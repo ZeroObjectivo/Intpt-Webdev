@@ -1,0 +1,66 @@
+/* Specific Unauthorized Styles */
+
+.error-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.error-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #E53E3E;
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    color: #4A5568;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 380px;
+    text-align: center;
+}
+
+.detected-email-box {
+    background: #F7FAFC;
+    padding: 1rem;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 340px;
+    margin-bottom: 2.5rem;
+    border: 1px solid #EDF2F7;
+    text-align: center;
+}
+
+.email-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #A0AEC0;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+}
+
+.email-value {
+    color: #2D3748;
+    font-weight: 500;
+    font-size: 0.95rem;
+    word-break: break-all;
+}
+
+.back-home {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #718096;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.back-home:hover {
+    color: #4A5568;
+    text-decoration: underline;
+}

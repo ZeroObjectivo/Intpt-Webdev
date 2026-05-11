@@ -8,142 +8,67 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     
-    <!-- Custom Login Styles (Reusing the same CSS for consistency) -->
+    <!-- Custom Login Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <!-- Specific Unauthorized Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/unauthorized.css') }}">
     
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    
-    <style>
-        /* Specific overrides for the error state */
-        .error-icon-box {
-            background: #FFF5F5;
-            border: 1px solid #FED7D7;
-            padding: 1.5rem;
-            border-radius: 20px;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .error-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #E53E3E;
-            margin-bottom: 1rem;
-        }
-        .error-message {
-            color: #4A5568;
-            font-size: 1rem;
-            line-height: 1.6;
-            margin-bottom: 2rem;
-            max-width: 380px;
-        }
-        .detected-email-box {
-            background: #F7FAFC;
-            padding: 1rem;
-            border-radius: 12px;
-            width: 100%;
-            margin-bottom: 2.5rem;
-            border: 1px solid #EDF2F7;
-        }
-        .email-label {
-            display: block;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #A0AEC0;
-            margin-bottom: 0.3rem;
-            font-weight: 600;
-        }
-        .email-value {
-            color: #2D3748;
-            font-weight: 500;
-            font-size: 0.95rem;
-        }
-        .btn-retry {
-            background-color: #4A90E2;
-            color: white;
-            text-decoration: none;
-            width: 100%;
-            max-width: 340px;
-            padding: 1.1rem 2rem;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 1.05rem;
-            transition: all 0.25s ease;
-            box-shadow: 0 10px 20px rgba(74, 144, 226, 0.2);
-        }
-        .btn-retry:hover {
-            transform: translateY(-2px);
-            background-color: #357ABD;
-            box-shadow: 0 15px 30px rgba(74, 144, 226, 0.3);
-        }
-        .back-home {
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
-            color: #718096;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .back-home:hover {
-            color: #4A5568;
-            text-decoration: underline;
-        }
-    </style>
 </head>
 <body class="login-page">
 
-    <!-- Background Decoration -->
+    <!-- Background Decoration (Same as Login) -->
     <div class="bg-wrapper">
         <img src="{{ url_for('static', filename='svg/Background.svg') }}" alt="" class="bg-svg">
     </div>
 
-    <!-- Top Left Header -->
+    <!-- Top Left Header (Same as Login) -->
     <header class="login-header">
         <a href="{{ url_for('core.home') }}">
             <img src="{{ url_for('static', filename='images/Navbar_Logo_New.png') }}" alt="University of Makati Herons' Hub" class="header-logo opacity-0">
         </a>
     </header>
 
-    <!-- Main Wrapper -->
+    <!-- Main Wrapper (Same as Login) -->
     <div class="login-wrapper">
         <main class="login-card opacity-0">
-            <!-- Heron Logo -->
+            <!-- Heron Logo (Same as Login) -->
             <img src="{{ url_for('static', filename='svg/Herons_Hub_Logo.svg') }}" alt="Herons' Hub" class="card-logo">
             
-            <h1 class="error-title">Account Restricted</h1>
-            
-            <p class="error-message">
-                Herons' Hub is exclusive to the UMak community. Please use your official <strong style="color: #2D3748;">@umak.edu.ph</strong> account.
-            </p>
+            <div class="error-content">
+                <h1 class="error-title">Account Restricted</h1>
+                
+                <p class="error-message">
+                    Herons' Hub is exclusive to the UMak community. Please use your official <strong style="color: #2D3748;">@umak.edu.ph</strong> account.
+                </p>
 
-            <div class="detected-email-box">
-                <span class="email-label">Detected Account</span>
-                <span class="email-value">{{ email }}</span>
+                {% if email %}
+                <div class="detected-email-box">
+                    <span class="email-label">Detected Account</span>
+                    <span class="email-value">{{ email }}</span>
+                </div>
+                {% endif %}
+
+                <a href="{{ url_for('auth.login') }}" class="btn-google">
+                    Try Again with UMak Email
+                </a>
+
+                <a href="{{ url_for('core.home') }}" class="back-home">
+                    Back to Landing Page
+                </a>
             </div>
-
-            <a href="{{ url_for('auth.login') }}" class="btn-retry">
-                Try Again with UMak Email
-            </a>
-
-            <a href="{{ url_for('core.home') }}" class="back-home">
-                Back to Landing Page
-            </a>
         </main>
     </div>
 
-    <!-- Global Footer -->
+    <!-- Global Footer (Same as Login) -->
     <footer class="login-footer">
         <p class="footer-disclaimer opacity-0">
             This hub is exclusively for the UMak community. Please use your official <strong>@umak.edu.ph</strong> account. Personal email addresses and unauthorized access will be denied to ensure the security and privacy of our academic community.
         </p>
     </footer>
 
-    <!-- Reusing the same animations -->
+    <!-- Custom Script (Reusing login animation logic) -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             gsap.set('.login-card', { opacity: 0, y: 40 });
