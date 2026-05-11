@@ -6,16 +6,21 @@
         </a>
 
         {% if session.get('user') %}
-            <!-- Dashboard Search Bar -->
-            <div class="hidden lg:flex flex-1 max-w-[650px] mx-12">
-                <div class="relative w-full">
-                    <input type="text" placeholder="Need to find something?" 
-                           class="w-full bg-[#E5E7EB] border-none rounded-full py-2.5 px-6 pr-12 text-sm text-[#101828] placeholder-[#4B5563] outline-none">
-                    <div class="absolute right-5 top-1/2 -translate-y-1/2 text-[#101828]">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            {% if request.endpoint == 'core.dashboard' %}
+                <!-- Dashboard Search Bar -->
+                <div class="hidden lg:flex flex-1 max-w-[650px] mx-12">
+                    <div class="relative w-full">
+                        <input type="text" placeholder="Need to find something?" 
+                               class="w-full bg-[#E5E7EB] border-none rounded-full py-2.5 px-6 pr-12 text-sm text-[#101828] placeholder-[#4B5563] outline-none">
+                        <div class="absolute right-5 top-1/2 -translate-y-1/2 text-[#101828]">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
                     </div>
                 </div>
-            </div>
+            {% else %}
+                <!-- Spacer for other pages when logged in -->
+                <div class="flex-1"></div>
+            {% endif %}
 
             <!-- Dashboard Navigation -->
             <div class="flex items-center gap-10">
