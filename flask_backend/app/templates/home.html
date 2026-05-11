@@ -25,8 +25,8 @@
             <h2 class="text-3xl md:text-4xl font-bold text-white mb-2">Welcome back, {{ user.user_metadata.full_name }}!</h2>
             <p class="text-white/80 text-lg">Ready to see what's happening at UMak today?</p>
             <div class="mt-6 flex gap-4 justify-center">
-                <a href="#" class="bg-umak-yellow text-umak-blue px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform shadow-lg">Enter Dashboard</a>
-                <a href="#" class="bg-white/10 text-white px-8 py-3 rounded-xl font-bold hover:bg-white/20 transition-all border border-white/30">View Your Posts</a>
+                <a href="{{ url_for('core.dashboard') }}" class="bg-umak-yellow text-umak-blue px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform shadow-lg">Enter Dashboard</a>
+                <a href="{{ url_for('core.dashboard') }}?filter=my-posts" class="bg-white/10 text-white px-8 py-3 rounded-xl font-bold hover:bg-white/20 transition-all border border-white/30">View Your Posts</a>
             </div>
         </div>
         {% endif %}
