@@ -7,9 +7,17 @@
 
         <!-- Auth Links -->
         <div class="flex items-center gap-8 text-sm md:text-base font-medium">
-            <a href="#" class="hover:text-umak-yellow transition-colors whitespace-nowrap">Sign Up</a>
-            <span class="text-white/20">|</span>
-            <a href="{{ url_for('core.login') }}" class="hover:text-umak-yellow transition-colors whitespace-nowrap">Log in</a>
+            {% if session.get('user') %}
+                <div class="flex items-center gap-4">
+                    <img src="{{ session['user']['user_metadata']['avatar_url'] }}" alt="Avatar" class="h-8 w-8 rounded-full border border-white/20">
+                    <span class="hidden md:inline text-white/90">Hello, {{ session['user']['user_metadata']['full_name'].split(' ')[0] }}</span>
+                    <a href="{{ url_for('auth.logout') }}" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-colors whitespace-nowrap">Logout</a>
+                </div>
+            {% else %}
+                <a href="{{ url_for('core.login') }}" class="hover:text-umak-yellow transition-colors whitespace-nowrap">Sign Up</a>
+                <span class="text-white/20">|</span>
+                <a href="{{ url_for('core.login') }}" class="hover:text-umak-yellow transition-colors whitespace-nowrap">Log in</a>
+            {% endif %}
         </div>
     </div>
 </nav>

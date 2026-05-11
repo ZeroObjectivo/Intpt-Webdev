@@ -1,7 +1,19 @@
-from flask import Blueprint, request, redirect, session, url_for, jsonify
+from flask import Blueprint, request, redirect, session, url_for, jsonify, render_template
 from services.supabase_client import supabase
+from functools import wraps
 
 auth = Blueprint('auth', __name__)
+
+def login_required(f):
+    """
+    Decorator to protect routes from unauthorized access.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('core.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @auth.route('/auth/login')
 def login():
@@ -57,23 +69,54 @@ def callback():
 @auth.route('/auth/session')
 def set_session():
     """
-    Captures the tokens and stores them in the Flask session.
+    Captures tokens, validates @umak.edu.ph domain, and syncs to DB.
     """
     access_token = request.args.get('access_token')
     refresh_token = request.args.get('refresh_token')
     
     if access_token:
-        # Store in Flask Session
+        # 1. Get user info from Supabase
+        user_response = supabase.auth.get_user(access_token)
+        user = user_response.user
+        email = user.email
+        
+        # 2. VALIDATION: Check for @umak.edu.ph
+        if not email.endswith('@umak.edu.ph'):
+            # Sign out immediately from Supabase
+            supabase.auth.sign_out()
+            return render_template('unauthorized.html', email=email)
+
+        # 3. Store in Flask Session
         session['access_token'] = access_token
         session['refresh_token'] = refresh_token
+        session['user'] = user.model_dump()
         
-        # Get user info from Supabase using the token
-        user_response = supabase.auth.get_user(access_token)
-        session['user'] = user_response.user.model_dump()
-        
-        return redirect(url_for('core.home'))
+        # 4. SYNC TO DATABASE: Save user to the profiles table
+        try:
+            user_id = user.id
+            full_name = user.user_metadata.get('full_name')
+            avatar_url = user.user_metadata.get('avatar_url')
+            
+            # Use 'upsert' to insert if new, or update if exists
+            supabase.table('profiles').upsert({
+                "id": str(user_id),
+                "email": email,
+                "full_name": full_name,
+                "avatar_url": avatar_url,
+                "updated_at": "now()"
+            }).execute()
+            
+        except Exception as e:
+            print(f"Database sync error: {e}")
+            # We don't block the login if DB sync fails, but we should log it
+            
+        return redirect(url_for('core.dashboard'))
     
     return "Session creation failed", 400
+
+@auth.route('/unauthorized')
+def unauthorized():
+    return render_template('unauthorized.html', email="Unknown")
 
 @auth.route('/auth/logout')
 def logout():
