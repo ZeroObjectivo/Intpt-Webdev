@@ -2,165 +2,176 @@
 
 {% block title %}Dashboard | Herons' Hub{% endblock %}
 
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-[#F8FAFC] font-metropolis">
-    
+<div class="relative min-h-screen bg-[#F0F2F5]">
     <!-- Hero Background Pattern (Subtle) -->
     <div class="absolute top-0 left-0 w-full h-64 bg-umak-blue -z-10 overflow-hidden">
         <img src="{{ url_for('static', filename='svg/Background.svg') }}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none">
     </div>
 
-    <div class="max-w-7xl mx-auto pt-28 pb-20 px-6">
-        
-        <!-- Welcome Header -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 animate-fade-up">
-            <div>
-                <span class="text-umak-yellow font-bold tracking-widest text-xs uppercase mb-2 block">Student Portal</span>
-                <h1 class="text-4xl md:text-5xl font-extrabold text-white">Dashboard</h1>
-                <p class="text-white/70 mt-3 text-lg">Welcome back, <span class="text-umak-yellow">{{ user.user_metadata.full_name }}</span></p>
+    <div class="pt-8">
+    <div class="dashboard-container">
+        <!-- Left Column: Feed -->
+        <main class="feed-column">
+            <!-- Share Box -->
+            <div class="share-box">
+                <div class="flex items-center flex-1">
+                    <img src="{{ user.user_metadata.avatar_url if user else '' }}" alt="" class="user-avatar object-cover">
+                    <span class="share-text">Ready to Share?</span>
+                </div>
+                <button class="btn-create-post">Create New Post</button>
             </div>
-            <div class="mt-6 md:mt-0 flex gap-3">
-                <button class="bg-umak-yellow text-umak-blue px-6 py-3 rounded-xl font-bold shadow-lg shadow-umak-yellow/20 hover:scale-105 transition-all">Create Post</button>
-                <button class="bg-white/10 backdrop-blur-md text-white border border-white/20 px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition-all">My Activity</button>
+
+            <!-- Category Pills -->
+            <div class="category-pills">
+                <div class="pill active">All Posts</div>
+                <div class="pill">General</div>
+                <div class="pill">Lost & Found</div>
+                <div class="pill">Buy & Sell</div>
+                <div class="pill">Question</div>
+                <div class="pill">Events</div>
             </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <!-- Sidebar: User Profile & Quick Links -->
-            <div class="lg:col-span-4 space-y-6">
-                <!-- Profile Card -->
-                <div class="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 animate-fade-up" style="animation-delay: 0.1s;">
-                    <div class="relative w-24 h-24 mx-auto mb-6">
-                        <img src="{{ user.user_metadata.avatar_url }}" alt="Avatar" class="w-full h-full rounded-full border-4 border-slate-50 shadow-inner object-cover">
-                        <div class="absolute bottom-1 right-1 bg-green-500 w-5 h-5 rounded-full border-4 border-white"></div>
-                    </div>
-                    
-                    <div class="text-center mb-8">
-                        <h2 class="text-2xl font-bold text-slate-800">{{ user.user_metadata.full_name }}</h2>
-                        <p class="text-slate-400 text-sm mt-1">{{ user.email }}</p>
-                        <div class="mt-4 inline-flex items-center gap-2 bg-umak-blue/5 text-umak-blue px-4 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase">
-                            <span class="w-2 h-2 bg-umak-blue rounded-full"></span>
-                            Official Student
+            <!-- Posts -->
+            <div class="posts-list">
+                <!-- Post 1 -->
+                <article class="post-card">
+                    <div class="post-header">
+                        <div class="post-user-avatar"></div>
+                        <div class="post-user-info">
+                            <h4>Juan Dela Cruz</h4>
+                            <span>General · Posted 2 mins ago</span>
                         </div>
                     </div>
+                    <div class="post-content">
+                        <h3>Lorem Ipsum Dolor Sit Amet,</h3>
+                        <p>Lorem Ipsum Dolor Sit Amet, Consectetur Adipiscing Elit, Sed Do Eiusmod Tempor Incididunt Ut Labore Et Dolore Magna Aliqua. Ut Enim Ad Minim Veniam, Quis Nostrud Exercitation Ullamco Laboris Nisi Ut Aliquip Ex Ea Commodo Consequat.</p>
+                    </div>
+                    <div class="post-actions">
+                        <div class="action-item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            <span>10 Likes</span>
+                        </div>
+                        <div class="action-item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            <span>2 Comments</span>
+                        </div>
+                        <div class="action-item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                            <span>8 Shares</span>
+                        </div>
+                    </div>
+                </article>
 
-                    <div class="border-t border-slate-50 pt-8 space-y-4">
-                        <div class="flex justify-between items-center p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer group">
-                            <span class="text-slate-500 font-medium group-hover:text-umak-blue transition-colors">Personal Feed</span>
-                            <span class="bg-slate-100 text-slate-500 w-6 h-6 flex items-center justify-center rounded-lg text-xs font-bold">0</span>
+                <!-- Post 2 -->
+                <article class="post-card">
+                    <div class="post-header">
+                        <div class="post-user-avatar"></div>
+                        <div class="post-user-info">
+                            <h4>Erwin Batumbakal</h4>
+                            <span>Question · Posted 30 mins ago</span>
                         </div>
-                        <div class="flex justify-between items-center p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer group">
-                            <span class="text-slate-500 font-medium group-hover:text-umak-blue transition-colors">Drafts</span>
-                            <span class="bg-slate-100 text-slate-500 w-6 h-6 flex items-center justify-center rounded-lg text-xs font-bold">0</span>
+                    </div>
+                    <div class="post-content">
+                        <h3>Lorem Ipsum Dolor Sit Amet,</h3>
+                        <p>Lorem Ipsum Dolor Sit Amet, Consectetur Adipiscing Elit, Sed Do Eiusmod Tempor Incididunt Ut Labore Et Dolore Magna Aliqua. Ut Enim Ad Minim Veniam, Quis Nostrud Exercitation Ullamco Laboris Nisi Ut Aliquip Ex Ea Commodo Consequat.</p>
+                        <div class="post-image-placeholder"></div>
+                    </div>
+                    <div class="post-actions">
+                        <div class="action-item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            <span>10 Likes</span>
                         </div>
-                        <div class="flex justify-between items-center p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer group">
-                            <span class="text-slate-500 font-medium group-hover:text-umak-blue transition-colors">Saved Topics</span>
-                            <span class="bg-slate-100 text-slate-500 w-6 h-6 flex items-center justify-center rounded-lg text-xs font-bold">0</span>
+                        <div class="action-item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            <span>2 Comments</span>
+                        </div>
+                        <div class="action-item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                            <span>8 Shares</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </main>
+
+        <!-- Right Column: Sidebar -->
+        <aside class="sidebar">
+            <!-- Trending Now -->
+            <section class="sidebar-section">
+                <h3 class="sidebar-title">Trending Now</h3>
+                <div class="trending-list">
+                    <div class="trending-item">
+                        <span class="trending-number">1</span>
+                        <div class="trending-details">
+                            <span>Events</span>
+                            <h4>Lorem Ipsum Event</h4>
+                            <span class="likes">2.4k Likes</span>
+                        </div>
+                    </div>
+                    <div class="trending-item">
+                        <span class="trending-number">2</span>
+                        <div class="trending-details">
+                            <span>Buy & Sell</span>
+                            <h4>Lorem Ipsum Event</h4>
+                            <span class="likes">2.4k Likes</span>
+                        </div>
+                    </div>
+                    <div class="trending-item">
+                        <span class="trending-number">3</span>
+                        <div class="trending-details">
+                            <span>General</span>
+                            <h4>SHOUTOUT TO MY CLASSMATES</h4>
+                            <span class="likes">2.4k Likes</span>
                         </div>
                     </div>
                 </div>
+            </section>
 
-                <!-- UMak Quick Info -->
-                <div class="bg-gradient-to-br from-umak-blue to-[#002a5a] rounded-[2.5rem] p-8 text-white shadow-xl shadow-umak-blue/20 animate-fade-up" style="animation-delay: 0.2s;">
-                    <h3 class="text-xl font-bold mb-4">Heron's Tip</h3>
-                    <p class="text-white/70 text-sm leading-relaxed mb-6">Always check the <strong>Lost and Found</strong> tag daily to help fellow Herons. Community kindness is what makes UMak great!</p>
-                    <a href="#" class="text-umak-yellow text-sm font-bold flex items-center gap-2 hover:gap-3 transition-all">
-                        Learn more about etiquette 
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Main Content: Feed Preview & Stats -->
-            <div class="lg:col-span-8 space-y-8">
-                
-                <!-- Stats Row -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-up" style="animation-delay: 0.3s;">
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                        <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest block mb-1">Posts</span>
-                        <span class="text-3xl font-black text-umak-blue">0</span>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                        <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest block mb-1">Points</span>
-                        <span class="text-3xl font-black text-umak-blue">0</span>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                        <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest block mb-1">Impact</span>
-                        <span class="text-3xl font-black text-umak-blue">0%</span>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                        <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest block mb-1">Level</span>
-                        <span class="text-3xl font-black text-umak-blue">1</span>
-                    </div>
-                </div>
-
-                <!-- Feed Placeholder -->
-                <div class="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-slate-200/50 border border-slate-100 animate-fade-up" style="animation-delay: 0.4s;">
-                    <div class="flex items-center justify-between mb-10">
-                        <h3 class="text-2xl font-bold text-slate-800">What's Trending</h3>
-                        <div class="flex gap-2">
-                            <span class="bg-umak-blue text-white px-4 py-1.5 rounded-full text-xs font-bold">All</span>
-                            <span class="bg-slate-100 text-slate-400 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-slate-200 cursor-pointer transition-colors">General</span>
-                            <span class="bg-slate-100 text-slate-400 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-slate-200 cursor-pointer transition-colors">Lost</span>
+            <!-- Upcoming Events -->
+            <section class="sidebar-section">
+                <h3 class="sidebar-title">Upcoming Events</h3>
+                <div class="event-list">
+                    <div class="event-card">
+                        <div class="event-date">
+                            <span class="event-day">11</span>
+                            <span class="event-month">May</span>
                         </div>
-                    </div>
-
-                    <!-- Empty State -->
-                    <div class="py-20 flex flex-col items-center text-center">
-                        <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                            <svg class="w-12 h-12 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 4v4h4"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11v5m-2-2h4"></path></svg>
+                        <div class="event-info">
+                            <h4>Presentation</h4>
+                            <p>3:00 PM - 6:00 PM<br>HPSB</p>
                         </div>
-                        <h4 class="text-xl font-bold text-slate-700">No posts yet!</h4>
-                        <p class="text-slate-400 max-w-xs mx-auto mt-2">The community is quiet... be the first Heron to share something interesting today!</p>
-                        <button class="mt-8 bg-umak-blue text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-umak-blue/30 transition-all">Start a Conversation</button>
+                        <div class="event-status status-ongoing">Ongoing</div>
+                    </div>
+                    <div class="event-card">
+                        <div class="event-date">
+                            <span class="event-day">13</span>
+                            <span class="event-month">May</span>
+                        </div>
+                        <div class="event-info">
+                            <h4>Culminating Activity</h4>
+                            <p>6:00 AM - 9:00 AM<br>HPSB</p>
+                        </div>
+                        <div class="event-status status-upcoming">Upcoming</div>
+                    </div>
+                    <div class="event-card">
+                        <div class="event-date">
+                            <span class="event-day">15</span>
+                            <span class="event-month">May</span>
+                        </div>
+                        <div class="event-info">
+                            <h4>Physics</h4>
+                            <p>3:00 PM - 6:00 PM<br>HPSB</p>
+                        </div>
+                        <div class="event-status status-upcoming">Upcoming</div>
                     </div>
                 </div>
-
-            </div>
-
-        </div>
+            </section>
+        </aside>
     </div>
 </div>
-
-<style>
-    /* Global Styles for Dashboard */
-    html, body {
-        background-color: #F8FAFC;
-        overflow-y: auto !important;
-        height: auto !important;
-    }
-
-    nav {
-        background-color: #001035 !important; /* Matches tailwind.config umak-blue */
-        backdrop-blur: none !important;
-        position: fixed !important;
-        width: 100%;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
-    }
-
-    .animate-fade-up {
-        animation: fade-up 1s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    @keyframes fade-up {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
-</style>
 {% endblock %}
