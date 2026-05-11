@@ -3,13 +3,13 @@ document.addEventListener('DOMContentLoaded', () => {
     gsap.set('.login-card', { opacity: 0, y: 40 });
     gsap.set('.header-logo', { opacity: 0, x: -20 });
     gsap.set('.footer-disclaimer', { opacity: 0 });
-    gsap.set('.bg-curves', { opacity: 0 });
+    gsap.set('.bg-wrapper', { opacity: 0 });
 
     // Timeline for Page Entrance
     const tl = gsap.timeline({ defaults: { ease: 'power4.out', duration: 1.5 } });
 
-    tl.to('.bg-curves', {
-        opacity: 0.3,
+    tl.to('.bg-wrapper', {
+        opacity: 1,
         duration: 2.5
     })
     .to('.header-logo', {

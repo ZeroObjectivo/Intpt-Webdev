@@ -14,11 +14,8 @@
 <body class="login-page">
 
     <!-- Background Decoration -->
-    <div class="bg-curves">
-        <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,1000 C300,800 600,900 1000,700 L1000,1000 L0,1000 Z" fill="rgba(255,255,255,0.15)"></path>
-            <path d="M0,0 C400,200 700,100 1000,300 L1000,0 L0,0 Z" fill="rgba(255,255,255,0.1)"></path>
-        </svg>
+    <div class="bg-wrapper">
+        <img src="{{ url_for('static', filename='svg/Background.svg') }}" alt="" class="bg-svg">
     </div>
 
     <!-- Top Left Header - Unified Logo from Navbar -->
@@ -30,10 +27,9 @@
     <div class="login-wrapper">
         <main class="login-card opacity-0">
             <!-- Heron Logo -->
-            <img src="{{ url_for('static', filename='images/Logo.png') }}" alt="Heron" class="card-logo">
+            <img src="{{ url_for('static', filename='svg/Herons_Hub_Logo.svg') }}" alt="Herons' Hub" class="card-logo">
             
             <!-- Title Group -->
-            <h1 class="card-title">HERONS HUB</h1>
             <p class="card-subtitle">A UMak-exclusive student community</p>
 
             <!-- Action Button -->
