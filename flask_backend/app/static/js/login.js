@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         duration: 1.6
     }, "-=1.4")
     .to('.footer-disclaimer', {
-        opacity: 0.7,
+        opacity: 1,
         duration: 1.2
     }, "-=1");
 

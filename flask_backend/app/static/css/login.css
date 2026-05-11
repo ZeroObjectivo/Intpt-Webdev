@@ -56,10 +56,15 @@ body.login-page {
     align-items: center;
 }
 
+.login-header a {
+    display: flex;
+    text-decoration: none;
+}
+
 .header-logo {
-    height: 54px;
+    height: 64px;
     width: auto;
-    object-contain: contain;
+    object-fit: contain;
 }
 
 /* Login Card */
@@ -79,7 +84,7 @@ body.login-page {
 
 .card-logo {
     width: 100%;
-    max-width: 280px;
+    max-width: 320px;
     height: auto;
     margin-bottom: 2rem;
 }
@@ -138,12 +143,17 @@ body.login-page {
 }
 
 .footer-disclaimer {
-    max-width: 900px;
+    max-width: 800px;
     margin: 0 auto;
-    font-size: 0.8rem;
-    color: rgba(45, 55, 72, 0.6);
-    line-height: 1.6;
+    font-size: 0.85rem;
+    color: #4A5568;
+    line-height: 1.7;
     font-weight: 400;
+}
+
+.footer-disclaimer strong {
+    color: #2D3748;
+    font-weight: 600;
 }
 
 /* Mobile Adjustments */
@@ -152,13 +162,13 @@ body.login-page {
         top: 1.5rem;
         left: 1.5rem;
     }
-    .header-logo { height: 40px; }
+    .header-logo { height: 48px; }
     
     .login-card {
         padding: 4rem 2rem;
         border-radius: 32px;
     }
-    .card-logo { max-width: 220px; }
+    .card-logo { max-width: 260px; }
     
     .login-footer {
         position: relative;

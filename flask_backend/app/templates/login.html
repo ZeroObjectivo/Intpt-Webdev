@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Herons Hub - UMak</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    
     <!-- Custom Login Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
     
@@ -20,7 +23,9 @@
 
     <!-- Top Left Header - Unified Logo from Navbar -->
     <header class="login-header">
-        <img src="{{ url_for('static', filename='images/Navbar_Logo_New.png') }}" alt="University of Makati Herons' Hub" class="header-logo opacity-0">
+        <a href="{{ url_for('core.home') }}">
+            <img src="{{ url_for('static', filename='images/Navbar_Logo_New.png') }}" alt="University of Makati Herons' Hub" class="header-logo opacity-0">
+        </a>
     </header>
 
     <!-- Main Wrapper for Absolute Centering -->
@@ -51,7 +56,7 @@
     <!-- Global Footer -->
     <footer class="login-footer">
         <p class="footer-disclaimer opacity-0">
-            This hub is exclusively for UMak community with @umak.edu.ph account; unauthorized users or personal email addresses will be denied access to ensure the security and privacy of our academic community.
+            This hub is exclusively for the UMak community. Please use your official <strong>@umak.edu.ph</strong> account. Personal email addresses and unauthorized access will be denied to ensure the security and privacy of our academic community.
         </p>
     </footer>
 
