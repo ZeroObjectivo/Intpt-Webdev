@@ -10,6 +10,9 @@ module.exports = {
         'umak-blue': '#001035',
         'umak-yellow': '#FFD700',
         'umak-light-blue': '#1E293B',
+      },
+      fontFamily: {
+        'metropolis': ['Metropolis', 'sans-serif'],
       }
     },
   },
