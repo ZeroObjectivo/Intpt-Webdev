@@ -84,23 +84,16 @@ def create_post():
         flash("Your login session expired. Please sign in again.", "error")
         return redirect(url_for('core.login'))
     
-    image_urls = []
-    if image_files:
-        # Limit to 5 images
-        for file in image_files[:5]:
-            if file and file.filename:
-                try:
-                    url = upload_single_image(file, user_id)
-                    image_urls.append(url)
-                except Exception as e:
-                    print(f"Error uploading image {file.filename}: {e}")
-                    flash(f"Failed to upload image {file.filename}.", "warning")
-
-    # Use the first image if the DB column is just a single string URL
-    single_image_url = image_urls[0] if image_urls else None
+    image_url = None
+    if image_files and image_files[0].filename:
+        try:
+            # Revert to single image logic temporarily to ensure stability
+            image_url = upload_single_image(image_files[0], user_id)
+        except Exception as e:
+            print(f"Error uploading image: {e}")
+            flash("Failed to upload image.", "warning")
 
     try:
-        # Prepare data for RPC with parameter name matching the function signature
         post_data = {
             "user_id": user_id,
             "content": content,
@@ -109,15 +102,14 @@ def create_post():
             "location": location,
             "status": status,
             "event_date": event_date,
-            "image_urls": single_image_url
+            "image_url": image_url
         }
-        print(f"DEBUG: Attempting to insert post via RPC for user {user_id}: {post_data}")
-        supabase.rpc('create_post_rpc', post_data).execute()
-        print(f"DEBUG: RPC Insert successful")
+        print(f"DEBUG: Attempting standard insert for user {user_id}: {post_data}")
+        supabase.table('posts').insert(post_data).execute()
         flash("Post created successfully!", "success")
     except Exception as e:
-        print(f"CRITICAL: Post insertion failed: {str(e)}")
-        flash("Something went wrong. Please try again.", "error")
+        print(f"CRITICAL: Standard post insertion failed: {str(e)}")
+        flash(f"Something went wrong: {str(e)}", "error")
         
     return redirect(url_for('core.dashboard'))
 
