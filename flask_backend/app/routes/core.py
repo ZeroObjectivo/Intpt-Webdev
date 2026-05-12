@@ -43,24 +43,32 @@ def dashboard():
                            trending=trending,
                            now=datetime.datetime.utcnow())
 
-@core.route('/settings/profile')
+@core.route('/profile/<target_user_id>')
 @login_required
-def profile_settings():
-    user_session = session.get('user')
-    user_id = user_session.get('id')
+def view_profile(target_user_id):
+    current_user_id = session.get('user').get('id')
     apply_supabase_auth_token()
     
     try:
-        profile, posts, activity = load_profile_data(user_id)
+        profile, posts, activity = load_profile_data(target_user_id)
+        # Check if the viewer owns this profile
+        is_own_profile = (current_user_id == target_user_id)
+        
         return render_template('profile_settings.html', 
                                user=profile, 
                                posts=posts, 
                                activity=activity,
+                               is_own_profile=is_own_profile,
                                now=datetime.datetime.utcnow())
     except Exception as e:
-        print(f"Error loading profile dashboard: {e}")
-        flash(f"Error loading profile: {str(e)}", "error")
+        print(f"Error loading profile: {e}")
+        flash("Profile not found.", "error")
         return redirect(url_for('core.dashboard'))
+
+@core.route('/settings/profile')
+@login_required
+def profile_settings():
+    return redirect(url_for('core.view_profile', target_user_id=session.get('user').get('id')))
 
 def load_profile_data(user_id):
     # 1. Fetch User Profile

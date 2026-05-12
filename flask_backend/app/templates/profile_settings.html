@@ -146,7 +146,9 @@
         <nav class="profile-tabs">
             <div class="tab-link active" onclick="switchTab('timeline', this)">Timeline</div>
             <div class="tab-link" onclick="switchTab('activity', this)">Activity Log</div>
+            {% if is_own_profile %}
             <div class="tab-link" onclick="switchTab('settings', this)">Edit Profile</div>
+            {% endif %}
         </nav>
     </div>
 
@@ -163,9 +165,9 @@
                             <div class="flex">
                                 <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
                                 <div class="post-user-info">
-                                    <h4>{{ user.full_name }}</h4>
+                                    <h4 class="font-black text-slate-800">{{ user.full_name }}</h4>
                                     {% set created = post.created_at|datetime_obj %}
-                                    <span>{{ created.strftime('%b %d, %Y') }}</span>
+                                    <span class="text-xs text-slate-400 font-bold">{{ created.strftime('%b %d, %Y') }}</span>
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-2">
@@ -173,6 +175,8 @@
                                     <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest badge-{{ post.category|lower|replace(' ', '-')|replace('&', 'and') }}">
                                         {{ post.category }}
                                     </span>
+                                    
+                                    {% if is_own_profile %}
                                     <!-- Post Menu -->
                                     <div class="relative">
                                         <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
@@ -183,6 +187,7 @@
                                             <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors">Delete Post</button>
                                         </div>
                                     </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

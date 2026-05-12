@@ -149,9 +149,13 @@
                         <article class="post-card">
                             <div class="post-header flex justify-between items-start">
                                 <div class="flex">
-                                    <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
+                                    <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}">
+                                        <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full hover:opacity-80 transition-opacity">
+                                    </a>
                                     <div class="post-user-info">
-                                        <h4>{{ post.profiles.full_name }}</h4>
+                                        <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="hover:underline">
+                                            <h4 class="font-black text-slate-800">{{ post.profiles.full_name }}</h4>
+                                        </a>
                                         {% set created = post.created_at|datetime_obj %}
                                         <span title="{{ created.strftime('%A, %B %d, %Y at %I:%M %p') }}">
                                             {% set diff = ((now - created).total_seconds()) %}
