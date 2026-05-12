@@ -276,7 +276,6 @@
 
 .action-item:hover {
     background: #eef4fb;
-    color: var(--hh-blue-500);
 }
 
 .action-icon {
@@ -315,8 +314,10 @@
 }
 
 .sidebar-heading {
-    margin: 0 0 14px;
-    font-size: 1.25rem;
+    margin: 0 0 1rem;
+    color: var(--hh-blue-900);
+    font-size: 1.125rem;
+    font-weight: 700;
 }
 
 .modal-heading {
