@@ -56,6 +56,12 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 *   **Cumulative Multi-Image Upload:** Supports batch selection of up to 5 images, with real-time preview and individual removal.
 *   **Grid Rendering:** Updated post rendering to display multiple images in a responsive, Facebook-style grid layout.
 
+### 8. Integration
+*   **Database Update Merge:** Merged `origin/db_update` into `main`, incorporating features:
+    *   Google OAuth implementation.
+    *   Domain restriction for sign-ups.
+    *   Updated database migrations for core features.
+
 ---
 
 ## Technical File Changes
@@ -65,3 +71,4 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - `supabase/migrations/20260512080000_support_multiple_images.sql`: Migration for multi-image column support.
 - `CHANGELOG.md`: Project-wide tracking.
 - `Md/Changelog_DynamicFields.md`: Feature-specific documentation.
+- `Change_Log.md`: Project-wide change log.
