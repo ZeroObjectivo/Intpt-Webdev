@@ -78,15 +78,20 @@ def create_post():
         return redirect(url_for('core.login'))
     
     try:
-        supabase.table('posts').insert({
+        post_data = {
             "user_id": user_id,
             "content": content,
-            "category": category
-        }).execute()
+            "category": category,
+            "price": price,
+            "location": location,
+            "status": status,
+            "event_date": event_date
+        }
+        supabase.table('posts').insert(post_data).execute()
         flash("Post created successfully!", "success")
     except Exception as e:
         if is_jwt_expired_error(e) and refresh_supabase_auth():
-            insert_post(user_id, content, category)
+            insert_post(user_id, content, category, price, location, status, event_date)
             flash("Post created successfully!", "success")
         elif is_jwt_expired_error(e):
             session.clear()
@@ -98,12 +103,17 @@ def create_post():
         
     return redirect(url_for('core.dashboard'))
 
-def insert_post(user_id, content, category):
-    supabase.table('posts').insert({
-            "user_id": user_id,
-            "content": content,
-            "category": category
-    }).execute()
+def insert_post(user_id, content, category, price=None, location=None, status=None, event_date=None):
+    post_data = {
+        "user_id": user_id,
+        "content": content,
+        "category": category,
+        "price": price,
+        "location": location,
+        "status": status,
+        "event_date": event_date
+    }
+    supabase.table('posts').insert(post_data).execute()
 
 @core.route('/login')
 def login():
