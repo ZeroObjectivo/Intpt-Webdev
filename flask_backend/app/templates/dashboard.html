@@ -50,13 +50,87 @@
             </aside>
 
             <main class="feed-column">
-                <!-- Share Box -->
+                <!-- Share Box (Facebook Style) -->
                 <div class="share-box">
-                    <div class="flex items-center flex-1">
-                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar object-cover">
-                        <span class="share-text">Hi {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}, ready to Share?</span>
-                    </div>
-                    <button class="btn-create-post" onclick="document.getElementById('createPostModal').classList.remove('hidden')">Create New Post</button>
+                    <form action="{{ url_for('core.create_post') }}" method="POST" enctype="multipart/form-data" id="inlinePostForm">
+                        <div class="share-box-top">
+                            <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar">
+                            <textarea name="content" id="postTextarea" rows="1" class="share-textarea" placeholder="What's on your mind, {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}?"></textarea>
+                        </div>
+
+                        <!-- Expanded Fields (Hidden by default) -->
+                        <div id="expandedFields" class="hidden space-y-4 mt-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="col-span-2 sm:col-span-1">
+                                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Category</label>
+                                    <select name="category" id="postCategorySelect" class="w-full p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                                        <option value="General">General</option>
+                                        <option value="Lost & Found">Lost & Found</option>
+                                        <option value="Buy & Sell">Buy & Sell</option>
+                                        <option value="Question">Question</option>
+                                        <option value="Events">Events</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Dynamic Fields Container -->
+                                <div id="dynamicFieldsContainer" class="col-span-2 grid grid-cols-2 gap-4 hidden">
+                                    <!-- Price -->
+                                    <div id="priceField" class="hidden">
+                                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Price (₱)</label>
+                                        <input type="number" name="price" step="0.01" class="w-full p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs font-bold text-slate-600 outline-none" placeholder="0.00">
+                                    </div>
+                                    <!-- Location -->
+                                    <div id="locationField" class="hidden">
+                                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Location</label>
+                                        <input type="text" name="location" class="w-full p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs font-bold text-slate-600 outline-none" placeholder="e.g., HPSB">
+                                    </div>
+                                    <!-- Status -->
+                                    <div id="statusField" class="hidden">
+                                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Status</label>
+                                        <select name="status" id="statusSelect" class="w-full p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs font-bold text-slate-600 outline-none">
+                                        </select>
+                                    </div>
+                                    <!-- Event Date -->
+                                    <div id="eventDateField" class="hidden">
+                                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Date & Time</label>
+                                        <input type="datetime-local" name="event_date" class="w-full p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs font-bold text-slate-600 outline-none">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Image Preview Area -->
+                            <div id="imagePreviewArea" class="hidden">
+                                <div class="image-preview-container">
+                                    <img id="imagePreview" src="#" alt="" class="image-preview">
+                                    <button type="button" id="removeImageBtn" class="remove-preview-btn">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="share-box-actions">
+                            <div class="flex gap-1">
+                                <label for="postImageInput" class="share-action-btn">
+                                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    <span>Photo</span>
+                                    <input type="file" name="image" id="postImageInput" class="hidden" accept="image/*">
+                                </label>
+                                <button type="button" class="share-action-btn hidden sm:flex">
+                                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    <span>Check-in</span>
+                                </button>
+                                <button type="button" class="share-action-btn hidden md:flex">
+                                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span>Feeling</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button type="button" id="cancelPostBtn" class="hidden text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+                                <button type="submit" class="btn-post-submit">Post</button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
 
                 <!-- Category Pills -->
@@ -245,69 +319,11 @@
     </div>
 </div>
 
-<div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
-        <div class="p-4 border-b flex justify-between items-center bg-[#F8F9FA]">
-            <h2 class="modal-heading">Create New Post</h2>
-            <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700" aria-label="Close create post modal">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-        <form action="{{ url_for('core.create_post') }}" method="POST" class="p-6">
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                <select name="category" id="postCategorySelect" class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
-                    <option value="General">General</option>
-                    <option value="Lost & Found">Lost & Found</option>
-                    <option value="Buy & Sell">Buy & Sell</option>
-                    <option value="Question">Question</option>
-                    <option value="Events">Events</option>
-                </select>
-            </div>
-
-            <!-- Dynamic Fields -->
-            <div id="dynamicFieldsContainer" class="space-y-4 mb-6 hidden">
-                <!-- Price (Buy & Sell) -->
-                <div id="priceField" class="hidden">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Price (₱)</label>
-                    <input type="number" name="price" step="0.01" class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue outline-none" placeholder="0.00">
-                </div>
-
-                <!-- Location (Lost & Found, Events) -->
-                <div id="locationField" class="hidden">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Location</label>
-                    <input type="text" name="location" class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue outline-none" placeholder="e.g., HPSB 2nd Floor, Admin Building">
-                </div>
-
-                <!-- Status (Buy & Sell, Lost & Found) -->
-                <div id="statusField" class="hidden">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                    <select name="status" id="statusSelect" class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue outline-none">
-                        <!-- Options filled by JS -->
-                    </select>
-                </div>
-
-                <!-- Event Date (Events) -->
-                <div id="eventDateField" class="hidden">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Event Date & Time</label>
-                    <input type="datetime-local" name="event_date" class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue outline-none">
-                </div>
-            </div>
-
-            <div class="mb-6">
-                <label class="form-label">What's on your mind?</label>
-                <textarea name="content" rows="4" required class="w-full p-4 rounded-lg border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
-            </div>
-            <div class="flex gap-4">
-                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="flex-1 py-3 px-6 rounded-lg border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
-                <button type="submit" class="flex-1 py-3 px-6 rounded-lg bg-umak-blue text-white font-bold hover:bg-opacity-90 transition-all shadow-lg shadow-blue-900/20">Post to Hub</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const postTextarea = document.getElementById('postTextarea');
+        const expandedFields = document.getElementById('expandedFields');
+        const cancelPostBtn = document.getElementById('cancelPostBtn');
         const categorySelect = document.getElementById('postCategorySelect');
         const dynamicContainer = document.getElementById('dynamicFieldsContainer');
         const priceField = document.getElementById('priceField');
@@ -315,6 +331,59 @@
         const statusField = document.getElementById('statusField');
         const statusSelect = document.getElementById('statusSelect');
         const eventDateField = document.getElementById('eventDateField');
+        const imageInput = document.getElementById('postImageInput');
+        const imagePreviewArea = document.getElementById('imagePreviewArea');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+
+        // Auto-expand textarea
+        postTextarea.addEventListener('input', () => {
+            postTextarea.style.height = 'auto';
+            postTextarea.style.height = (postTextarea.scrollHeight) + 'px';
+            
+            if (postTextarea.value.length > 0) {
+                expandedFields.classList.remove('hidden');
+                cancelPostBtn.classList.remove('hidden');
+            }
+        });
+
+        // Expand on focus
+        postTextarea.addEventListener('focus', () => {
+            expandedFields.classList.remove('hidden');
+            cancelPostBtn.classList.remove('hidden');
+        });
+
+        // Cancel post
+        cancelPostBtn.addEventListener('click', () => {
+            postTextarea.value = '';
+            postTextarea.style.height = '40px';
+            expandedFields.classList.add('hidden');
+            cancelPostBtn.classList.add('hidden');
+            imagePreviewArea.classList.add('hidden');
+            imageInput.value = '';
+            dynamicContainer.classList.add('hidden');
+            categorySelect.value = 'General';
+        });
+
+        // Image Preview
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreviewArea.classList.remove('hidden');
+                    expandedFields.classList.remove('hidden');
+                    cancelPostBtn.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeImageBtn.addEventListener('click', () => {
+            imageInput.value = '';
+            imagePreviewArea.classList.add('hidden');
+        });
 
         categorySelect.addEventListener('change', () => {
             const category = categorySelect.value;

@@ -62,6 +62,7 @@ def create_post():
     
     content = request.form.get('content')
     category = request.form.get('category', 'General')
+    image_file = request.files.get('image')
     
     # Extra fields
     price = request.form.get('price')
@@ -75,7 +76,7 @@ def create_post():
     status = status.strip() if status and status.strip() else None
     event_date = event_date if event_date and event_date.strip() else None
     
-    if not content:
+    if not content and not image_file:
         flash("Post content cannot be empty!", "error")
         return redirect(url_for('core.dashboard'))
 
@@ -83,6 +84,14 @@ def create_post():
         flash("Your login session expired. Please sign in again.", "error")
         return redirect(url_for('core.login'))
     
+    image_url = None
+    if image_file:
+        try:
+            image_url = upload_post_image(image_file, user_id)
+        except Exception as e:
+            print(f"Error uploading image: {e}")
+            flash("Failed to upload image. Post created without it.", "warning")
+
     try:
         post_data = {
             "user_id": user_id,
@@ -91,13 +100,14 @@ def create_post():
             "price": price,
             "location": location,
             "status": status,
-            "event_date": event_date
+            "event_date": event_date,
+            "image_url": image_url
         }
         supabase.table('posts').insert(post_data).execute()
         flash("Post created successfully!", "success")
     except Exception as e:
         if is_jwt_expired_error(e) and refresh_supabase_auth():
-            insert_post(user_id, content, category, price, location, status, event_date)
+            insert_post(user_id, content, category, price, location, status, event_date, image_url)
             flash("Post created successfully!", "success")
         elif is_jwt_expired_error(e):
             session.clear()
@@ -109,7 +119,26 @@ def create_post():
         
     return redirect(url_for('core.dashboard'))
 
-def insert_post(user_id, content, category, price=None, location=None, status=None, event_date=None):
+def upload_post_image(file, user_id):
+    import uuid
+    file_ext = file.filename.split('.')[-1]
+    filename = f"{user_id}/{uuid.uuid4()}.{file_ext}"
+    
+    # Upload to 'post-images' bucket
+    # Note: Ensure this bucket exists and is public in Supabase
+    bucket_name = 'post-images'
+    
+    file_data = file.read()
+    res = supabase.storage.from_(bucket_name).upload(
+        path=filename,
+        file=file_data,
+        file_options={"content-type": file.content_type}
+    )
+    
+    # Get public URL
+    return supabase.storage.from_(bucket_name).get_public_url(filename)
+
+def insert_post(user_id, content, category, price=None, location=None, status=None, event_date=None, image_url=None):
     post_data = {
         "user_id": user_id,
         "content": content,
@@ -117,7 +146,8 @@ def insert_post(user_id, content, category, price=None, location=None, status=No
         "price": price,
         "location": location,
         "status": status,
-        "event_date": event_date
+        "event_date": event_date,
+        "image_url": image_url
     }
     supabase.table('posts').insert(post_data).execute()
 
