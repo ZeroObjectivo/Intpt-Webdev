@@ -70,13 +70,36 @@ flask_backend/
     npm install
     ```
 
-5.  **Configure Environment Variables:**
-    Create a `.env` file in the `flask_backend/` root:
-    ```env
-    SUPABASE_URL=your_supabase_project_url
-    SUPABASE_KEY=your_supabase_anon_key
-    DATABASE_URL=your_postgresql_connection_string
-    SECRET_KEY=your_flask_secret_key
+### 5. Configure Environment Variables:
+    Copy the template and fill in your Supabase credentials:
+    ```bash
+    cp .env.example .env
+    ```
+
+### 🔄 Database Synchronization
+
+To ensure your local setup matches the project's database schema:
+
+1.  **Install Supabase CLI:**
+    ```bash
+    npm install
+    ```
+2.  **Login to Supabase:**
+    ```bash
+    npx supabase login
+    ```
+3.  **Link the project:**
+    ```bash
+    npx supabase link --project-ref qpkckyznzxesnrsqplch
+    ```
+4.  **Sync your database:**
+    If you are using a local Docker setup:
+    ```bash
+    npx supabase db reset
+    ```
+    If you are applying changes to a remote project:
+    ```bash
+    npx supabase db push
     ```
 
 ### Running the Project
