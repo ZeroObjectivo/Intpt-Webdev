@@ -23,7 +23,7 @@ function resetZoomState() {
     hasMoved = false;
 }
 
-function openImageModal(post, index) {
+function openImageModal(post, index, updateHash = true) {
     currentPost = post;
     currentIdx = index;
     
@@ -33,12 +33,15 @@ function openImageModal(post, index) {
     document.getElementById('imageModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
     
-    // Update URL hash for persistence (e.g., #view-post-123-0)
-    window.location.hash = `view-post-${post.id}-${index}`;
+    // Update URL hash for persistence (e.g., #view-post-uuid-0)
+    if (updateHash) {
+        window.location.hash = `view-post-${post.id}-${index}`;
+    }
 }
 
 function closeImageModal(event) {
     const modal = document.getElementById('imageModal');
+    // If called without event, it's a forced close
     if (!event || event.target === modal || event.target.closest('.modal-close')) {
         if (document.fullscreenElement) {
             document.exitFullscreen();
@@ -47,7 +50,9 @@ function closeImageModal(event) {
         document.body.style.overflow = 'auto';
         
         // Clear hash on close
-        history.pushState("", document.title, window.location.pathname + window.location.search);
+        if (window.location.hash.startsWith('#view-post-')) {
+            history.pushState("", document.title, window.location.pathname + window.location.search);
+        }
     }
 }
 
@@ -61,6 +66,29 @@ function changeModalImage(step, event) {
     
     // Update hash when switching images
     window.location.hash = `view-post-${currentPost.id}-${currentIdx}`;
+}
+
+function checkHashAndOpenModal() {
+    const hash = window.location.hash;
+    if (hash.startsWith('#view-post-')) {
+        // Regex to handle UUIDs and index: #view-post-{id}-{index}
+        const match = hash.match(/#view-post-(.+)-(\d+)$/);
+        if (match) {
+            const postId = match[1];
+            const imgIdx = parseInt(match[2]);
+            
+            if (window.allPosts) {
+                const post = window.allPosts.find(p => p.id == postId);
+                if (post) {
+                    // Don't re-open if it's already the current post/index
+                    if (currentPost && currentPost.id == postId && currentIdx == imgIdx) return;
+                    openImageModal(post, imgIdx, false); // false to avoid redundant hash update
+                }
+            }
+        }
+    } else if (document.getElementById('imageModal') && document.getElementById('imageModal').style.display === 'flex') {
+        closeImageModal();
+    }
 }
 
 function toggleZoom(event) {
@@ -83,7 +111,7 @@ function toggleZoom(event) {
 
 function handleImageClick(event) {
     const wrapper = document.querySelector('.modal-image-wrapper');
-    if (wrapper.classList.contains('zoomed')) {
+    if (wrapper && wrapper.classList.contains('zoomed')) {
         toggleZoom(event);
     }
 }
@@ -105,6 +133,8 @@ function updateModalContent() {
     const prevBtn = document.getElementById('modalPrev');
     const nextBtn = document.getElementById('modalNext');
     
+    if (!currentPost) return;
+    
     modalImg.src = currentPost.image_urls[currentIdx];
     
     if (currentPost.image_urls.length <= 1) {
@@ -115,7 +145,8 @@ function updateModalContent() {
         nextBtn.style.display = 'flex';
     }
 
-    document.getElementById('modalUserAvatar').src = currentPost.profiles.avatar_url || "/static/images/Logo.png";
+    const avatar = document.getElementById('modalUserAvatar');
+    avatar.src = currentPost.profiles.avatar_url || "/static/images/Logo.png";
     document.getElementById('modalUserName').innerText = currentPost.profiles.full_name;
     document.getElementById('modalPostTime').innerText = formatPostTime(currentPost.created_at);
     document.getElementById('modalPostText').innerText = currentPost.content;
@@ -207,16 +238,9 @@ document.addEventListener('DOMContentLoaded', () => {
         img.style.transform = `scale(${currentScale}) translate(${translateX}px, ${translateY}px)`;
     }, { passive: false });
 
-    // Handle Persistence on Refresh
-    if (window.location.hash.startsWith('#view-post-')) {
-        const parts = window.location.hash.split('-');
-        const postId = parts[2];
-        const imgIdx = parseInt(parts[3] || 0);
-        
-        // We need the 'allPosts' data from the dashboard
-        if (window.allPosts) {
-            const post = window.allPosts.find(p => p.id == postId);
-            if (post) openImageModal(post, imgIdx);
-        }
-    }
+    // Handle initial hash on load with a small delay to ensure allPosts is populated
+    setTimeout(checkHashAndOpenModal, 100);
 });
+
+// Handle browser back/forward and direct hash entry
+window.addEventListener('hashchange', checkHashAndOpenModal);
