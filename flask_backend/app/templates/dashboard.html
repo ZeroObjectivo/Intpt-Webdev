@@ -177,11 +177,11 @@
                                         </span>
                                         
                                         {% if post.user_id == user.id %}
-                                        <div class="relative group/menu">
-                                            <button class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                                        <div class="relative">
+                                            <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
                                             </button>
-                                            <div class="absolute right-0 top-full mt-1 w-32 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 py-1 hidden group-hover/menu:block z-20">
+                                            <div id="post-menu-{{ post.id }}" class="post-menu-dropdown absolute right-0 top-full mt-1 w-32 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 py-1 hidden z-20">
                                                 <button onclick="showEditForm('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">Edit Post</button>
                                                 <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors">Delete Post</button>
                                             </div>
@@ -374,6 +374,26 @@
 
 <script>
     // Post Action Helpers
+    function togglePostMenu(postId, event) {
+        if (event) event.stopPropagation();
+        const menu = document.getElementById(`post-menu-${postId}`);
+        const allMenus = document.querySelectorAll('.post-menu-dropdown');
+        
+        // Close others
+        allMenus.forEach(m => {
+            if (m.id !== `post-menu-${postId}`) m.classList.add('hidden');
+        });
+        
+        menu.classList.toggle('hidden');
+    }
+
+    // Global click listener to close menus
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.post-menu-dropdown')) {
+            document.querySelectorAll('.post-menu-dropdown').forEach(m => m.classList.add('hidden'));
+        }
+    });
+
     function showEditForm(postId) {
         document.getElementById(`post-content-${postId}`).classList.add('hidden');
         document.getElementById(`edit-form-${postId}`).classList.remove('hidden');
