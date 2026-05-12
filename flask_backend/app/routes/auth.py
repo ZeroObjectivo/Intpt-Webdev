@@ -78,23 +78,39 @@ def login():
 def callback():
     """
     Supabase redirects here after successful Google login.
-    Note: Supabase uses a URL fragment (#access_token=...) which is 
-    not visible to the server. We need a tiny bit of JS to capture it.
+    Handles both Fragment (Implicit) and Code (PKCE) flows.
     """
-    # For now, we will return a simple page that captures the token
-    # and sends it to our session route.
     return """
     <html>
-        <body>
-            <p>Finishing login...</p>
+        <body style="font-family: sans-serif; padding: 20px;">
+            <h3>Processing login...</h3>
+            <p id="status">Checking for tokens...</p>
+            <div id="debug" style="background: #f4f4f4; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; margin-top: 20px;">
+                <strong>Debug Info:</strong><br>
+                URL: <span id="url"></span><br>
+                Hash: <span id="hash"></span><br>
+                Search: <span id="search"></span>
+            </div>
             <script>
-                // Get the hash part of the URL
+                const url = window.location.href;
                 const hash = window.location.hash;
+                const search = window.location.search;
+                const params = new URLSearchParams(search);
+
+                document.getElementById('url').innerText = url;
+                document.getElementById('hash').innerText = hash || "(none)";
+                document.getElementById('search').innerText = search || "(none)";
+
                 if (hash) {
-                    // Send the hash to our server to set the session
+                    document.getElementById('status').innerText = "Token found in fragment. Redirecting...";
                     window.location.href = "/auth/session?" + hash.substring(1);
+                } else if (params.has('code')) {
+                    document.getElementById('status').innerText = "Auth code found in query. Redirecting...";
+                    window.location.href = "/auth/session" + search;
+                } else if (params.has('error')) {
+                    document.getElementById('status').innerHTML = "<b>OAuth Error:</b> " + params.get('error_description');
                 } else {
-                    document.body.innerHTML = "Login failed: No token found.";
+                    document.getElementById('status').innerText = "No token or code found. Please check your Supabase redirect settings.";
                 }
             </script>
         </body>
@@ -104,39 +120,58 @@ def callback():
 @auth.route('/auth/session')
 def set_session():
     """
-    Captures tokens, validates @umak.edu.ph domain, and checks if user is new.
+    Captures tokens or codes, validates @umak.edu.ph domain, and sets up session.
     """
     access_token = request.args.get('access_token')
     refresh_token = request.args.get('refresh_token')
+    code = request.args.get('code')
     
-    if access_token:
-        # 1. Get user info from Supabase
-        user_response = supabase.auth.get_user(access_token)
-        user = user_response.user
+    try:
+        if code:
+            # Handle PKCE Code Exchange
+            res = supabase.auth.exchange_code_for_session({"auth_code": code})
+            session_data = res.session
+            user = res.user
+            access_token = session_data.access_token
+            refresh_token = session_data.refresh_token
+        elif access_token:
+            # Handle Implicit Flow
+            user_response = supabase.auth.get_user(access_token)
+            user = user_response.user
+        else:
+            return "No valid session data found", 400
+
         email = user.email
         
-        # 2. VALIDATION: Check for @umak.edu.ph
+        # 1. VALIDATION: Check for @umak.edu.ph
         if not email.endswith('@umak.edu.ph'):
             supabase.auth.sign_out()
             return render_template('unauthorized.html', email=email)
 
-        # 3. Check if user exists in profiles table
+        # 2. Check if user exists in profiles table
         profile_check = supabase.table('profiles').select("id").eq("id", user.id).execute()
         
         # Store tokens and basic user data in session
         session['access_token'] = access_token
         session['refresh_token'] = refresh_token
-        session['temp_user'] = user.model_dump()
+        session['temp_user'] = {
+            "id": user.id,
+            "email": user.email,
+            "user_metadata": user.user_metadata
+        }
 
-        # 4. REDIRECT: New user vs Existing user
+        # 3. REDIRECT: New user vs Existing user
         if not profile_check.data:
             return redirect(url_for('auth.onboarding'))
         
         # If exists, finalize session and go to dashboard
         session['user'] = session.pop('temp_user')
         return redirect(url_for('core.dashboard'))
-    
-    return "Session creation failed", 400
+        
+    except Exception as e:
+        print(f"Session Error: {e}")
+        return f"Authentication failed: {str(e)}", 500
+
 
 @auth.route('/onboarding')
 def onboarding():
