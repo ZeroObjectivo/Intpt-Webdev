@@ -38,6 +38,8 @@ flask_backend/
 
 ## 🏁 Getting Started
 
+> **Note:** All commands below should be run from the `flask_backend/` directory.
+
 ### Prerequisites
 
 1.  **Python 3.14+**
@@ -78,7 +80,7 @@ flask_backend/
 
 ### 🔄 Database Synchronization
 
-To ensure your local setup matches the project's database schema:
+To ensure your local setup matches the project's database schema (Run from `flask_backend/`):
 
 1.  **Install Supabase CLI:**
     ```bash
@@ -103,6 +105,9 @@ To ensure your local setup matches the project's database schema:
     ```
 
 ### Running the Project
+
+> **Important:** Ensure you are in the `flask_backend/` directory and your virtual environment is active.
+
 
 To run the project properly, you need to manage both the Flask server and the Tailwind CSS compiler.
 
