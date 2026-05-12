@@ -377,28 +377,6 @@ def upload_single_image(file, user_id):
         print(f"CRITICAL: Supabase storage upload failed: {str(e)}")
         raise e
 
-def insert_post_multi(user_id, content, category, price=None, location=None, status=None, event_date=None, image_urls=None):
-    post_data = {
-        "user_id": user_id,
-        "content": content,
-        "category": category,
-        "price": price,
-        "location": location,
-        "status": status,
-        "event_date": event_date,
-        "image_urls": image_urls if image_urls else []
-    }
-    supabase.table('posts').insert(post_data).execute()
-
-def upload_post_image(file, user_id):
-    # Legacy helper for single image upload
-    return upload_single_image(file, user_id)
-
-def insert_post(user_id, content, category, price=None, location=None, status=None, event_date=None, image_url=None):
-    # Legacy helper for single image insert
-    image_urls = [image_url] if image_url else []
-    insert_post_multi(user_id, content, category, price, location, status, event_date, image_urls)
-
 @core.route('/login')
 def login():
     return render_template('login.html')
