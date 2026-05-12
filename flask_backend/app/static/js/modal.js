@@ -624,6 +624,30 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
     const wrapper = document.querySelector('.modal-image-wrapper');
     const img = document.getElementById('modalImage');
+    const commentTextarea = document.getElementById('commentTextarea');
+    const commentForm = document.getElementById('modalCommentForm');
+
+    if (commentTextarea) {
+        // Submit on Enter, New line on Shift + Enter
+        commentTextarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const content = commentTextarea.value.trim();
+                if (content) {
+                    // Trigger the form submission
+                    const event = new Event('submit', { cancelable: true });
+                    commentForm.dispatchEvent(event);
+                }
+            }
+        });
+
+        // Auto-resize textarea as user types
+        commentTextarea.addEventListener('input', () => {
+            commentTextarea.style.height = 'auto';
+            commentTextarea.style.height = (commentTextarea.scrollHeight) + 'px';
+        });
+    }
+
     if (!wrapper || !img) return;
 
     wrapper.addEventListener('mousedown', (e) => {
