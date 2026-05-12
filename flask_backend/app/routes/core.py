@@ -107,9 +107,12 @@ def create_post():
             "event_date": event_date,
             "image_urls": image_urls
         }
-        supabase.table('posts').insert(post_data).execute()
+        print(f"DEBUG: Attempting to insert post for user {user_id}: {post_data}")
+        response = supabase.table('posts').insert(post_data).execute()
+        print(f"DEBUG: Insert successful: {response.data}")
         flash("Post created successfully!", "success")
     except Exception as e:
+        print(f"CRITICAL: Post insertion failed: {str(e)}")
         if is_jwt_expired_error(e) and refresh_supabase_auth():
             insert_post_multi(user_id, content, category, price, location, status, event_date, image_urls)
             flash("Post created successfully!", "success")
@@ -118,7 +121,6 @@ def create_post():
             flash("Your login session expired. Please sign in again.", "error")
             return redirect(url_for('core.login'))
         else:
-            print(f"Error creating post: {e}")
             flash("Something went wrong. Please try again.", "error")
         
     return redirect(url_for('core.dashboard'))
@@ -127,25 +129,25 @@ def upload_single_image(file, user_id):
     import uuid
     import time
     
-    file_ext = file.filename.split('.')[-1]
-    # Add timestamp to filename to prevent caching issues and ensure uniqueness
-    timestamp = int(time.time())
-    filename = f"{user_id}/{timestamp}_{uuid.uuid4().hex}.{file_ext}"
-    
-    bucket_name = 'post-images'
-    
-    # Important: Reset stream to beginning if it was read before
-    file.seek(0)
-    file_data = file.read()
-    
-    # Try uploading
-    res = supabase.storage.from_(bucket_name).upload(
-        path=filename,
-        file=file_data,
-        file_options={"content-type": file.content_type}
-    )
-    
-    return supabase.storage.from_(bucket_name).get_public_url(filename)
+    try:
+        file_ext = file.filename.split('.')[-1]
+        timestamp = int(time.time())
+        filename = f"{user_id}/{timestamp}_{uuid.uuid4().hex}.{file_ext}"
+        bucket_name = 'post-images'
+        
+        file.seek(0)
+        file_data = file.read()
+        
+        # Try uploading
+        res = supabase.storage.from_(bucket_name).upload(
+            path=filename,
+            file=file_data,
+            file_options={"content-type": file.content_type}
+        )
+        return supabase.storage.from_(bucket_name).get_public_url(filename)
+    except Exception as e:
+        print(f"CRITICAL: Supabase storage upload failed: {str(e)}")
+        raise e
 
 def insert_post_multi(user_id, content, category, price=None, location=None, status=None, event_date=None, image_urls=None):
     post_data = {
