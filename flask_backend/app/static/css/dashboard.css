@@ -12,9 +12,21 @@
     --hh-text-main: #1a1d20;
     --hh-text-muted: #6c757d;
     --hh-border: #e2e8f0;
-    --hh-radius: 8px;
+    --hh-radius: 16px;
     --hh-shadow-light: 0 2px 4px rgba(1, 6, 28, 0.05);
     --hh-shadow-hover: 0 4px 12px rgba(1, 6, 28, 0.1);
+
+    /* Category Colors */
+    --cat-general-bg: #f1f5f9;
+    --cat-general-text: #475569;
+    --cat-lost-bg: #fff7ed;
+    --cat-lost-text: #ea580c;
+    --cat-buy-bg: #ecfdf5;
+    --cat-buy-text: #059669;
+    --cat-question-bg: #eff6ff;
+    --cat-question-text: #2563eb;
+    --cat-events-bg: #faf5ff;
+    --cat-events-text: #9333ea;
 }
 
 .dashboard-page {
@@ -164,9 +176,12 @@
 }
 
 .pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex: 0 0 auto;
     min-height: 34px;
-    padding: 0 14px;
+    padding: 0 16px;
     border: 1px solid var(--hh-border);
     border-radius: 9999px;
     background: var(--hh-surface);
@@ -187,6 +202,20 @@
     background: #eef4fb;
     border-color: var(--hh-silver-300);
 }
+
+/* Category Specific Pills */
+.pill-general.active { background: var(--cat-general-text); border-color: var(--cat-general-text); }
+.pill-lost-found.active { background: var(--cat-lost-text); border-color: var(--cat-lost-text); }
+.pill-buy-sell.active { background: var(--cat-buy-text); border-color: var(--cat-buy-text); }
+.pill-question.active { background: var(--cat-question-text); border-color: var(--cat-question-text); }
+.pill-events.active { background: var(--cat-events-text); border-color: var(--cat-events-text); }
+
+/* Category Badges on Posts */
+.badge-general { background: var(--cat-general-bg); color: var(--cat-general-text); }
+.badge-lost-found { background: var(--cat-lost-bg); color: var(--cat-lost-text); }
+.badge-buy-sell { background: var(--cat-buy-bg); color: var(--cat-buy-text); }
+.badge-question { background: var(--cat-question-bg); color: var(--cat-question-text); }
+.badge-events { background: var(--cat-events-bg); color: var(--cat-events-text); }
 
 .posts-list {
     display: flex;

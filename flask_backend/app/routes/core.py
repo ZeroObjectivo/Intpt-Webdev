@@ -19,13 +19,14 @@ def home():
 def dashboard():
     user_session = session.get('user')
     user_id = user_session.get('id')
+    category = request.args.get('category')
     apply_supabase_auth_token()
 
     try:
-        profile, posts = load_dashboard_data(user_id)
+        profile, posts = load_dashboard_data(user_id, category)
     except Exception as e:
         if is_jwt_expired_error(e) and refresh_supabase_auth():
-            profile, posts = load_dashboard_data(user_id)
+            profile, posts = load_dashboard_data(user_id, category)
         elif is_jwt_expired_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
@@ -33,16 +34,21 @@ def dashboard():
         else:
             raise
     
-    return render_template('dashboard.html', user=profile, posts=posts)
+    return render_template('dashboard.html', user=profile, posts=posts, active_category=category)
 
-def load_dashboard_data(user_id):
+def load_dashboard_data(user_id, category=None):
     
     # 1. Fetch User Profile from DB
     profile_response = supabase.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
     
     # 2. Fetch Latest Posts with Profile info
-    posts_response = supabase.table('posts').select("*, profiles(full_name, avatar_url)").order("created_at", desc=True).limit(10).execute()
+    query = supabase.table('posts').select("*, profiles(full_name, avatar_url)")
+    
+    if category:
+        query = query.eq('category', category)
+        
+    posts_response = query.order("created_at", desc=True).limit(20).execute()
     posts = posts_response.data
     
     return profile, posts

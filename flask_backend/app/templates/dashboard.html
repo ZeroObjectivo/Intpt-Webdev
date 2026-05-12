@@ -61,12 +61,12 @@
 
                 <!-- Category Pills -->
                 <div class="category-pills">
-                    <div class="pill active">All Posts</div>
-                    <div class="pill">General</div>
-                    <div class="pill">Lost & Found</div>
-                    <div class="pill">Buy & Sell</div>
-                    <div class="pill">Question</div>
-                    <div class="pill">Events</div>
+                    <a href="{{ url_for('core.dashboard') }}" class="pill {% if not active_category %}active{% endif %}" role="button">All Posts</a>
+                    <a href="{{ url_for('core.dashboard', category='General') }}" class="pill pill-general {% if active_category == 'General' %}active{% endif %}" role="button">General</a>
+                    <a href="{{ url_for('core.dashboard', category='Lost & Found') }}" class="pill pill-lost-found {% if active_category == 'Lost & Found' %}active{% endif %}" role="button">Lost & Found</a>
+                    <a href="{{ url_for('core.dashboard', category='Buy & Sell') }}" class="pill pill-buy-sell {% if active_category == 'Buy & Sell' %}active{% endif %}" role="button">Buy & Sell</a>
+                    <a href="{{ url_for('core.dashboard', category='Question') }}" class="pill pill-question {% if active_category == 'Question' %}active{% endif %}" role="button">Question</a>
+                    <a href="{{ url_for('core.dashboard', category='Events') }}" class="pill pill-events {% if active_category == 'Events' %}active{% endif %}" role="button">Events</a>
                 </div>
 
                 <!-- Posts -->
@@ -86,11 +86,11 @@
                                 <!-- Category Badge -->
                                 <div class="flex flex-col items-end gap-2">
                                     <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest 
-                                        {% if post.category == 'General' %}bg-slate-100 text-slate-600
-                                        {% elif post.category == 'Lost & Found' %}bg-orange-100 text-orange-600
-                                        {% elif post.category == 'Buy & Sell' %}bg-emerald-100 text-emerald-600
-                                        {% elif post.category == 'Question' %}bg-blue-100 text-blue-600
-                                        {% elif post.category == 'Events' %}bg-purple-100 text-purple-600
+                                        {% if post.category == 'General' %}badge-general
+                                        {% elif post.category == 'Lost & Found' %}badge-lost-found
+                                        {% elif post.category == 'Buy & Sell' %}badge-buy-sell
+                                        {% elif post.category == 'Question' %}badge-question
+                                        {% elif post.category == 'Events' %}badge-events
                                         {% endif %}">
                                         {{ post.category }}
                                     </span>
