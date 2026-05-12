@@ -7,12 +7,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'umak-blue': '#001035',
-        'umak-yellow': '#FFD700',
-        'umak-light-blue': '#1E293B',
+        'umak-blue': 'var(--umak-blue)',
+        'umak-yellow': 'var(--umak-yellow)',
+        'umak-light-blue': 'var(--umak-blue-light)',
+        'umak-bright': 'var(--umak-blue-bright)',
       },
       fontFamily: {
-        'metropolis': ['Metropolis', 'sans-serif'],
+        'sans': ['Metropolis', 'Inter', 'system-ui', 'sans-serif'],
+        'accent': ['Playfair Display', 'serif'],
+      },
+      borderRadius: {
+        'xl': 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+      },
+      boxShadow: {
+        'soft': 'var(--shadow-soft)',
+        'strong': 'var(--shadow-strong)',
       }
     },
   },

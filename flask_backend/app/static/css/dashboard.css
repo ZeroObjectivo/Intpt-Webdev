@@ -11,44 +11,45 @@
 /* Share Box Component */
 .share-box {
     background: white;
-    border-radius: 50px;
+    border-radius: var(--radius-2xl);
     padding: 10px 10px 10px 30px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-soft);
     margin-bottom: 30px;
 }
 
 .share-box .user-avatar {
     width: 45px;
     height: 45px;
-    background: #FFD700;
+    background: var(--umak-yellow);
     border-radius: 50%;
     margin-right: 15px;
 }
 
 .share-box .share-text {
     flex-grow: 1;
-    color: #8E8E8E;
+    color: var(--slate-500);
     font-size: 1.1rem;
     font-weight: 400;
 }
 
 .btn-create-post {
-    background: #FFD700;
-    color: #001035;
+    background: var(--umak-yellow);
+    color: var(--umak-blue);
     border: none;
     padding: 12px 30px;
-    border-radius: 30px;
-    font-weight: 600;
+    border-radius: var(--radius-xl);
+    font-weight: 700;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s;
 }
 
 .btn-create-post:hover {
-    transform: scale(1.02);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
 }
 
 /* Category Pills */
@@ -60,23 +61,23 @@
 }
 
 .pill {
-    padding: 8px 20px;
-    background: #D9E1EC;
-    color: #001035;
-    border-radius: 20px;
+    padding: 10px 24px;
+    background: var(--slate-100);
+    color: var(--umak-blue);
+    border-radius: var(--radius-xl);
     font-size: 0.85rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .pill.active {
-    background: #001035;
+    background: var(--umak-blue);
     color: white;
 }
 
 .pill:hover:not(.active) {
-    background: #CCD5E1;
+    background: #e2e8f0;
 }
 
 /* Post Cards */

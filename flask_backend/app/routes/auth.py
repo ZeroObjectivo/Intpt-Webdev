@@ -69,7 +69,7 @@ def callback():
 @auth.route('/auth/session')
 def set_session():
     """
-    Captures tokens, validates @umak.edu.ph domain, and syncs to DB.
+    Captures tokens, validates @umak.edu.ph domain, and checks if user is new.
     """
     access_token = request.args.get('access_token')
     refresh_token = request.args.get('refresh_token')
@@ -82,37 +82,62 @@ def set_session():
         
         # 2. VALIDATION: Check for @umak.edu.ph
         if not email.endswith('@umak.edu.ph'):
-            # Sign out immediately from Supabase
             supabase.auth.sign_out()
             return render_template('unauthorized.html', email=email)
 
-        # 3. Store in Flask Session
+        # 3. Check if user exists in profiles table
+        profile_check = supabase.table('profiles').select("id").eq("id", user.id).execute()
+        
+        # Store tokens and basic user data in session
         session['access_token'] = access_token
         session['refresh_token'] = refresh_token
-        session['user'] = user.model_dump()
+        session['temp_user'] = user.model_dump()
+
+        # 4. REDIRECT: New user vs Existing user
+        if not profile_check.data:
+            return redirect(url_for('auth.onboarding'))
         
-        # 4. SYNC TO DATABASE: Save user to the profiles table
-        try:
-            user_id = user.id
-            full_name = user.user_metadata.get('full_name')
-            avatar_url = user.user_metadata.get('avatar_url')
-            
-            # Use 'upsert' to insert if new, or update if exists
-            supabase.table('profiles').upsert({
-                "id": str(user_id),
-                "email": email,
-                "full_name": full_name,
-                "avatar_url": avatar_url,
-                "updated_at": "now()"
-            }).execute()
-            
-        except Exception as e:
-            print(f"Database sync error: {e}")
-            # We don't block the login if DB sync fails, but we should log it
-            
+        # If exists, finalize session and go to dashboard
+        session['user'] = session.pop('temp_user')
         return redirect(url_for('core.dashboard'))
     
     return "Session creation failed", 400
+
+@auth.route('/onboarding')
+def onboarding():
+    """
+    Shows the onboarding page with T&C and logo animation.
+    """
+    if 'temp_user' not in session:
+        return redirect(url_for('core.login'))
+    return render_template('onboarding.html', user=session['temp_user'])
+
+@auth.route('/onboarding/complete', methods=['POST'])
+def complete_onboarding():
+    """
+    Finalizes the registration after agreeing to terms.
+    """
+    if 'temp_user' not in session:
+        return redirect(url_for('core.login'))
+    
+    user = session['temp_user']
+    
+    # 1. Create the profile in Supabase
+    try:
+        supabase.table('profiles').insert({
+            "id": str(user['id']),
+            "email": user['email'],
+            "full_name": user['user_metadata'].get('full_name'),
+            "avatar_url": user['user_metadata'].get('avatar_url'),
+            "updated_at": "now()"
+        }).execute()
+        
+        # 2. Move from temp_user to full user session
+        session['user'] = session.pop('temp_user')
+        return redirect(url_for('core.dashboard'))
+    except Exception as e:
+        print(f"Onboarding completion error: {e}")
+        return "Failed to complete onboarding", 500
 
 @auth.route('/unauthorized')
 def unauthorized():

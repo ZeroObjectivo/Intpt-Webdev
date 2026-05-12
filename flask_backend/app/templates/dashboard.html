@@ -20,10 +20,10 @@
             <!-- Share Box -->
             <div class="share-box">
                 <div class="flex items-center flex-1">
-                    <img src="{{ user.user_metadata.avatar_url if user else '' }}" alt="" class="user-avatar object-cover">
-                    <span class="share-text">Ready to Share?</span>
+                    <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar object-cover">
+                    <span class="share-text">Hi {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}, ready to Share?</span>
                 </div>
-                <button class="btn-create-post">Create New Post</button>
+                <button class="btn-create-post" onclick="document.getElementById('createPostModal').classList.remove('hidden')">Create New Post</button>
             </div>
 
             <!-- Category Pills -->
@@ -38,64 +38,39 @@
 
             <!-- Posts -->
             <div class="posts-list">
-                <!-- Post 1 -->
-                <article class="post-card">
-                    <div class="post-header">
-                        <div class="post-user-avatar"></div>
-                        <div class="post-user-info">
-                            <h4>Juan Dela Cruz</h4>
-                            <span>General · Posted 2 mins ago</span>
+                {% if posts %}
+                    {% for post in posts %}
+                    <article class="post-card">
+                        <div class="post-header">
+                            <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
+                            <div class="post-user-info">
+                                <h4>{{ post.profiles.full_name }}</h4>
+                                <span>{{ post.category }} · Posted {{ post.created_at[:10] }}</span>
+                            </div>
                         </div>
+                        <div class="post-content">
+                            <p>{{ post.content }}</p>
+                            {% if post.image_url %}
+                                <img src="{{ post.image_url }}" class="mt-4 rounded-lg w-full max-h-96 object-cover">
+                            {% endif %}
+                        </div>
+                        <div class="post-actions">
+                            <div class="action-item">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                                <span>Like</span>
+                            </div>
+                            <div class="action-item">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                <span>Comment</span>
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                {% else %}
+                    <div class="bg-white p-8 rounded-2xl text-center shadow-sm">
+                        <p class="text-gray-500">No posts yet. Be the first to share something!</p>
                     </div>
-                    <div class="post-content">
-                        <h3>Lorem Ipsum Dolor Sit Amet,</h3>
-                        <p>Lorem Ipsum Dolor Sit Amet, Consectetur Adipiscing Elit, Sed Do Eiusmod Tempor Incididunt Ut Labore Et Dolore Magna Aliqua. Ut Enim Ad Minim Veniam, Quis Nostrud Exercitation Ullamco Laboris Nisi Ut Aliquip Ex Ea Commodo Consequat.</p>
-                    </div>
-                    <div class="post-actions">
-                        <div class="action-item">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                            <span>10 Likes</span>
-                        </div>
-                        <div class="action-item">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                            <span>2 Comments</span>
-                        </div>
-                        <div class="action-item">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                            <span>8 Shares</span>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Post 2 -->
-                <article class="post-card">
-                    <div class="post-header">
-                        <div class="post-user-avatar"></div>
-                        <div class="post-user-info">
-                            <h4>Erwin Batumbakal</h4>
-                            <span>Question · Posted 30 mins ago</span>
-                        </div>
-                    </div>
-                    <div class="post-content">
-                        <h3>Lorem Ipsum Dolor Sit Amet,</h3>
-                        <p>Lorem Ipsum Dolor Sit Amet, Consectetur Adipiscing Elit, Sed Do Eiusmod Tempor Incididunt Ut Labore Et Dolore Magna Aliqua. Ut Enim Ad Minim Veniam, Quis Nostrud Exercitation Ullamco Laboris Nisi Ut Aliquip Ex Ea Commodo Consequat.</p>
-                        <div class="post-image-placeholder"></div>
-                    </div>
-                    <div class="post-actions">
-                        <div class="action-item">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                            <span>10 Likes</span>
-                        </div>
-                        <div class="action-item">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                            <span>2 Comments</span>
-                        </div>
-                        <div class="action-item">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
-                            <span>8 Shares</span>
-                        </div>
-                    </div>
-                </article>
+                {% endif %}
             </div>
         </main>
 
@@ -172,6 +147,37 @@
                 </div>
             </section>
         </aside>
+</div>
+
+<!-- Create Post Modal -->
+<div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
+        <div class="p-4 border-b flex justify-between items-center bg-[#F8F9FA]">
+            <h3 class="text-xl font-bold text-umak-blue">Create New Post</h3>
+            <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form action="{{ url_for('core.create_post') }}" method="POST" class="p-6">
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <select name="category" class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
+                    <option value="General">General</option>
+                    <option value="Lost & Found">Lost & Found</option>
+                    <option value="Buy & Sell">Buy & Sell</option>
+                    <option value="Question">Question</option>
+                    <option value="Events">Events</option>
+                </select>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">What's on your mind?</label>
+                <textarea name="content" rows="4" required class="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
+            </div>
+            <div class="flex gap-4">
+                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="flex-1 py-3 px-6 rounded-xl border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
+                <button type="submit" class="flex-1 py-3 px-6 rounded-xl bg-umak-blue text-white font-bold hover:bg-opacity-90 transition-all shadow-lg shadow-blue-900/20">Post to Hub</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

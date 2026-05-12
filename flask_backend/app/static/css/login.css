@@ -1,8 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600&display=swap');
-
 :root {
-    --umak-blue: #4477AE;
-    --umak-yellow: #E8F19E;
+    --umak-blue: #001035;
+    --umak-blue-bright: #316CFF;
 }
 
 * {
@@ -12,11 +10,11 @@
 }
 
 body.login-page {
-    background: #F7FAFC;
+    background: var(--slate-50);
     min-height: 100vh;
     width: 100vw;
-    font-family: 'Inter', sans-serif;
-    color: #333;
+    font-family: 'Metropolis', sans-serif;
+    color: var(--slate-900);
     overflow: hidden;
     position: relative;
 }
@@ -97,7 +95,7 @@ body.login-page {
 }
 
 .btn-google {
-    background-color: #4A90E2; /* Slightly brighter blue for clarity */
+    background-color: var(--umak-blue-bright);
     color: white;
     width: 100%;
     max-width: 340px;
@@ -112,13 +110,13 @@ body.login-page {
     border: none;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    box-shadow: 0 10px 20px rgba(74, 144, 226, 0.2);
+    box-shadow: 0 10px 20px rgba(49, 108, 255, 0.2);
 }
 
 .btn-google:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(74, 144, 226, 0.3);
-    background-color: #357ABD;
+    box-shadow: 0 15px 30px rgba(49, 108, 255, 0.3);
+    background-color: var(--umak-blue);
 }
 
 .btn-google svg {
