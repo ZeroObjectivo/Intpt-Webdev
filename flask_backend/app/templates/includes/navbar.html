@@ -1,19 +1,27 @@
-<nav class="bg-umak-blue text-white py-3 px-8 md:px-12 sticky top-0 z-50 font-metropolis shadow-md" style="background-color: #001035;">
-    <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+<nav class="bg-umak-blue text-white py-4 px-6 mb-6 fixed top-0 left-0 w-full z-50 font-sans shadow-md" style="background-color: #001035;">
+    <div class="w-full flex items-center justify-between">
         <!-- Logo Section -->
-        <a href="{{ url_for('core.home') }}" class="flex items-center shrink-0">
-            <img src="{{ url_for('static', filename='images/Navbar_Logo_New.png') }}" alt="UMak Herons' Hub" class="h-10 w-auto object-contain">
-        </a>
+        <div class="py-1 shrink-0">
+            <a href="{{ url_for('core.home') }}" class="block">
+                <img src="{{ url_for('static', filename='images/Top Navigation Bar Logo.svg') }}" alt="UMak Herons Hub" class="block h-8 w-auto">
+            </a>
+        </div>
 
         {% if session.get('user') %}
             {% if request.endpoint == 'core.dashboard' %}
                 <!-- Dashboard Search Bar -->
-                <div class="hidden lg:flex flex-1 max-w-[650px] mx-12">
-                    <div class="relative w-full">
-                        <input type="text" placeholder="Need to find something?" 
-                               class="w-full bg-[#E5E7EB] border-none rounded-full py-2.5 px-6 pr-12 text-sm text-[#101828] placeholder-[#4B5563] outline-none">
-                        <div class="absolute right-5 top-1/2 -translate-y-1/2 text-[#101828]">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <div class="hidden lg:flex flex-1 justify-center mx-12">
+                    <div id="navbarSearchContainer" class="relative w-72 transition-all">
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            id="navbarSearchInput"
+                            class="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border rounded-full outline-none transition-all border-gray-300"
+                        >
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
                         </div>
                     </div>
                 </div>
@@ -23,19 +31,19 @@
             {% endif %}
 
             <!-- Dashboard Navigation -->
-            <div class="flex items-center gap-10">
+            <div class="flex items-center gap-6">
                 <!-- Go to Dashboard -->
-                <a href="{{ url_for('core.dashboard') }}" class="hidden xl:block text-sm font-medium text-white hover:text-umak-yellow transition-colors">Go to Dashboard</a>
+                <a href="{{ url_for('core.dashboard') }}" class="hidden xl:block px-3 py-2 text-sm font-medium text-white hover:text-umak-yellow transition-colors">Go to Dashboard</a>
 
                 <!-- User Profile & Controls Group -->
-                <div class="flex items-center gap-8">
+                <div class="flex items-center gap-4">
                     <!-- 1. Name -->
                     <span class="text-sm font-medium text-white whitespace-nowrap">
                         {{ session['user']['user_metadata']['full_name'].split(' ')[0] if session.get('user') else 'Name' }}
                     </span>
                     
                     <!-- 2. Profile Icon with Dropdown -->
-                    <div class="relative cursor-pointer" id="profile-dropdown-trigger">
+                    <div class="relative cursor-pointer p-1.5 rounded-full hover:bg-white/10 transition-colors" id="profile-dropdown-trigger">
                         <!-- Figma-accurate Avatar: Yellow circle -->
                         <div class="w-10 h-10 bg-[#FFFF00] rounded-full border border-white/10 flex items-center justify-center overflow-hidden" style="border-radius: 50%;">
                             {% if session['user']['user_metadata'].get('avatar_url') %}
@@ -67,14 +75,14 @@
                     </div>
                     
                     <!-- 3. Notification Icon -->
-                    <button class="text-white hover:text-umak-yellow transition-colors">
+                    <button class="p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors" aria-label="Notifications">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"></path>
                         </svg>
                     </button>
                     
                     <!-- 4. Settings Icon -->
-                    <button class="text-white hover:text-umak-yellow transition-colors">
+                    <button class="p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors" aria-label="Settings">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.127c-.332.183-.582.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -98,14 +106,38 @@
                             }
                         });
                     }
+
+                    const searchInput = document.getElementById('navbarSearchInput');
+                    if (searchInput) {
+                        const searchContainer = searchInput.parentElement;
+                        const searchIcon = searchContainer.querySelector('svg');
+
+                        searchInput.addEventListener('focus', function() {
+                            searchContainer.classList.add('w-96', 'bg-white');
+                            searchContainer.classList.remove('w-72');
+                            searchInput.classList.remove('border-gray-300');
+                            searchInput.classList.add('border-blue-500');
+                            searchIcon.classList.add('text-blue-500');
+                            searchIcon.classList.remove('text-gray-400');
+                        });
+
+                        searchInput.addEventListener('blur', function() {
+                            searchContainer.classList.add('w-72');
+                            searchContainer.classList.remove('w-96', 'bg-white');
+                            searchInput.classList.add('border-gray-300');
+                            searchInput.classList.remove('border-blue-500');
+                            searchIcon.classList.add('text-gray-400');
+                            searchIcon.classList.remove('text-blue-500');
+                        });
+                    }
                 });
             </script>
         {% else %}
             <!-- Public Auth Links -->
-            <div class="flex items-center gap-8 text-sm md:text-base font-medium">
-                <a href="{{ url_for('core.login') }}" class="hover:text-umak-yellow transition-colors whitespace-nowrap">Sign Up</a>
+            <div class="flex items-center gap-4 text-sm md:text-base font-medium">
+                <a href="{{ url_for('core.login') }}" class="px-3 py-2 hover:text-umak-yellow transition-colors whitespace-nowrap">Sign Up</a>
                 <span class="text-white/20">|</span>
-                <a href="{{ url_for('core.login') }}" class="hover:text-umak-yellow transition-colors whitespace-nowrap">Log in</a>
+                <a href="{{ url_for('core.login') }}" class="px-3 py-2 hover:text-umak-yellow transition-colors whitespace-nowrap">Log in</a>
             </div>
         {% endif %}
     </div>

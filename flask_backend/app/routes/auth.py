@@ -2,6 +2,7 @@ from flask import Blueprint, request, redirect, session, url_for, jsonify, rende
 from services.supabase_client import supabase, engine
 from sqlalchemy import text
 from functools import wraps
+from postgrest.exceptions import APIError
 
 auth = Blueprint('auth', __name__)
 
@@ -15,6 +16,39 @@ def login_required(f):
             return redirect(url_for('core.login'))
         return f(*args, **kwargs)
     return decorated_function
+
+def is_jwt_expired_error(error):
+    return isinstance(error, APIError) and getattr(error, "code", None) == "PGRST303"
+
+def apply_supabase_auth_token():
+    access_token = session.get('access_token')
+    if not access_token:
+        return False
+
+    supabase.postgrest.auth(access_token)
+    return True
+
+def refresh_supabase_auth():
+    refresh_token = session.get('refresh_token')
+    if not refresh_token:
+        return False
+
+    try:
+        response = supabase.auth.refresh_session(refresh_token)
+        auth_session = getattr(response, "session", None)
+        access_token = getattr(auth_session, "access_token", None)
+        new_refresh_token = getattr(auth_session, "refresh_token", refresh_token)
+
+        if not access_token:
+            return False
+
+        session['access_token'] = access_token
+        session['refresh_token'] = new_refresh_token
+        supabase.postgrest.auth(access_token)
+        return True
+    except Exception as e:
+        print(f"Supabase session refresh error: {e}")
+        return False
 
 @auth.route('/auth/login')
 def login():

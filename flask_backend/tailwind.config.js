@@ -14,7 +14,8 @@ module.exports = {
       },
       fontFamily: {
         'sans': ['Metropolis', 'Inter', 'system-ui', 'sans-serif'],
-        'accent': ['Playfair Display', 'serif'],
+        'heading': ['Marcellus SC', 'Georgia', 'serif'],
+        'accent': ['Marcellus SC', 'Georgia', 'serif'],
       },
       borderRadius: {
         'xl': 'var(--radius-xl)',
