@@ -59,24 +59,38 @@
                 </div>
 
                 <div class="category-pills" aria-label="Post categories">
-                    <button class="pill active" type="button">All Posts</button>
-                    <button class="pill" type="button">General</button>
-                    <button class="pill" type="button">Lost & Found</button>
-                    <button class="pill" type="button">Buy & Sell</button>
-                    <button class="pill" type="button">Question</button>
-                    <button class="pill" type="button">Events</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#1F2764] text-[#FFFFFF] text-sm font-semibold" type="button">All Post</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-semibold" type="button">General</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#FFECA7] text-[#6E3E1E] text-sm font-semibold" type="button">Lost & Found</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-semibold" type="button">Heron Business</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#C5DDFF] text-[#1A3C8D] text-sm font-semibold" type="button">Question</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-semibold" type="button">Events</button>
                 </div>
 
                 <div class="posts-list">
                     {% if posts %}
                         {% for post in posts %}
                         <article class="post-card">
-                            <div class="post-header">
-                                <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
-                                <div class="post-user-info">
-                                    <p class="post-author-name">{{ post.profiles.full_name }}</p>
-                                    <span class="post-meta">{{ post.category }} · Posted {{ post.created_at[:10] }}</span>
+                            {% set post_category = post.category or 'General' %}
+                            <div class="post-header flex justify-between items-start gap-4">
+                                <div class="flex items-start min-w-0">
+                                    <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
+                                    <div class="post-user-info">
+                                        <p class="post-author-name">{{ post.profiles.full_name }}</p>
+                                        <span class="post-meta">Posted {{ post.created_at[:10] }}</span>
+                                    </div>
                                 </div>
+                                {% if post_category == 'Lost & Found' %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#FFECA7] text-[#6E3E1E] text-xs font-semibold">Lost & Found</span>
+                                {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#BFFFDE] text-[#145C50] text-xs font-semibold">Heron Business</span>
+                                {% elif post_category == 'Question' %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#C5DDFF] text-[#1A3C8D] text-xs font-semibold">Question</span>
+                                {% elif post_category == 'Events' %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#533074] text-[#EDF1FF] text-xs font-semibold">Events</span>
+                                {% else %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#D9D9D9] text-[#475569] text-xs font-semibold">General</span>
+                                {% endif %}
                             </div>
                             <div class="post-content">
                                 <p>{{ post.content }}</p>
@@ -115,7 +129,7 @@
                         <div class="trending-item">
                             <span class="trending-number">1</span>
                             <div class="trending-details">
-                                <span>Events</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-semibold">Events</span>
                                 <h4>Lorem Ipsum Event</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -123,7 +137,7 @@
                         <div class="trending-item">
                             <span class="trending-number">2</span>
                             <div class="trending-details">
-                                <span>Buy & Sell</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-semibold">Heron Business</span>
                                 <h4>Lorem Ipsum Event</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -131,7 +145,7 @@
                         <div class="trending-item">
                             <span class="trending-number">3</span>
                             <div class="trending-details">
-                                <span>General</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-semibold">General</span>
                                 <h4>SHOUTOUT TO MY CLASSMATES</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -196,7 +210,7 @@
                 <select name="category" class="w-full p-3 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
                     <option value="General">General</option>
                     <option value="Lost & Found">Lost & Found</option>
-                    <option value="Buy & Sell">Buy & Sell</option>
+                    <option value="Heron Business">Heron Business</option>
                     <option value="Question">Question</option>
                     <option value="Events">Events</option>
                 </select>
