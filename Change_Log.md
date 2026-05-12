@@ -21,12 +21,10 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Single-Image Layout:** Limited the maximum height of single-image posts to 400px, preventing cards from expanding excessively and improving feed readability.
 
 ### Added
-- **Facebook Theater View Modal:** Transitioned the image modal from a floating card to a standard Facebook-style "Theater" layout.
-    - **Full-Viewport Layout:** The modal now occupies the entire screen, with a full-height split between the image and post details.
-    - **Integrated Side Panel:** A clean, white side panel on the right contains all post metadata and comments, mirroring the desktop Facebook experience.
-    - **Hidden-until-Hover UI:** Navigation arrows and image controls (Zoom, Fullscreen) now fade in on hover for a cleaner, image-focused view.
-    - **Refined Action Buttons:** Redesigned "Like" and "Comment" buttons to use Facebook's standard icon-and-text layout.
-    - **Optimized Mobile View:** Added a responsive vertical layout for mobile devices, ensuring accessibility across all screen sizes.
+- **Modal Persistence & Decoupling:**
+    - **Separate Components:** Extracted modal HTML, CSS, and JavaScript into dedicated files (`modal.html`, `modal.css`, `modal.js`) to keep the dashboard code clean and maintainable.
+    - **Refresh Persistence:** Implemented URL hash tracking (e.g., `#view-post-<id>-<index>`). If a user refreshes the page while the modal is open, the modal automatically reopens to the same post and image.
+    - **Clean State Management:** Integrated a centralized `allPosts` JavaScript variable to bridge the gap between server-side data and client-side modal interactions.
 
 ---
 

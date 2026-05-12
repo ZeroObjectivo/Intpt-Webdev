@@ -1,0 +1,246 @@
+/* Facebook Theater Style Modal */
+.image-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    overflow: hidden;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    position: relative;
+    flex-direction: row;
+}
+
+.modal-main-view {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    overflow: hidden;
+}
+
+.modal-controls {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    gap: 8px;
+    z-index: 1010;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.modal-main-view:hover .modal-controls {
+    opacity: 1;
+}
+
+.modal-control-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-control-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.modal-control-btn.active {
+    background: var(--hh-blue-500);
+    color: white;
+}
+
+.modal-image-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+}
+
+.modal-image-wrapper.zoomed {
+    cursor: grab;
+}
+
+.modal-image-wrapper.dragging {
+    cursor: grabbing;
+}
+
+.modal-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    pointer-events: none;
+}
+
+.modal-image-wrapper.zoomed .modal-image {
+    transition: transform 0.1s ease-out;
+}
+
+.modal-side-panel {
+    width: 360px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border-left: 1px solid #ddd;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    z-index: 2020;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* FB Style Header */
+.modal-post-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+}
+
+.modal-post-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.modal-post-header h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #050505;
+}
+
+.modal-post-header span {
+    font-size: 13px;
+    color: #65676b;
+}
+
+.modal-post-content {
+    padding: 16px;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #050505;
+}
+
+.modal-post-actions {
+    padding: 4px 12px;
+    border-top: 1px solid #ebedf0;
+    border-bottom: 1px solid #ebedf0;
+    margin: 0 12px;
+    display: flex;
+    justify-content: space-around;
+}
+
+.modal-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 4px;
+    color: #65676b;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modal-action-btn:hover {
+    background: #f2f2f2;
+}
+
+.modal-comments-section {
+    padding: 16px;
+    flex: 1;
+    background: #fff;
+}
+
+.modal-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    z-index: 1005;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+}
+
+.modal-main-view:hover .modal-nav {
+    opacity: 1;
+}
+
+.modal-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-prev { left: 16px; }
+.modal-next { right: 16px; }
+
+@media (max-width: 900px) {
+    .modal-container {
+        flex-direction: column;
+    }
+    .modal-main-view {
+        height: 50vh;
+        flex: none;
+    }
+    .modal-side-panel {
+        width: 100%;
+        flex: 1;
+        border-left: none;
+        border-top: 1px solid #ddd;
+    }
+    .modal-close {
+        background: rgba(0,0,0,0.5);
+    }
+}
