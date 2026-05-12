@@ -1,5 +1,6 @@
 from flask import Blueprint, request, redirect, session, url_for, jsonify, render_template
-from services.supabase_client import supabase
+from services.supabase_client import supabase, engine
+from sqlalchemy import text
 from functools import wraps
 
 auth = Blueprint('auth', __name__)
@@ -117,14 +118,18 @@ def complete_onboarding():
     """
     Finalizes the registration after agreeing to terms.
     """
-    if 'temp_user' not in session:
+    if 'temp_user' not in session or 'access_token' not in session:
         return redirect(url_for('core.login'))
     
     user = session['temp_user']
+    access_token = session['access_token']
     
-    # 1. Create the profile in Supabase
+    # 1. Create the profile in Supabase (using user's token to satisfy RLS)
     try:
-        supabase.table('profiles').insert({
+        # Set the JWT for this specific request
+        supabase.postgrest.auth(access_token)
+        
+        supabase.table('profiles').upsert({
             "id": str(user['id']),
             "email": user['email'],
             "full_name": user['user_metadata'].get('full_name'),

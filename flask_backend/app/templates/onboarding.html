@@ -29,20 +29,20 @@
     <div class="onboarding-content relative z-10 w-full max-w-5xl flex flex-col items-center">
         
         <!-- Logo Header (Top/Outside) -->
-        <div class="mb-12 text-center">
-            <img src="{{ url_for('static', filename='svg/Herons_Hub_Community.svg') }}" alt="Herons' Hub" class="h-20 lg:h-24">
+        <div class="mb-10 text-center">
+            <img src="{{ url_for('static', filename='svg/Herons_Hub_Community.svg') }}" alt="Herons' Hub" class="h-16 lg:h-20">
         </div>
 
         <!-- Main T&C Card -->
-        <div class="w-full bg-white tc-card p-10 lg:p-14 relative flex flex-col items-center">
-            <div class="text-center mb-8">
+        <div class="w-full bg-white tc-card p-8 lg:p-12 relative flex flex-col items-center">
+            <div class="text-center mb-6">
                 <h1 class="text-xl lg:text-2xl font-bold text-[#001035] mb-1">Terms and Conditions for Herons' Hub</h1>
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Last Updated: May 8, 2026</p>
             </div>
 
             <!-- Inner Card for T&C (Card in Card) -->
-            <div class="w-full bg-slate-50/80 rounded-[32px] border border-slate-100 p-8 lg:p-10">
-                <div class="tc-container h-[300px] overflow-y-auto custom-scrollbar pr-6 text-[#001035] text-sm leading-relaxed">
+            <div class="w-full bg-slate-50/80 rounded-[32px] border border-slate-100 p-6 lg:p-10 relative">
+                <div class="tc-container h-[250px] lg:h-[350px] overflow-y-auto custom-scrollbar pr-6 text-[#001035] text-sm leading-relaxed">
                     <p class="mb-8 font-medium italic opacity-80">
                         Welcome to Herons' Hub! These Terms and Conditions govern your access to and use of the Herons' Hub web application. By registering for, accessing, or using Herons' Hub, you agree to be bound by these Terms. If you do not agree with any part of these Terms, please do not use the App.
                     </p>
@@ -54,7 +54,7 @@
                                 <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
                                 1. Disclaimer of Affiliation
                             </h2>
-                            <p class="opacity-90">Herons' Hub is an independent, student-led initiative. It is created, managed, and maintained by students for the community. Herons' Hub is <strong>NOT</strong> an official platform of the University of Makati (UMak), nor is it affiliated with, endorsed by, or sponsored by the University of Makati administration.</p>
+                            <p class="opacity-90">Herons' Hub is an independent, student-led initiative. It is created, managed, and maintained by students for the community. Herons' Hub is <strong>NOT</strong> an official platform of the University of Makati (UMak), nor is it affiliated with, endorsed by, or sponsored by the University of Makati administration. Any views, opinions, or content shared on this App do not reflect those of the University of Makati.</p>
                         </div>
 
                         <!-- 2 -->
@@ -64,9 +64,9 @@
                                 2. Eligibility and User Accounts
                             </h2>
                             <ul class="space-y-4 opacity-90 pl-5">
-                                <li><strong>Community Focus:</strong> Exclusive platform for students, faculty, and staff of the University of Makati.</li>
-                                <li><strong>Mandatory Login:</strong> Requires an active University of Makati email via Google SSO (@umak.edu.ph).</li>
-                                <li><strong>Security:</strong> You are responsible for safeguarding your Google account credentials and for all activities that occur under your Herons' Hub profile.</li>
+                                <li><strong>Community Focus:</strong> Herons' Hub is an exclusive platform designed for the students, faculty, and staff of the University of Makati.</li>
+                                <li><strong>Mandatory Login Method:</strong> Access to Herons' Hub requires an active University of Makati email address. You must register and log in using the Google Single Sign-On (SSO) service with a valid @umak.edu.ph email account. By logging in, you represent that you are the authorized owner of that email address.</li>
+                                <li><strong>Account Security:</strong> You are responsible for safeguarding your Google account credentials and for all activities that occur under your Herons' Hub profile. You must notify us immediately of any unauthorized use of your account.</li>
                                 <li><strong>One Account:</strong> Users are permitted to maintain only one active account linked to their official university email.</li>
                             </ul>
                         </div>
@@ -75,59 +75,135 @@
                         <div>
                             <h2 class="font-black text-base mb-3 flex items-center gap-3">
                                 <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
-                                3. Community Guidelines
+                                3. Community Guidelines and Acceptable Use
                             </h2>
                             <p class="mb-4 opacity-90">Herons' Hub thrives on mutual respect and constructive interaction. By using the App, you agree <strong>NOT</strong> to:</p>
                             <ul class="space-y-3 opacity-90 pl-5">
-                                <li>• Harass, bully, or engage in hate speech.</li>
-                                <li>• Violate academic integrity (cheating/plagiarism).</li>
-                                <li>• Post illegal, defamatory, or obscene content.</li>
-                                <li>• Spam, scam, or distribute phishing links.</li>
-                                <li>• Attempt to hack or destabilize the App infrastructure.</li>
+                                <li>• <strong>Harass or Bully:</strong> Engage in hate speech, harassment, bullying, discrimination, or abusive behavior toward any member of the community.</li>
+                                <li>• <strong>Violate Academic Integrity:</strong> Share, request, or promote materials that facilitate cheating, plagiarism, or any form of academic dishonesty.</li>
+                                <li>• <strong>Post Illegal Content:</strong> Share content that is illegal, defamatory, obscene, pornographic, or infringes on the intellectual property rights or privacy of others.</li>
+                                <li>• <strong>Spam or Scam:</strong> Post unauthorized promotional content, spam, phishing links, or engage in fraudulent activities.</li>
+                                <li>• <strong>Disrupt the App:</strong> Attempt to hack, destabilize, or introduce malicious code/viruses to the App or its servers.</li>
+                            </ul>
+                            <p class="mt-4 italic text-slate-500 text-xs">The Herons' Hub moderation team reserves the right to remove any content or suspend/terminate any account that violates these guidelines without prior notice.</p>
+                        </div>
+
+                        <!-- 4 -->
+                        <div>
+                            <h2 class="font-black text-base mb-3 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
+                                4. User-Generated Content
+                            </h2>
+                            <ul class="space-y-4 opacity-90 pl-5">
+                                <li><strong>Ownership:</strong> You retain all ownership rights to the text, images, and other content you post on Herons' Hub ("User Content").</li>
+                                <li><strong>License to Us:</strong> By posting User Content, you grant Herons' Hub a non-exclusive, royalty-free, worldwide license to use, display, reproduce, and distribute your content solely for the purposes of operating and improving the App.</li>
+                                <li><strong>Responsibility:</strong> You are solely responsible for the content you post and the consequences of sharing it.</li>
                             </ul>
                         </div>
 
-                        <!-- 4-11 Summary for brevity but with full section headers -->
-                        <div class="space-y-8">
-                            <div>
-                                <h2 class="font-black text-base mb-2">4. User-Generated Content</h2>
-                                <p class="opacity-80">You retain ownership of your content but grant us a license to host and display it to operate the App.</p>
-                            </div>
-                            <div>
-                                <h2 class="font-black text-base mb-2">5. Marketplace and Lost & Found</h2>
-                                <p class="opacity-80">We are a communication platform only. We do not verify items or process payments. Trade at your own risk.</p>
-                            </div>
-                            <div>
-                                <h2 class="font-black text-base mb-2">6. Privacy and Data</h2>
-                                <p class="opacity-80">Data is handled per the Philippine Data Privacy Act of 2012.</p>
-                            </div>
-                            <div>
-                                <h2 class="font-black text-base mb-2">7-11. General Terms</h2>
-                                <p class="opacity-80">Includes Intellectual Property, Limitation of Liability, Modifications, Governing Law, and Contact Information.</p>
-                            </div>
+                        <!-- 5 -->
+                        <div>
+                            <h2 class="font-black text-base mb-3 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
+                                5. Marketplace (Buy & Sell) and Lost & Found
+                            </h2>
+                            <p class="mb-4 opacity-90 font-medium italic">Herons' Hub provides features to facilitate the buying and selling of items, as well as the reporting of lost and found items.</p>
+                            <ul class="space-y-4 opacity-90 pl-5">
+                                <li><strong>Role of Herons' Hub:</strong> The App acts merely as a bulletin board or communication platform. Herons' Hub does not process payments, guarantee the quality or safety of items, or verify the ownership of lost items. We are not a party to any transaction or exchange between users.</li>
+                                <li><strong>Buying and Selling:</strong> All transactions are strictly between the buyer and the seller. You assume all risks associated with trading. We strongly advise users to arrange meetups in safe, public locations (such as public areas on the UMak campus) and to verify items before exchanging money.</li>
+                                <li><strong>Prohibited Items:</strong> You may not buy, sell, or trade illegal goods, dangerous materials, or items that violate academic integrity (e.g., pre-written essays, stolen exam copies).</li>
+                                <li><strong>Lost and Found:</strong> Users posting about found items must do so truthfully and make reasonable efforts to return the item to its rightful owner. Herons' Hub is not liable for any unreturned items, false claims of ownership, or disputes arising from lost and found listings. We encourage users to surrender high-value found items to official UMak security or designated lost-and-found offices.</li>
+                                <li><strong>No Liability:</strong> Herons' Hub and its development team will not mediate disputes between buyers, sellers, or individuals claiming lost items, and we shall not be held liable for any loss, fraud, or damages arising from these interactions.</li>
+                            </ul>
+                        </div>
+
+                        <!-- 6 -->
+                        <div>
+                            <h2 class="font-black text-base mb-3 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
+                                6. Privacy and Data
+                            </h2>
+                            <p class="opacity-90">Your privacy is important to us. Our collection and use of personal information in connection with the App is described. By using Herons' Hub, you consent to the collection and use of your information as outlined in our Privacy Policy, in accordance with the <strong>Philippine Data Privacy Act of 2012 (Republic Act No. 10173)</strong>.</p>
+                        </div>
+
+                        <!-- 7 -->
+                        <div>
+                            <h2 class="font-black text-base mb-3 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
+                                7. Intellectual Property
+                            </h2>
+                            <p class="opacity-90">All original code, design elements, logos (excluding official UMak trademarks, which we do not own), and architecture of Herons' Hub are the intellectual property of the Herons' Hub development team. You may not copy, modify, or distribute our intellectual property without prior written consent.</p>
+                        </div>
+
+                        <!-- 8 -->
+                        <div>
+                            <h2 class="font-black text-base mb-3 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
+                                8. Limitation of Liability
+                            </h2>
+                            <ul class="space-y-4 opacity-90 pl-5">
+                                <li><strong>Use at Your Own Risk:</strong> Herons' Hub is provided on an "AS IS" and "AS AVAILABLE" basis. Because this is a student-led project, we cannot guarantee that the App will be uninterrupted, secure, or error-free.</li>
+                                <li><strong>No Liability:</strong> To the maximum extent permitted by Philippine law, the creators, developers, and moderators of Herons' Hub shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, data, or academic standing resulting from your use of, or inability to use, the App.</li>
+                            </ul>
+                        </div>
+
+                        <!-- 9 -->
+                        <div>
+                            <h2 class="font-black text-base mb-3 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
+                                9. Modifications to the App and Terms
+                            </h2>
+                            <ul class="space-y-4 opacity-90 pl-5">
+                                <li><strong>Changes to the App:</strong> We reserve the right to modify, update, or discontinue Herons' Hub (or any part of it) at any time without notice.</li>
+                                <li><strong>Changes to these Terms:</strong> We may revise these Terms from time to time. The most current version will always be posted on the App. By continuing to use the App after changes become effective, you agree to be bound by the revised Terms.</li>
+                            </ul>
+                        </div>
+
+                        <!-- 10 -->
+                        <div>
+                            <h2 class="font-black text-base mb-3 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
+                                10. Governing Law
+                            </h2>
+                            <p class="opacity-90">These Terms shall be governed by and construed in accordance with the laws of the <strong>Republic of the Philippines</strong>.</p>
+                        </div>
+
+                        <!-- 11 -->
+                        <div>
+                            <h2 class="font-black text-base mb-3 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-[#0D4E8B]"></span>
+                                11. Contact Us
+                            </h2>
+                            <p class="opacity-90">If you have any questions, concerns, or feedback regarding these Terms or the Herons' Hub application, please contact the student development team at: <a href="mailto:herons@umak.edu.ph" class="text-blue-600 font-bold underline">herons@umak.edu.ph</a></p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Scroll Prompt Overlay -->
+                <div id="scroll-prompt" class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-[#0D4E8B] animate-bounce transition-opacity duration-300 pointer-events-none">
+                    <span class="text-[10px] font-black uppercase tracking-widest">Scroll to Read</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+                </div>
+
+                <!-- Scroll Gradient Shadow -->
+                <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent pointer-events-none rounded-b-[32px]"></div>
             </div>
 
-            <!-- Scroll Indicator -->
-            <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none rounded-b-[40px]"></div>
-        </div>
+            <!-- Footer Action (Inside Main Card) -->
+            <div id="footer-action" class="mt-8 flex flex-col items-center gap-6 w-full opacity-0 pointer-events-none translate-y-4 transition-all duration-700">
+                <label class="flex items-center gap-4 cursor-pointer group">
+                    <input type="checkbox" id="agree-terms" class="agree-checkbox">
+                    <span class="text-sm font-bold text-slate-500 group-hover:text-[#0D4E8B] transition-colors">
+                        I have read and agree to all terms
+                    </span>
+                </label>
 
-        <!-- Footer Action (Bottom/Outside) -->
-        <div id="footer-action" class="mt-12 flex flex-col items-center gap-6 w-full max-w-sm opacity-0 pointer-events-none translate-y-4 transition-all duration-700">
-            <label class="flex items-center gap-4 cursor-pointer group">
-                <input type="checkbox" id="agree-terms" class="agree-checkbox">
-                <span class="text-sm font-bold text-slate-500 group-hover:text-[#0D4E8B] transition-colors">
-                    I have read and agree to all terms
-                </span>
-            </label>
-
-            <form action="{{ url_for('auth.complete_onboarding') }}" method="POST" class="w-full">
-                <button type="submit" id="continue-btn" disabled class="w-full py-5 bg-[#0D4E8B] text-white rounded-2xl font-black text-xl shadow-[0_20px_40px_rgba(13,78,139,0.2)] opacity-40 cursor-not-allowed transition-all">
-                    Continue
-                </button>
-            </form>
+                <form action="{{ url_for('auth.complete_onboarding') }}" method="POST" class="w-full flex justify-center">
+                    <button type="submit" id="continue-btn" disabled class="w-64 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed transition-all">
+                        Continue
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
