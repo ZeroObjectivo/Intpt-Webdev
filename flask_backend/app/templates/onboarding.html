@@ -22,9 +22,9 @@
     </div>
 
     <!-- Cinematic Splash Screen -->
-    <div class="splash-screen fixed inset-0 z-[100] bg-[#001035] flex flex-col items-center justify-center text-white">
+    <div class="splash-screen fixed inset-0 z-[100] bg-[#001035] flex flex-col items-center justify-center text-white px-6">
         <div class="logo-pulse w-48 h-48 mb-6">
-            <img src="{{ url_for('static', filename='svg/Herons_Hub_Logo.svg') }}" alt="Logo" class="w-full h-full brightness-0 invert">
+            <img src="{{ url_for('static', filename='svg/Splash_Logo.svg') }}" alt="Logo" class="w-full h-full brightness-0 invert">
         </div>
         <h2 class="text-2xl font-bold tracking-[0.3em] uppercase opacity-90 animate-pulse">Herons' Hub</h2>
     </div>
@@ -33,9 +33,8 @@
     <div class="onboarding-content relative z-10 w-full max-w-5xl flex flex-col items-center">
         
         <!-- Logo Header -->
-        <div class="mb-10 text-center">
-            <img src="{{ url_for('static', filename='svg/Herons_Hub_Logo.svg') }}" alt="Herons' Hub" class="h-16 lg:h-20 mb-2">
-            <p class="text-[10px] lg:text-xs text-[#5C729D] font-bold tracking-[0.2em] uppercase">Community for everyone</p>
+        <div class="mb-10 text-center flex flex-col items-center">
+            <img src="{{ url_for('static', filename='svg/Herons_Hub_Community.svg') }}" alt="Herons' Hub" class="w-full max-w-[280px] lg:max-w-[350px] mb-4">
         </div>
 
         <!-- New User Detection Header -->
