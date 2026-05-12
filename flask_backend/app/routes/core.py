@@ -62,7 +62,7 @@ def create_post():
     
     content = request.form.get('content')
     category = request.form.get('category', 'General')
-    image_file = request.files.get('image')
+    image_files = request.files.getlist('image')
     
     # Extra fields
     price = request.form.get('price')
@@ -76,7 +76,7 @@ def create_post():
     status = status.strip() if status and status.strip() else None
     event_date = event_date if event_date and event_date.strip() else None
     
-    if not content and not image_file:
+    if not content and (not image_files or not image_files[0].filename):
         flash("Post content cannot be empty!", "error")
         return redirect(url_for('core.dashboard'))
 
@@ -84,13 +84,17 @@ def create_post():
         flash("Your login session expired. Please sign in again.", "error")
         return redirect(url_for('core.login'))
     
-    image_url = None
-    if image_file:
-        try:
-            image_url = upload_post_image(image_file, user_id)
-        except Exception as e:
-            print(f"Error uploading image: {e}")
-            flash("Failed to upload image. Post created without it.", "warning")
+    image_urls = []
+    if image_files:
+        # Limit to 5 images
+        for file in image_files[:5]:
+            if file and file.filename:
+                try:
+                    url = upload_single_image(file, user_id)
+                    image_urls.append(url)
+                except Exception as e:
+                    print(f"Error uploading image {file.filename}: {e}")
+                    flash(f"Failed to upload image {file.filename}.", "warning")
 
     try:
         post_data = {
@@ -101,13 +105,13 @@ def create_post():
             "location": location,
             "status": status,
             "event_date": event_date,
-            "image_url": image_url
+            "image_urls": image_urls
         }
         supabase.table('posts').insert(post_data).execute()
         flash("Post created successfully!", "success")
     except Exception as e:
         if is_jwt_expired_error(e) and refresh_supabase_auth():
-            insert_post(user_id, content, category, price, location, status, event_date, image_url)
+            insert_post_multi(user_id, content, category, price, location, status, event_date, image_urls)
             flash("Post created successfully!", "success")
         elif is_jwt_expired_error(e):
             session.clear()
@@ -119,26 +123,31 @@ def create_post():
         
     return redirect(url_for('core.dashboard'))
 
-def upload_post_image(file, user_id):
+def upload_single_image(file, user_id):
     import uuid
-    file_ext = file.filename.split('.')[-1]
-    filename = f"{user_id}/{uuid.uuid4()}.{file_ext}"
+    import time
     
-    # Upload to 'post-images' bucket
-    # Note: Ensure this bucket exists and is public in Supabase
+    file_ext = file.filename.split('.')[-1]
+    # Add timestamp to filename to prevent caching issues and ensure uniqueness
+    timestamp = int(time.time())
+    filename = f"{user_id}/{timestamp}_{uuid.uuid4().hex}.{file_ext}"
+    
     bucket_name = 'post-images'
     
+    # Important: Reset stream to beginning if it was read before
+    file.seek(0)
     file_data = file.read()
+    
+    # Try uploading
     res = supabase.storage.from_(bucket_name).upload(
         path=filename,
         file=file_data,
         file_options={"content-type": file.content_type}
     )
     
-    # Get public URL
     return supabase.storage.from_(bucket_name).get_public_url(filename)
 
-def insert_post(user_id, content, category, price=None, location=None, status=None, event_date=None, image_url=None):
+def insert_post_multi(user_id, content, category, price=None, location=None, status=None, event_date=None, image_urls=None):
     post_data = {
         "user_id": user_id,
         "content": content,
@@ -147,9 +156,18 @@ def insert_post(user_id, content, category, price=None, location=None, status=No
         "location": location,
         "status": status,
         "event_date": event_date,
-        "image_url": image_url
+        "image_urls": image_urls if image_urls else []
     }
     supabase.table('posts').insert(post_data).execute()
+
+def upload_post_image(file, user_id):
+    # Legacy helper for single image upload
+    return upload_single_image(file, user_id)
+
+def insert_post(user_id, content, category, price=None, location=None, status=None, event_date=None, image_url=None):
+    # Legacy helper for single image insert
+    image_urls = [image_url] if image_url else []
+    insert_post_multi(user_id, content, category, price, location, status, event_date, image_urls)
 
 @core.route('/login')
 def login():
