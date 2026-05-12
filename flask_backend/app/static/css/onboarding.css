@@ -1,4 +1,4 @@
-/* Onboarding Styles - Figma Aligned */
+/* Onboarding Styles - Minimalist Figma Accuracy */
 
 @keyframes splash-fade-out {
     0% { opacity: 1; transform: scale(1); }
@@ -6,134 +6,95 @@
 }
 
 @keyframes content-fade-in {
-    0% { opacity: 0; transform: translateY(40px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fade-in-up {
     0% { opacity: 0; transform: translateY(20px); }
     100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes logo-pulse {
-    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(255,255,255,0)); }
-    50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(255,255,255,0.2)); }
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(0,0,0,0)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(255,255,255,0.2)); }
 }
 
 .splash-screen {
     background-color: #001035;
-    animation: splash-fade-out 0.8s cubic-bezier(0.7, 0, 0.3, 1) 2s forwards;
+    animation: splash-fade-out 0.6s cubic-bezier(0.7, 0, 0.3, 1) 1.5s forwards;
 }
 
 .onboarding-content {
     opacity: 0;
-    animation: content-fade-in 1s cubic-bezier(0.16, 1, 0.3, 1) 2.6s forwards;
+    animation: content-fade-in 0.8s ease-out 2s forwards;
 }
 
 .logo-pulse {
     animation: logo-pulse 2s ease-in-out infinite;
 }
 
-.animate-fade-in-up {
-    opacity: 0;
-    animation: fade-in-up 0.8s ease-out 3s forwards;
-}
-
-/* Background Geometric Shapes (Approximating Figma Asset) */
-.bg-shape {
+/* Background Geometric Lines (Figma Reference) */
+.bg-lines {
     position: absolute;
-    border: 2px solid rgba(13, 78, 139, 0.05);
-    border-radius: 4rem;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: 
+        radial-gradient(circle at 50% 50%, transparent 0%, transparent 100%),
+        url("data:image/svg+xml,%3Csvg width='100%' height='100%' viewBox='0 0 1440 1024' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='100' y='100' width='1240' height='824' rx='100' stroke='%23395B8E' stroke-opacity='0.1' stroke-width='2'/%3E%3Crect x='200' y='200' width='1040' height='624' rx='80' stroke='%23395B8E' stroke-opacity='0.1' stroke-width='2'/%3E%3Crect x='-100' y='-100' width='600' height='600' rx='150' stroke='%23395B8E' stroke-opacity='0.1' stroke-width='2'/%3E%3Crect x='1100' y='700' width='500' height='500' rx='120' stroke='%23395B8E' stroke-opacity='0.1' stroke-width='2'/%3E%3C/svg%3E");
+    background-size: cover;
+    opacity: 0.6;
 }
 
-.shape-1 {
-    width: 800px;
-    height: 500px;
-    top: -10%;
-    left: -10%;
-    transform: rotate(-12deg);
+/* T&C Card Styling */
+.tc-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0px 40px 80px rgba(0, 16, 53, 0.08);
+    border-radius: 40px;
 }
 
-.shape-2 {
-    width: 600px;
-    height: 800px;
-    bottom: -15%;
-    right: -5%;
-    transform: rotate(5deg);
-}
-
-.shape-3 {
-    width: 400px;
-    height: 400px;
-    top: 40%;
-    right: -10%;
-    border-radius: 8rem;
-}
-
-/* Custom Scrollbar for T&C */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    background: #F8FAFC;
+    border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
+    background: #E2E8F0;
     border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #cbd5e1;
+    background: #CBD5E1;
 }
 
-/* Lists */
-.list-alpha {
-    list-style-type: lower-alpha;
+/* Button Reset & Customization */
+#continue-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.list-alpha li {
-    padding-left: 0.5rem;
+#continue-btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(13, 78, 139, 0.4);
+}
+
+#continue-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background-color: #94A3B8;
 }
 
 /* Checkbox Styling */
-input[type="checkbox"] {
-    appearance: none;
-    -webkit-appearance: none;
-    background-color: #fff;
-    margin: 0;
-    font: inherit;
-    color: #0D4E8B;
-    width: 1.25em;
-    height: 1.25em;
-    border: 2px solid #e2e8f0;
-    border-radius: 0.35em;
-    display: grid;
-    place-content: center;
-    transition: all 0.2s ease-in-out;
+.agree-checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid #E2E8F0;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-input[type="checkbox"]::before {
-    content: "";
-    width: 0.65em;
-    height: 0.65em;
-    transform: scale(0);
-    transition: 120ms transform ease-in-out;
-    box-shadow: inset 1em 1em #0D4E8B;
-    transform-origin: bottom left;
-    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-}
-
-input[type="checkbox"]:checked {
+.agree-checkbox:checked {
+    background-color: #0D4E8B;
     border-color: #0D4E8B;
-}
-
-input[type="checkbox"]:checked::before {
-    transform: scale(1);
-}
-
-input[type="checkbox"]:focus {
-    outline: 2px solid rgba(13, 78, 139, 0.2);
-    outline-offset: 2px;
 }

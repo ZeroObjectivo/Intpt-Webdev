@@ -1,41 +1,39 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const tcContainer = document.querySelector('.tc-container');
     const agreeCheckbox = document.getElementById('agree-terms');
     const continueBtn = document.getElementById('continue-btn');
-    const progressBar = document.getElementById('progress-bar');
+    const tcContainer = document.querySelector('.tc-container');
 
-    // Initially disable the button
-    if (continueBtn) {
-        continueBtn.disabled = true;
-        continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
-    }
+    // Ensure initial state
+    if (continueBtn && agreeCheckbox) {
+        continueBtn.disabled = !agreeCheckbox.checked;
+        updateButtonStyles(continueBtn, agreeCheckbox.checked);
 
-    // Scroll progress tracking
-    if (tcContainer && progressBar) {
-        tcContainer.addEventListener('scroll', () => {
-            const scrollTop = tcContainer.scrollTop;
-            const scrollHeight = tcContainer.scrollHeight - tcContainer.clientHeight;
-            const progress = (scrollTop / scrollHeight) * 100;
-            progressBar.style.width = `${progress}%`;
-
-            // If scrolled to bottom (roughly)
-            if (progress > 95) {
-                // Potential feature: Auto-check or just highlight the checkbox
-            }
+        // Toggle logic
+        agreeCheckbox.addEventListener('change', () => {
+            const isChecked = agreeCheckbox.checked;
+            continueBtn.disabled = !isChecked;
+            updateButtonStyles(continueBtn, isChecked);
         });
     }
 
-    // Checkbox logic
-    if (agreeCheckbox && continueBtn) {
-        agreeCheckbox.addEventListener('change', () => {
-            if (agreeCheckbox.checked) {
-                continueBtn.disabled = false;
-                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                continueBtn.classList.add('hover:scale-105', 'active:scale-95', 'shadow-blue-500/20');
-            } else {
-                continueBtn.disabled = true;
-                continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                continueBtn.classList.remove('hover:scale-105', 'active:scale-95', 'shadow-blue-500/20');
+    function updateButtonStyles(btn, isActive) {
+        if (isActive) {
+            btn.classList.remove('opacity-40', 'cursor-not-allowed');
+            btn.classList.add('opacity-100', 'cursor-pointer', 'hover:scale-[1.02]', 'active:scale-[0.98]');
+        } else {
+            btn.classList.add('opacity-40', 'cursor-not-allowed');
+            btn.classList.remove('opacity-100', 'cursor-pointer', 'hover:scale-[1.02]', 'active:scale-[0.98]');
+        }
+    }
+
+    // Smooth scroll indicator logic
+    if (tcContainer) {
+        tcContainer.addEventListener('scroll', () => {
+            const isAtBottom = tcContainer.scrollHeight - tcContainer.scrollTop <= tcContainer.clientHeight + 10;
+            // Optional: Highlight checkbox when user reaches bottom
+            if (isAtBottom && !agreeCheckbox.checked) {
+                agreeCheckbox.parentElement.classList.add('animate-bounce');
+                setTimeout(() => agreeCheckbox.parentElement.classList.remove('animate-bounce'), 1000);
             }
         });
     }
