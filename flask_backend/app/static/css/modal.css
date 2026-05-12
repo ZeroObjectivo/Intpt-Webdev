@@ -145,21 +145,27 @@
 }
 
 .modal-post-header h4 {
-    font-size: 15px;
-    font-weight: 600;
-    color: #050505;
+    margin: 0;
+    color: var(--hh-blue-900);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
 .modal-post-header span {
-    font-size: 13px;
-    color: #65676b;
+    display: block;
+    margin-top: 2px;
+    color: var(--hh-text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
 }
 
 .modal-post-content {
     padding: 16px;
-    font-size: 15px;
-    line-height: 1.4;
-    color: #050505;
+    color: var(--hh-text-main);
+    font-size: 0.94rem;
+    line-height: 1.62;
 }
 
 .modal-post-actions {
@@ -194,6 +200,98 @@
     padding: 16px;
     flex: 1;
     background: #fff;
+    overflow-y: auto;
+}
+
+#modalCommentsList {
+    margin-top: 8px;
+}
+
+.modal-comment-input {
+    background: white;
+    z-index: 10;
+}
+
+#commentTextarea {
+    transition: all 0.2s;
+    min-height: 36px;
+    max-height: 120px;
+}
+
+#modalCommentsList h5 {
+    margin: 0;
+    color: var(--hh-blue-900);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+#modalCommentsList p {
+    margin: 2px 0 0;
+    color: var(--hh-text-main);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.comment-replies {
+    margin-left: 44px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.view-replies-btn {
+    margin-left: 44px;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #65676b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: fit-content;
+}
+
+.view-replies-btn:hover {
+    background: #f2f2f2;
+}
+
+.view-replies-btn svg {
+    transition: transform 0.2s;
+}
+
+.view-replies-btn.active svg {
+    transform: rotate(180deg);
+}
+
+.modal-side-panel .modal-action-btn.text-red-500 {
+    color: #ef4444;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.modal-comments-section::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-comments-section::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-comments-section::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.modal-comments-section::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
 }
 
 .modal-nav {
@@ -225,6 +323,20 @@
 
 .modal-prev { left: 16px; }
 .modal-next { right: 16px; }
+
+.modal-container.no-image {
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.modal-container.no-image .modal-side-panel {
+    width: 600px;
+    max-width: 95%;
+    height: 90%;
+    margin: auto;
+    border-radius: 20px;
+    border-left: none;
+}
 
 @media (max-width: 900px) {
     .modal-container {

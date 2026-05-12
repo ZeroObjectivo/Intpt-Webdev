@@ -7,7 +7,34 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ## [Unreleased] - 2026-05-13
 
-### 1. Supabase Storage RLS & Authentication Fix
+### 1. Like and Comment Functionality
+### Added
+- **Comment Reply Functionality:**
+    - Implemented threaded comment support by adding a `parent_id` column to the `comments` table.
+    - Updated `add_comment` backend route to handle optional `parent_id`.
+    - Added "Reply" functionality in the modal: clicking "Reply" auto-populates the mention and shows a "Replying to" indicator.
+    - Implemented UI for canceling replies and clearing mention state.
+- **Backend Likes & Comments Logic:**
+    - Implemented `toggle_like` route to handle post likes with optimistic UI updates.
+    - Implemented `get_comments` and `add_comment` routes to fetch and persist user comments.
+    - Created RPC functions (`increment_likes_count`, `decrement_likes_count`, `increment_comments_count`, `decrement_comments_count`) to handle atomic counter updates in the database.
+- **Database Schema Updates:**
+    - Added `comments_count` column to the `posts` table via migration.
+    - Initialized existing counts based on existing data in `likes` and `comments` tables.
+- **Interactive Modal Enhancements:**
+    - **Comment Modal:** Enabled opening the modal via the "Comment" button on post cards, even for text-only posts.
+    - **Dynamic Comments Section:** Implemented real-time comment fetching and rendering within the modal side panel.
+    - **Comment Submission:** Added an inline comment form in the modal with immediate UI feedback and dashboard counter synchronization.
+- **Optimistic UI Updates:** 
+    - Implemented optimistic like toggling on post cards for a snappier user experience.
+    - Synced like status and counts between the dashboard feed and the open modal.
+
+### Fixed
+- **Naive vs Aware Datetime Error:** Resolved `TypeError: can't subtract offset-naive and offset-aware datetimes` on the dashboard by ensuring the `now` variable passed to the template is offset-naive (UTC), matching the output of the `datetime_obj` filter.
+- **Modal Image Visibility:** Updated modal logic to hide the main image view when opening a post that contains no images (text-only posts).
+- **Dashboard Data Loading:** Updated `load_dashboard_data` to properly fetch `likes_count`, `comments_count`, and the `user_has_liked` status for the current session.
+
+### 2. Supabase Storage RLS & Authentication Fix
 ### Fixed
 - **Storage Upload Error:** Resolved "new row violates row-level security policy" (Unauthorized) error when uploading images with posts.
 - **Image Display on Cards:** Fixed issue where uploaded images were not appearing on post cards.

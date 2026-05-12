@@ -34,7 +34,12 @@ def dashboard():
         else:
             raise
     
-    return render_template('dashboard.html', user=profile, posts=posts, active_category=category)
+    import datetime
+    return render_template('dashboard.html', 
+                           user=profile, 
+                           posts=posts, 
+                           active_category=category,
+                           now=datetime.datetime.utcnow())
 
 def load_dashboard_data(user_id, category=None):
     
@@ -42,7 +47,7 @@ def load_dashboard_data(user_id, category=None):
     profile_response = supabase.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
     
-    # 2. Fetch Latest Posts with Profile info
+    # 2. Fetch Latest Posts with Profile info and Likes/Comments counts
     query = supabase.table('posts').select("*, profiles(full_name, avatar_url)")
     
     if category:
@@ -51,7 +56,98 @@ def load_dashboard_data(user_id, category=None):
     posts_response = query.order("created_at", desc=True).limit(20).execute()
     posts = posts_response.data
     
+    # 3. For each post, check if the current user has liked it
+    # and ensure counts are present
+    for post in posts:
+        # Check if current user liked this post
+        like_check = supabase.table('likes').select("id").eq("post_id", post['id']).eq("user_id", user_id).execute()
+        post['user_has_liked'] = len(like_check.data) > 0
+        
+        # Ensure counts are initialized if null
+        post['likes_count'] = post.get('likes_count') or 0
+        post['comments_count'] = post.get('comments_count') or 0
+    
     return profile, posts
+
+@core.route('/posts/<post_id>/like', methods=['POST'])
+@login_required
+def toggle_like(post_id):
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    apply_supabase_auth_token()
+    
+    try:
+        # Check if already liked
+        existing = supabase.table('likes').select("id").eq("post_id", post_id).eq("user_id", user_id).execute()
+        
+        if len(existing.data) > 0:
+            # Unlike
+            supabase.table('likes').delete().eq("post_id", post_id).eq("user_id", user_id).execute()
+            # Decrement likes_count
+            supabase.rpc('decrement_likes_count', {'row_id': post_id}).execute()
+            return {"status": "unliked", "post_id": post_id}
+        else:
+            # Like
+            supabase.table('likes').insert({"post_id": post_id, "user_id": user_id}).execute()
+            # Increment likes_count
+            supabase.rpc('increment_likes_count', {'row_id': post_id}).execute()
+            return {"status": "liked", "post_id": post_id}
+            
+    except Exception as e:
+        print(f"Error toggling like: {e}")
+        return {"error": str(e)}, 500
+
+@core.route('/posts/<post_id>/comments', methods=['GET'])
+@login_required
+def get_comments(post_id):
+    apply_supabase_auth_token()
+    try:
+        comments_response = supabase.table('comments')\
+            .select("*, profiles(full_name, avatar_url)")\
+            .eq("post_id", post_id)\
+            .order("created_at", desc=False)\
+            .execute()
+        return {"comments": comments_response.data}
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+@core.route('/posts/<post_id>/comments', methods=['POST'])
+@login_required
+def add_comment(post_id):
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    content = request.json.get('content')
+    parent_id = request.json.get('parent_id') # Optional parent_id for replies
+    
+    if not content:
+        return {"error": "Comment cannot be empty"}, 400
+        
+    apply_supabase_auth_token()
+    try:
+        # Insert comment
+        comment_data = {
+            "post_id": post_id,
+            "user_id": user_id,
+            "content": content
+        }
+        if parent_id:
+            comment_data["parent_id"] = parent_id
+            
+        comment_response = supabase.table('comments').insert(comment_data).execute()
+        
+        # Increment comments_count
+        supabase.rpc('increment_comments_count', {'row_id': post_id}).execute()
+        
+        # Fetch the inserted comment with profile info
+        new_comment = supabase.table('comments')\
+            .select("*, profiles(full_name, avatar_url)")\
+            .eq("id", comment_response.data[0]['id'])\
+            .single().execute()
+            
+        return {"comment": new_comment.data}
+    except Exception as e:
+        print(f"Error adding comment: {e}")
+        return {"error": str(e)}, 500
 
 @core.route('/posts/create', methods=['POST'])
 @login_required

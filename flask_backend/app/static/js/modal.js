@@ -6,6 +6,7 @@ let hasMoved = false;
 let startX, startY;
 let translateX = 0, translateY = 0;
 let currentScale = 1;
+let currentReplyTo = null;
 
 function resetZoomState() {
     const wrapper = document.querySelector('.modal-image-wrapper');
@@ -29,14 +30,49 @@ function openImageModal(post, index, updateHash = true) {
     
     resetZoomState();
     updateModalContent();
+    updateModalActions(post);
     
-    document.getElementById('imageModal').style.display = 'flex';
+    const modal = document.getElementById('imageModal');
+    const container = modal.querySelector('.modal-container');
+    const mainView = modal.querySelector('.modal-main-view');
+    
+    modal.style.display = 'flex';
+    mainView.style.display = 'flex';
+    container.classList.remove('no-image');
     document.body.style.overflow = 'hidden';
     
     // Update URL hash for persistence (e.g., #view-post-uuid-0)
     if (updateHash) {
         window.location.hash = `view-post-${post.id}-${index}`;
     }
+
+    fetchComments(post.id);
+}
+
+function openCommentModal(post) {
+    currentPost = post;
+    currentIdx = 0;
+    
+    resetZoomState();
+    updateModalContent();
+    updateModalActions(post);
+    
+    const modal = document.getElementById('imageModal');
+    const container = modal.querySelector('.modal-container');
+    const mainView = modal.querySelector('.modal-main-view');
+    
+    modal.style.display = 'flex';
+    
+    if (!post.image_urls || post.image_urls.length === 0) {
+        mainView.style.display = 'none';
+        container.classList.add('no-image');
+    } else {
+        mainView.style.display = 'flex';
+        container.classList.remove('no-image');
+    }
+    
+    document.body.style.overflow = 'hidden';
+    fetchComments(post.id);
 }
 
 function closeImageModal(event) {
@@ -135,14 +171,16 @@ function updateModalContent() {
     
     if (!currentPost) return;
     
-    modalImg.src = currentPost.image_urls[currentIdx];
-    
-    if (currentPost.image_urls.length <= 1) {
-        prevBtn.style.display = 'none';
-        nextBtn.style.display = 'none';
-    } else {
-        prevBtn.style.display = 'flex';
-        nextBtn.style.display = 'flex';
+    if (currentPost.image_urls && currentPost.image_urls.length > 0) {
+        modalImg.src = currentPost.image_urls[currentIdx];
+        
+        if (currentPost.image_urls.length <= 1) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+        } else {
+            prevBtn.style.display = 'flex';
+            nextBtn.style.display = 'flex';
+        }
     }
 
     const avatar = document.getElementById('modalUserAvatar');
@@ -181,6 +219,289 @@ function formatPostTime(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' at ' + 
            date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+async function fetchComments(postId) {
+    const list = document.getElementById('modalCommentsList');
+    list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-slate-400">Loading comments...</p></div>';
+    
+    try {
+        const response = await fetch(`/posts/${postId}/comments`);
+        const data = await response.json();
+        
+        if (data.comments && data.comments.length > 0) {
+            list.innerHTML = '';
+            
+            // Organize comments by parent_id
+            const topLevel = data.comments.filter(c => !c.parent_id);
+            const replies = data.comments.filter(c => c.parent_id);
+            
+            topLevel.forEach(comment => {
+                const commentEl = renderComment(comment);
+                list.appendChild(commentEl);
+                
+                // Find and render replies for this comment
+                const commentReplies = replies.filter(r => r.parent_id === comment.id);
+                if (commentReplies.length > 0) {
+                    const repliesContainer = commentEl.querySelector('.comment-replies');
+                    repliesContainer.style.display = 'none'; // Hide by default
+                    
+                    const toggleBtn = document.createElement('button');
+                    toggleBtn.className = 'view-replies-btn';
+                    toggleBtn.onclick = () => toggleReplies(comment.id, toggleBtn);
+                    toggleBtn.innerHTML = `
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <span>View ${commentReplies.length} ${commentReplies.length === 1 ? 'reply' : 'replies'}</span>
+                    `;
+                    
+                    // Insert button after the main comment body
+                    commentEl.insertBefore(toggleBtn, repliesContainer);
+                    
+                    commentReplies.forEach(reply => {
+                        repliesContainer.appendChild(renderComment(reply, true));
+                    });
+                }
+            });
+        } else {
+            list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-slate-400 italic">No comments yet. Be the first to reply!</p></div>';
+        }
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-red-400">Failed to load comments.</p></div>';
+    }
+}
+
+function toggleReplies(commentId, btn) {
+    const parentEl = document.getElementById(`comment-${commentId}`);
+    const repliesContainer = parentEl.querySelector('.comment-replies');
+    const isHidden = repliesContainer.style.display === 'none';
+    
+    if (isHidden) {
+        repliesContainer.style.display = 'flex';
+        btn.classList.add('active');
+        btn.querySelector('span').innerText = 'Hide replies';
+    } else {
+        repliesContainer.style.display = 'none';
+        btn.classList.remove('active');
+        // Count replies to restore text
+        const count = repliesContainer.children.length;
+        btn.querySelector('span').innerText = `View ${count} ${count === 1 ? 'reply' : 'replies'}`;
+    }
+}
+
+function renderComment(comment, isReply = false) {
+    const avatar = comment.profiles.avatar_url || "/static/images/Logo.png";
+    const div = document.createElement('div');
+    div.className = 'flex flex-col gap-2 group';
+    div.id = `comment-${comment.id}`;
+    
+    // Reply logic: nested replies should point to the same top-level parent's ID 
+    // to keep it to 1 level of nesting, but mention the actual person being replied to.
+    // For now, let's just use comment.id as parent_id.
+    
+    div.innerHTML = `
+        <div class="flex gap-3">
+            <img src="${avatar}" alt="" class="w-8 h-8 rounded-full object-cover">
+            <div class="flex-1">
+                <div class="bg-slate-50 rounded-2xl px-3 py-2">
+                    <h5>${comment.profiles.full_name}</h5>
+                    <p>${comment.content}</p>
+                </div>
+                <div class="flex items-center gap-3 mt-1 ml-2">
+                    <span class="text-[10px] font-bold text-slate-400">${formatPostTime(comment.created_at)}</span>
+                    <button onclick="setReply('${comment.id}', '${comment.profiles.full_name}')" class="text-[10px] font-bold text-slate-400 hover:text-umak-blue">Reply</button>
+                </div>
+            </div>
+        </div>
+        ${!isReply ? '<div class="comment-replies"></div>' : ''}
+    `;
+    return div;
+}
+
+async function submitComment(event) {
+    event.preventDefault();
+    const textarea = document.getElementById('commentTextarea');
+    const content = textarea.value.trim();
+    
+    if (!content || !currentPost) return;
+    
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    
+    const body = { content };
+    if (currentReplyTo) {
+        body.parent_id = currentReplyTo.id;
+    }
+    
+    try {
+        const response = await fetch(`/posts/${currentPost.id}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        
+        const data = await response.json();
+        
+        if (data.comment) {
+            const list = document.getElementById('modalCommentsList');
+            if (list.querySelector('.italic')) list.innerHTML = ''; // Remove "No comments" text
+            
+            const newCommentEl = renderComment(data.comment, !!data.comment.parent_id);
+            
+            if (data.comment.parent_id) {
+                const parentEl = document.getElementById(`comment-${data.comment.parent_id}`);
+                // If the parent is itself a reply, we append to the same container
+                const repliesContainer = parentEl.querySelector('.comment-replies') || parentEl.closest('.comment-replies');
+                if (repliesContainer) {
+                    repliesContainer.appendChild(newCommentEl);
+                } else {
+                    // Fallback to end of list if container not found
+                    list.appendChild(newCommentEl);
+                }
+            } else {
+                list.appendChild(newCommentEl);
+            }
+            
+            textarea.value = '';
+            textarea.style.height = 'auto';
+            newCommentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Clear reply state
+            cancelReply();
+            
+            // Update comments count on dashboard
+            updateDashboardCount(currentPost.id, 'comments', 1);
+        }
+    } catch (error) {
+        console.error('Error submitting comment:', error);
+    } finally {
+        submitBtn.disabled = false;
+    }
+}
+
+function setReply(commentId, userName) {
+    currentReplyTo = { id: commentId, name: userName };
+    const textarea = document.getElementById('commentTextarea');
+    textarea.value = `@${userName} `;
+    textarea.focus();
+    
+    // Show reply indicator
+    let indicator = document.getElementById('replyIndicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'replyIndicator';
+        indicator.className = 'flex items-center justify-between bg-slate-100 px-3 py-1 rounded-t-lg text-[10px] font-bold text-slate-500 border-b border-white';
+        document.getElementById('modalCommentForm').parentElement.prepend(indicator);
+    }
+    indicator.innerHTML = `
+        <span>Replying to ${userName}</span>
+        <button onclick="cancelReply()" class="text-slate-400 hover:text-red-500">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    `;
+}
+
+function cancelReply() {
+    currentReplyTo = null;
+    const indicator = document.getElementById('replyIndicator');
+    if (indicator) indicator.remove();
+    
+    const textarea = document.getElementById('commentTextarea');
+    if (textarea.value.startsWith('@')) {
+        textarea.value = '';
+    }
+}
+
+async function toggleLike(postId, btn) {
+    const icon = btn.querySelector('svg');
+    const countSpan = btn.querySelector('.likes-count');
+    let count = parseInt(countSpan.innerText || '0');
+    
+    const isLiked = btn.classList.contains('text-red-500');
+    
+    // Optimistic update
+    if (isLiked) {
+        btn.classList.remove('text-red-500');
+        btn.classList.add('text-slate-400');
+        icon.classList.remove('fill-current');
+        if (countSpan) countSpan.innerText = Math.max(0, count - 1);
+    } else {
+        btn.classList.add('text-red-500');
+        btn.classList.remove('text-slate-400');
+        icon.classList.add('fill-current');
+        if (countSpan) countSpan.innerText = count + 1;
+    }
+    
+    try {
+        const response = await fetch(`/posts/${postId}/like`, { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.status === 'liked') {
+            btn.classList.add('text-red-500');
+            btn.classList.remove('text-slate-400');
+            icon.classList.add('fill-current');
+        } else if (data.status === 'unliked') {
+            btn.classList.remove('text-red-500');
+            btn.classList.add('text-slate-400');
+            icon.classList.remove('fill-current');
+        }
+    } catch (error) {
+        console.error('Error toggling like:', error);
+        // Revert on error
+        if (countSpan) countSpan.innerText = count;
+    }
+}
+
+function updateDashboardCount(postId, type, delta) {
+    const posts = document.querySelectorAll('.post-card');
+    posts.forEach(post => {
+        // This is a bit hacky but works for now
+        // Ideally we should have data-post-id on the post-card
+        const commentBtn = post.querySelector(`button[onclick*="${postId}"] .comments-count`);
+        if (commentBtn && type === 'comments') {
+            commentBtn.innerText = parseInt(commentBtn.innerText) + delta;
+        }
+    });
+}
+
+function updateModalActions(post) {
+    const likeBtn = document.querySelector('.modal-side-panel .modal-action-btn:first-child');
+    const commentBtn = document.querySelector('.modal-side-panel .modal-action-btn:last-child');
+
+    if (post.user_has_liked) {
+        likeBtn.classList.add('text-red-500');
+        likeBtn.querySelector('svg').classList.add('fill-current');
+    } else {
+        likeBtn.classList.remove('text-red-500');
+        likeBtn.querySelector('svg').classList.remove('fill-current');
+    }
+
+    likeBtn.onclick = () => {
+        toggleLike(post.id, likeBtn);
+        // Sync with dashboard
+        const dashBtn = document.querySelector(`.post-card button[onclick*="toggleLike('${post.id}'"]`);
+        if (dashBtn) {
+            const isLiked = likeBtn.classList.contains('text-red-500');
+            const icon = dashBtn.querySelector('svg');
+            const countSpan = dashBtn.querySelector('.likes-count');
+            if (isLiked) {
+                dashBtn.classList.add('text-red-500');
+                icon.classList.add('fill-current');
+            } else {
+                dashBtn.classList.remove('text-red-500');
+                icon.classList.remove('fill-current');
+            }
+            // Update dashboard count
+            if (countSpan) {
+                const currentDashCount = parseInt(countSpan.innerText);
+                countSpan.innerText = isLiked ? currentDashCount + 1 : Math.max(0, currentDashCount - 1);
+            }
+        }
+    };
+
+    commentBtn.onclick = () => {
+        document.getElementById('commentTextarea').focus();
+    };
 }
 
 // Global Event Listeners
