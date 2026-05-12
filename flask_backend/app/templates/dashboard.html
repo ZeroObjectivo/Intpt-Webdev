@@ -183,7 +183,7 @@
 </div>
 
 <div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
+    <div class="bg-white rounded-[16px] w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
         <div class="p-4 border-b flex justify-between items-center bg-[#F8F9FA]">
             <h2 class="modal-heading">Create New Post</h2>
             <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700" aria-label="Close create post modal">
@@ -193,7 +193,7 @@
         <form action="{{ url_for('core.create_post') }}" method="POST" class="p-6">
             <div class="mb-4">
                 <label class="form-label">Category</label>
-                <select name="category" class="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
+                <select name="category" class="w-full p-3 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
                     <option value="General">General</option>
                     <option value="Lost & Found">Lost & Found</option>
                     <option value="Buy & Sell">Buy & Sell</option>
@@ -203,11 +203,11 @@
             </div>
             <div class="mb-6">
                 <label class="form-label">What's on your mind?</label>
-                <textarea name="content" rows="4" required class="w-full p-4 rounded-lg border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
+                <textarea name="content" rows="4" required class="w-full p-4 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
             </div>
             <div class="flex gap-4">
-                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="flex-1 py-3 px-6 rounded-lg border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
-                <button type="submit" class="flex-1 py-3 px-6 rounded-lg bg-umak-blue text-white font-bold hover:bg-opacity-90 transition-all shadow-lg shadow-blue-900/20">Post to Hub</button>
+                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="flex-1 py-3 px-6 rounded-[16px] border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
+                <button type="submit" class="flex-1 py-3 px-6 rounded-[16px] bg-umak-blue text-white font-bold hover:bg-opacity-90 transition-all shadow-lg shadow-blue-900/20">Post to Hub</button>
             </div>
         </form>
     </div>

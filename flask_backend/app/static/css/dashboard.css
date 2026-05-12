@@ -12,7 +12,7 @@
     --hh-text-main: #1a1d20;
     --hh-text-muted: #6c757d;
     --hh-border: #e2e8f0;
-    --hh-radius: 8px;
+    --hh-radius: 16px;
     --hh-shadow-light: 0 2px 4px rgba(1, 6, 28, 0.05);
     --hh-shadow-hover: 0 4px 12px rgba(1, 6, 28, 0.1);
 }
