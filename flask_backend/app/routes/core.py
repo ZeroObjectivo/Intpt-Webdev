@@ -43,6 +43,120 @@ def dashboard():
                            trending=trending,
                            now=datetime.datetime.utcnow())
 
+@core.route('/settings/profile')
+@login_required
+def profile_settings():
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    apply_supabase_auth_token()
+    
+    try:
+        profile, posts, activity = load_profile_data(user_id)
+        return render_template('profile_settings.html', 
+                               user=profile, 
+                               posts=posts, 
+                               activity=activity,
+                               now=datetime.datetime.utcnow())
+    except Exception as e:
+        print(f"Error loading profile dashboard: {e}")
+        flash(f"Error loading profile: {str(e)}", "error")
+        return redirect(url_for('core.dashboard'))
+
+def load_profile_data(user_id):
+    # 1. Fetch User Profile
+    profile_response = supabase.table('profiles').select("*").eq("id", user_id).single().execute()
+    profile = profile_response.data
+    
+    # 2. Fetch User's Own Posts
+    posts_response = supabase.table('posts')\
+        .select("*, profiles(full_name, avatar_url)")\
+        .eq("user_id", user_id)\
+        .order("created_at", desc=True).execute()
+    posts = posts_response.data
+    
+    # Ensure counts and user_has_liked for own posts
+    for post in posts:
+        post['user_has_liked'] = True # If it's my post, I can see it, but I still need to check likes table if I actually liked it
+        # Actually, let's do a real check for likes
+        like_check = supabase.table('likes').select("id").eq("post_id", post['id']).eq("user_id", user_id).execute()
+        post['user_has_liked'] = len(like_check.data) > 0
+        post['likes_count'] = post.get('likes_count') or 0
+        post['comments_count'] = post.get('comments_count') or 0
+
+    # 3. Fetch Activity Log (Recent Likes and Comments by the user)
+    # Get recent likes on other people's posts
+    likes_activity = supabase.table('likes')\
+        .select("created_at, posts(id, content, category)")\
+        .eq("user_id", user_id)\
+        .order("created_at", desc=True).limit(10).execute()
+    
+    # Get recent comments by the user
+    comments_activity = supabase.table('comments')\
+        .select("id, created_at, content, post_id, posts(id, content, category)")\
+        .eq("user_id", user_id)\
+        .order("created_at", desc=True).limit(10).execute()
+    
+    # Combine and sort activity
+    activity = []
+    for l in likes_activity.data:
+        if l.get('posts'):
+            activity.append({
+                "type": "like",
+                "created_at": l['created_at'],
+                "post_id": l['posts']['id'],
+                "post_content": l['posts']['content'],
+                "category": l['posts']['category']
+            })
+    
+    for c in comments_activity.data:
+        if c.get('posts'):
+            activity.append({
+                "type": "comment",
+                "created_at": c['created_at'],
+                "content": c['content'],
+                "post_id": c['posts']['id'],
+                "post_content": c['posts']['content'],
+                "category": c['posts']['category']
+            })
+            
+    activity.sort(key=lambda x: x['created_at'], reverse=True)
+    
+    return profile, posts, activity[:20]
+
+@core.route('/settings/profile', methods=['POST'])
+@login_required
+def update_profile():
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    
+    # Get form data
+    contact_number = request.form.get('contact_number')
+    contact_privacy = request.form.get('contact_privacy', 'public')
+    college = request.form.get('college')
+    course = request.form.get('course')
+    level = request.form.get('level')
+    bio = request.form.get('bio')
+    
+    apply_supabase_auth_token()
+    
+    try:
+        update_data = {
+            "contact_number": contact_number,
+            "contact_privacy": contact_privacy,
+            "college": college,
+            "course": course,
+            "level": level,
+            "bio": bio,
+            "updated_at": "now()"
+        }
+        
+        supabase.table('profiles').update(update_data).eq("id", user_id).execute()
+        flash("Profile updated successfully!", "success")
+        return redirect(url_for('core.profile_settings'))
+    except Exception as e:
+        flash(f"Error updating profile: {str(e)}", "error")
+        return redirect(url_for('core.profile_settings'))
+
 def load_dashboard_data(user_id, category=None):
     
     # 1. Fetch User Profile from DB

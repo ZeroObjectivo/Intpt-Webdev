@@ -31,6 +31,12 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ### 2. Post Creation & Community Enhancements
 ### Added
+- **Profile Settings Page:**
+    - Created a dedicated settings area for users to manage their academic and contact information.
+    - Fields include: College (dropdown), Course, Year Level, Bio, and Contact Number.
+    - Implemented **Contact Privacy:** Users can toggle between "Public" and "Only Me" for their contact number visibility.
+    - Locked identity fields (Name and Profile Picture) to ensure sync with verified Google UMak accounts.
+    - Designed a unified, mobile-responsive UI with consistent Herons' Hub branding.
 - **Custom Confirmation Modal:**
     - Replaced native browser `confirm()` dialogs with a custom, themed system modal for all delete actions (posts and comments).
     - Designed with a "soft-red" theme to provide clear visual warning while matching the project's aesthetic.
