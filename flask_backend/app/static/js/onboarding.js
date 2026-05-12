@@ -1,39 +1,48 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const agreeCheckbox = document.getElementById('agree-terms');
     const continueBtn = document.getElementById('continue-btn');
+    const agreeCheckbox = document.getElementById('agree-terms');
     const tcContainer = document.querySelector('.tc-container');
+    const footerAction = document.getElementById('footer-action');
 
-    // Ensure initial state
-    if (continueBtn && agreeCheckbox) {
-        continueBtn.disabled = !agreeCheckbox.checked;
-        updateButtonStyles(continueBtn, agreeCheckbox.checked);
+    let hasScrolledToBottom = false;
 
-        // Toggle logic
-        agreeCheckbox.addEventListener('change', () => {
-            const isChecked = agreeCheckbox.checked;
-            continueBtn.disabled = !isChecked;
-            updateButtonStyles(continueBtn, isChecked);
+    // Detect scroll to bottom
+    if (tcContainer && footerAction) {
+        tcContainer.addEventListener('scroll', () => {
+            if (hasScrolledToBottom) return;
+
+            // Use a threshold (10px) to ensure it triggers accurately
+            const isAtBottom = tcContainer.scrollHeight - tcContainer.scrollTop <= tcContainer.clientHeight + 10;
+            
+            if (isAtBottom) {
+                hasScrolledToBottom = true;
+                revealFooter();
+            }
         });
-    }
 
-    function updateButtonStyles(btn, isActive) {
-        if (isActive) {
-            btn.classList.remove('opacity-40', 'cursor-not-allowed');
-            btn.classList.add('opacity-100', 'cursor-pointer', 'hover:scale-[1.02]', 'active:scale-[0.98]');
-        } else {
-            btn.classList.add('opacity-40', 'cursor-not-allowed');
-            btn.classList.remove('opacity-100', 'cursor-pointer', 'hover:scale-[1.02]', 'active:scale-[0.98]');
+        // Also check if content is short enough that it doesn't need scrolling (unlikely here but good practice)
+        if (tcContainer.scrollHeight <= tcContainer.clientHeight) {
+            hasScrolledToBottom = true;
+            revealFooter();
         }
     }
 
-    // Smooth scroll indicator logic
-    if (tcContainer) {
-        tcContainer.addEventListener('scroll', () => {
-            const isAtBottom = tcContainer.scrollHeight - tcContainer.scrollTop <= tcContainer.clientHeight + 10;
-            // Optional: Highlight checkbox when user reaches bottom
-            if (isAtBottom && !agreeCheckbox.checked) {
-                agreeCheckbox.parentElement.classList.add('animate-bounce');
-                setTimeout(() => agreeCheckbox.parentElement.classList.remove('animate-bounce'), 1000);
+    function revealFooter() {
+        footerAction.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+        footerAction.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+    }
+
+    // Handle checkbox and button state
+    if (agreeCheckbox && continueBtn) {
+        agreeCheckbox.addEventListener('change', () => {
+            if (agreeCheckbox.checked) {
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+                continueBtn.classList.add('hover:scale-[1.02]', 'active:scale-95');
+            } else {
+                continueBtn.disabled = true;
+                continueBtn.classList.add('opacity-40', 'cursor-not-allowed');
+                continueBtn.classList.remove('hover:scale-[1.02]', 'active:scale-95');
             }
         });
     }
