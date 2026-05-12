@@ -31,7 +31,19 @@
 
     body {
         @apply bg-slate-50 text-slate-900;
-        font-family: 'Metropolis', sans-serif;
+        font-family: 'Metropolis', 'Inter', sans-serif;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    .font-heading {
+        font-family: 'Marcellus SC', Georgia, serif;
+        font-weight: 400;
+        letter-spacing: 0;
     }
 }
 

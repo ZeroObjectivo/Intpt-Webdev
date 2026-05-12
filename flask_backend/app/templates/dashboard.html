@@ -7,161 +7,193 @@
 {% endblock %}
 
 {% block content %}
-<div class="relative min-h-screen bg-[#F0F2F5]">
-    <!-- Hero Background Pattern (Subtle) -->
-    <div class="absolute top-0 left-0 w-full h-64 bg-umak-blue -z-10 overflow-hidden">
-        <img src="{{ url_for('static', filename='svg/Background.svg') }}" alt="" class="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none">
+<div class="dashboard-page">
+    <div class="dashboard-shell">
+        <div class="dashboard-container">
+            <aside class="primary-sidebar" aria-label="Primary navigation">
+                <nav class="primary-nav">
+                    <a href="{{ url_for('core.dashboard') }}" class="primary-nav-link active" aria-current="page">
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1V10.5Z"></path>
+                        </svg>
+                        <span>Home Feed</span>
+                    </a>
+                    <a href="#" class="primary-nav-link">
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12l-1 12H7L6 8Z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 8a3 3 0 0 1 6 0"></path>
+                        </svg>
+                        <span>Marketplace</span>
+                    </a>
+                    <a href="#" class="primary-nav-link">
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"></path>
+                        </svg>
+                        <span>Events</span>
+                    </a>
+                    <a href="#" class="primary-nav-link">
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 17v-5"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8h.01"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+                        </svg>
+                        <span>About</span>
+                    </a>
+                    <a href="#" class="primary-nav-link">
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6 1.8 1.8 0 0 0-.5 1.25V21a2 2 0 0 1-4 0v-.09A1.8 1.8 0 0 0 8 19.4a1.8 1.8 0 0 0-1.98.36l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.8 1.8 0 0 0 3.6 15a1.8 1.8 0 0 0-.6-1 1.8 1.8 0 0 0-1.25-.5H1.7a2 2 0 0 1 0-4h.09A1.8 1.8 0 0 0 3.6 8a1.8 1.8 0 0 0-.36-1.98l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.8 1.8 0 0 0 8 3.6a1.8 1.8 0 0 0 1-.6A1.8 1.8 0 0 0 9.5 1.75V1.7a2 2 0 0 1 4 0v.09A1.8 1.8 0 0 0 15 3.6a1.8 1.8 0 0 0 1.98-.36l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.8 1.8 0 0 0 19.4 8c.16.39.37.72.6 1 .35.31.79.5 1.25.5h.05a2 2 0 0 1 0 4h-.09A1.8 1.8 0 0 0 19.4 15Z"></path>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="feed-column">
+                <div class="share-box">
+                    <div class="share-box-user">
+                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar object-cover">
+                        <span class="share-text">Hi {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}, ready to share?</span>
+                    </div>
+                    <button class="btn-create-post" onclick="document.getElementById('createPostModal').classList.remove('hidden')">Create New Post</button>
+                </div>
+
+                <div class="category-pills" aria-label="Post categories">
+                    <button class="pill active" type="button">All Posts</button>
+                    <button class="pill" type="button">General</button>
+                    <button class="pill" type="button">Lost & Found</button>
+                    <button class="pill" type="button">Buy & Sell</button>
+                    <button class="pill" type="button">Question</button>
+                    <button class="pill" type="button">Events</button>
+                </div>
+
+                <div class="posts-list">
+                    {% if posts %}
+                        {% for post in posts %}
+                        <article class="post-card">
+                            <div class="post-header">
+                                <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
+                                <div class="post-user-info">
+                                    <p class="post-author-name">{{ post.profiles.full_name }}</p>
+                                    <span class="post-meta">{{ post.category }} · Posted {{ post.created_at[:10] }}</span>
+                                </div>
+                            </div>
+                            <div class="post-content">
+                                <p>{{ post.content }}</p>
+                                {% if post.image_url %}
+                                    <img src="{{ post.image_url }}" class="post-image" alt="">
+                                {% endif %}
+                            </div>
+                            <div class="post-actions">
+                                <button class="action-item" type="button">
+                                    <svg aria-hidden="true" class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 15l7-7 7 7"></path>
+                                    </svg>
+                                    <span>Upvote</span>
+                                </button>
+                                <button class="action-item" type="button">
+                                    <svg aria-hidden="true" class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 0 1-4.255-.949L3 20l1.395-3.72A7.58 7.58 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"></path>
+                                    </svg>
+                                    <span>Comment</span>
+                                </button>
+                            </div>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-feed">
+                            <p>No posts yet. Be the first to share something.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </main>
+
+            <aside class="sidebar">
+                <section class="sidebar-section">
+                    <h2 class="sidebar-heading">Trending Now</h2>
+                    <div class="trending-list">
+                        <div class="trending-item">
+                            <span class="trending-number">1</span>
+                            <div class="trending-details">
+                                <span>Events</span>
+                                <h4>Lorem Ipsum Event</h4>
+                                <span class="likes">2.4k Likes</span>
+                            </div>
+                        </div>
+                        <div class="trending-item">
+                            <span class="trending-number">2</span>
+                            <div class="trending-details">
+                                <span>Buy & Sell</span>
+                                <h4>Lorem Ipsum Event</h4>
+                                <span class="likes">2.4k Likes</span>
+                            </div>
+                        </div>
+                        <div class="trending-item">
+                            <span class="trending-number">3</span>
+                            <div class="trending-details">
+                                <span>General</span>
+                                <h4>SHOUTOUT TO MY CLASSMATES</h4>
+                                <span class="likes">2.4k Likes</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="sidebar-section">
+                    <h2 class="sidebar-heading">Upcoming Events</h2>
+                    <div class="event-list">
+                        <div class="event-card">
+                            <div class="event-date">
+                                <span class="event-day">11</span>
+                                <span class="event-month">May</span>
+                            </div>
+                            <div class="event-info">
+                                <h4>Presentation</h4>
+                                <p>3:00 PM - 6:00 PM<br>HPSB</p>
+                            </div>
+                            <div class="event-status status-ongoing">Ongoing</div>
+                        </div>
+                        <div class="event-card">
+                            <div class="event-date">
+                                <span class="event-day">13</span>
+                                <span class="event-month">May</span>
+                            </div>
+                            <div class="event-info">
+                                <h4>Culminating Activity</h4>
+                                <p>6:00 AM - 9:00 AM<br>HPSB</p>
+                            </div>
+                            <div class="event-status status-upcoming">Upcoming</div>
+                        </div>
+                        <div class="event-card">
+                            <div class="event-date">
+                                <span class="event-day">15</span>
+                                <span class="event-month">May</span>
+                            </div>
+                            <div class="event-info">
+                                <h4>Physics</h4>
+                                <p>3:00 PM - 6:00 PM<br>HPSB</p>
+                            </div>
+                            <div class="event-status status-upcoming">Upcoming</div>
+                        </div>
+                    </div>
+                </section>
+            </aside>
+        </div>
     </div>
-
-    <div class="pt-8">
-    <div class="dashboard-container">
-        <!-- Left Column: Feed -->
-        <main class="feed-column">
-            <!-- Share Box -->
-            <div class="share-box">
-                <div class="flex items-center flex-1">
-                    <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar object-cover">
-                    <span class="share-text">Hi {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}, ready to Share?</span>
-                </div>
-                <button class="btn-create-post" onclick="document.getElementById('createPostModal').classList.remove('hidden')">Create New Post</button>
-            </div>
-
-            <!-- Category Pills -->
-            <div class="category-pills">
-                <div class="pill active">All Posts</div>
-                <div class="pill">General</div>
-                <div class="pill">Lost & Found</div>
-                <div class="pill">Buy & Sell</div>
-                <div class="pill">Question</div>
-                <div class="pill">Events</div>
-            </div>
-
-            <!-- Posts -->
-            <div class="posts-list">
-                {% if posts %}
-                    {% for post in posts %}
-                    <article class="post-card">
-                        <div class="post-header">
-                            <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
-                            <div class="post-user-info">
-                                <h4>{{ post.profiles.full_name }}</h4>
-                                <span>{{ post.category }} · Posted {{ post.created_at[:10] }}</span>
-                            </div>
-                        </div>
-                        <div class="post-content">
-                            <p>{{ post.content }}</p>
-                            {% if post.image_url %}
-                                <img src="{{ post.image_url }}" class="mt-4 rounded-lg w-full max-h-96 object-cover">
-                            {% endif %}
-                        </div>
-                        <div class="post-actions">
-                            <div class="action-item">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                                <span>Like</span>
-                            </div>
-                            <div class="action-item">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                                <span>Comment</span>
-                            </div>
-                        </div>
-                    </article>
-                    {% endfor %}
-                {% else %}
-                    <div class="bg-white p-8 rounded-2xl text-center shadow-sm">
-                        <p class="text-gray-500">No posts yet. Be the first to share something!</p>
-                    </div>
-                {% endif %}
-            </div>
-        </main>
-
-        <!-- Right Column: Sidebar -->
-        <aside class="sidebar">
-            <!-- Trending Now -->
-            <section class="sidebar-section">
-                <h3 class="sidebar-title">Trending Now</h3>
-                <div class="trending-list">
-                    <div class="trending-item">
-                        <span class="trending-number">1</span>
-                        <div class="trending-details">
-                            <span>Events</span>
-                            <h4>Lorem Ipsum Event</h4>
-                            <span class="likes">2.4k Likes</span>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <span class="trending-number">2</span>
-                        <div class="trending-details">
-                            <span>Buy & Sell</span>
-                            <h4>Lorem Ipsum Event</h4>
-                            <span class="likes">2.4k Likes</span>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <span class="trending-number">3</span>
-                        <div class="trending-details">
-                            <span>General</span>
-                            <h4>SHOUTOUT TO MY CLASSMATES</h4>
-                            <span class="likes">2.4k Likes</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Upcoming Events -->
-            <section class="sidebar-section">
-                <h3 class="sidebar-title">Upcoming Events</h3>
-                <div class="event-list">
-                    <div class="event-card">
-                        <div class="event-date">
-                            <span class="event-day">11</span>
-                            <span class="event-month">May</span>
-                        </div>
-                        <div class="event-info">
-                            <h4>Presentation</h4>
-                            <p>3:00 PM - 6:00 PM<br>HPSB</p>
-                        </div>
-                        <div class="event-status status-ongoing">Ongoing</div>
-                    </div>
-                    <div class="event-card">
-                        <div class="event-date">
-                            <span class="event-day">13</span>
-                            <span class="event-month">May</span>
-                        </div>
-                        <div class="event-info">
-                            <h4>Culminating Activity</h4>
-                            <p>6:00 AM - 9:00 AM<br>HPSB</p>
-                        </div>
-                        <div class="event-status status-upcoming">Upcoming</div>
-                    </div>
-                    <div class="event-card">
-                        <div class="event-date">
-                            <span class="event-day">15</span>
-                            <span class="event-month">May</span>
-                        </div>
-                        <div class="event-info">
-                            <h4>Physics</h4>
-                            <p>3:00 PM - 6:00 PM<br>HPSB</p>
-                        </div>
-                        <div class="event-status status-upcoming">Upcoming</div>
-                    </div>
-                </div>
-            </section>
-        </aside>
 </div>
 
-<!-- Create Post Modal -->
 <div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
+    <div class="bg-white rounded-lg w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
         <div class="p-4 border-b flex justify-between items-center bg-[#F8F9FA]">
-            <h3 class="text-xl font-bold text-umak-blue">Create New Post</h3>
-            <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+            <h2 class="modal-heading">Create New Post</h2>
+            <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700" aria-label="Close create post modal">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
         <form action="{{ url_for('core.create_post') }}" method="POST" class="p-6">
             <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                <select name="category" class="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
+                <label class="form-label">Category</label>
+                <select name="category" class="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
                     <option value="General">General</option>
                     <option value="Lost & Found">Lost & Found</option>
                     <option value="Buy & Sell">Buy & Sell</option>
@@ -170,12 +202,12 @@
                 </select>
             </div>
             <div class="mb-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">What's on your mind?</label>
-                <textarea name="content" rows="4" required class="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
+                <label class="form-label">What's on your mind?</label>
+                <textarea name="content" rows="4" required class="w-full p-4 rounded-lg border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
             </div>
             <div class="flex gap-4">
-                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="flex-1 py-3 px-6 rounded-xl border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
-                <button type="submit" class="flex-1 py-3 px-6 rounded-xl bg-umak-blue text-white font-bold hover:bg-opacity-90 transition-all shadow-lg shadow-blue-900/20">Post to Hub</button>
+                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="flex-1 py-3 px-6 rounded-lg border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
+                <button type="submit" class="flex-1 py-3 px-6 rounded-lg bg-umak-blue text-white font-bold hover:bg-opacity-90 transition-all shadow-lg shadow-blue-900/20">Post to Hub</button>
             </div>
         </form>
     </div>
