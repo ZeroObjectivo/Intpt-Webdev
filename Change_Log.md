@@ -21,12 +21,12 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Single-Image Layout:** Limited the maximum height of single-image posts to 400px, preventing cards from expanding excessively and improving feed readability.
 
 ### Added
-- **Floating Post Modal:** Redesigned the post detail view to be a floating card.
-    - Implemented a centered `.modal-container` with heavy drop shadows and rounded corners.
-    - Set the background overlay to be semi-transparent with blur, keeping the dashboard visible.
-    - Positioned the close button to float elegantly above the modal card.
-    - Refined navigation arrows and internal spacing for a premium feel.
-- **Clickable Image Modal:** Implemented a Facebook-style expanded view for post images.
+- **Facebook Theater View Modal:** Transitioned the image modal from a floating card to a standard Facebook-style "Theater" layout.
+    - **Full-Viewport Layout:** The modal now occupies the entire screen, with a full-height split between the image and post details.
+    - **Integrated Side Panel:** A clean, white side panel on the right contains all post metadata and comments, mirroring the desktop Facebook experience.
+    - **Hidden-until-Hover UI:** Navigation arrows and image controls (Zoom, Fullscreen) now fade in on hover for a cleaner, image-focused view.
+    - **Refined Action Buttons:** Redesigned "Like" and "Comment" buttons to use Facebook's standard icon-and-text layout.
+    - **Optimized Mobile View:** Added a responsive vertical layout for mobile devices, ensuring accessibility across all screen sizes.
 
 ---
 
