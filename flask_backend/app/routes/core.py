@@ -96,7 +96,11 @@ def create_post():
                     print(f"Error uploading image {file.filename}: {e}")
                     flash(f"Failed to upload image {file.filename}.", "warning")
 
+    # Use the first image if the DB column is just a single string URL
+    single_image_url = image_urls[0] if image_urls else None
+
     try:
+        # Prepare data for RPC with parameter name matching the function signature
         post_data = {
             "user_id": user_id,
             "content": content,
@@ -105,23 +109,15 @@ def create_post():
             "location": location,
             "status": status,
             "event_date": event_date,
-            "image_urls": image_urls
+            "image_urls": single_image_url
         }
-        print(f"DEBUG: Attempting to insert post for user {user_id}: {post_data}")
-        response = supabase.table('posts').insert(post_data).execute()
-        print(f"DEBUG: Insert successful: {response.data}")
+        print(f"DEBUG: Attempting to insert post via RPC for user {user_id}: {post_data}")
+        supabase.rpc('create_post_rpc', post_data).execute()
+        print(f"DEBUG: RPC Insert successful")
         flash("Post created successfully!", "success")
     except Exception as e:
         print(f"CRITICAL: Post insertion failed: {str(e)}")
-        if is_jwt_expired_error(e) and refresh_supabase_auth():
-            insert_post_multi(user_id, content, category, price, location, status, event_date, image_urls)
-            flash("Post created successfully!", "success")
-        elif is_jwt_expired_error(e):
-            session.clear()
-            flash("Your login session expired. Please sign in again.", "error")
-            return redirect(url_for('core.login'))
-        else:
-            flash("Something went wrong. Please try again.", "error")
+        flash("Something went wrong. Please try again.", "error")
         
     return redirect(url_for('core.dashboard'))
 
