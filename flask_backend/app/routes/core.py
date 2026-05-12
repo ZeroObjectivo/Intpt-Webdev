@@ -6,6 +6,8 @@ from .auth import (
     refresh_supabase_auth,
 )
 from services.supabase_client import supabase
+import datetime
+import time
 
 core = Blueprint('core', __name__)
 
@@ -23,10 +25,10 @@ def dashboard():
     apply_supabase_auth_token()
 
     try:
-        profile, posts = load_dashboard_data(user_id, category)
+        profile, posts, trending = load_dashboard_data(user_id, category)
     except Exception as e:
         if is_jwt_expired_error(e) and refresh_supabase_auth():
-            profile, posts = load_dashboard_data(user_id, category)
+            profile, posts, trending = load_dashboard_data(user_id, category)
         elif is_jwt_expired_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
@@ -34,11 +36,11 @@ def dashboard():
         else:
             raise
     
-    import datetime
     return render_template('dashboard.html', 
                            user=profile, 
                            posts=posts, 
-                           active_category=category,
+                           active_category=category, 
+                           trending=trending,
                            now=datetime.datetime.utcnow())
 
 def load_dashboard_data(user_id, category=None):
@@ -55,7 +57,7 @@ def load_dashboard_data(user_id, category=None):
         
     posts_response = query.order("created_at", desc=True).limit(20).execute()
     posts = posts_response.data
-    
+
     # 3. For each post, check if the current user has liked it
     # and ensure counts are present
     for post in posts:
@@ -66,8 +68,12 @@ def load_dashboard_data(user_id, category=None):
         # Ensure counts are initialized if null
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = post.get('comments_count') or 0
+
+    # 4. Fetch Trending Posts (Top 3 by likes_count)
+    trending_response = supabase.table('posts').select("content, category, likes_count").order("likes_count", desc=True).limit(3).execute()
+    trending = trending_response.data
     
-    return profile, posts
+    return profile, posts, trending
 
 @core.route('/posts/<post_id>/like', methods=['POST'])
 @login_required
@@ -149,11 +155,132 @@ def add_comment(post_id):
         print(f"Error adding comment: {e}")
         return {"error": str(e)}, 500
 
+@core.route('/posts/<post_id>/update', methods=['POST'])
+@login_required
+def update_post(post_id):
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    
+    content = request.form.get('content')
+    category = request.form.get('category')
+    price = request.form.get('price')
+    location = request.form.get('location')
+    status = request.form.get('status')
+    event_date = request.form.get('event_date')
+    event_end_date = request.form.get('event_end_date')
+    
+    apply_supabase_auth_token()
+    
+    try:
+        # RLS will prevent unauthorized updates, but we'll check user_id too
+        update_data = {
+            "content": content,
+            "category": category,
+            "updated_at": "now()"
+        }
+        
+        if price is not None: update_data["price"] = float(price) if price.strip() else None
+        if location is not None: update_data["location"] = location.strip()
+        if status is not None: update_data["status"] = status.strip()
+        if event_date is not None: update_data["event_date"] = event_date if event_date.strip() else None
+        if event_end_date is not None: update_data["event_end_date"] = event_end_date if event_end_date.strip() else None
+
+        result = supabase.table('posts').update(update_data).eq("id", post_id).eq("user_id", user_id).execute()
+        
+        if not result.data:
+            return {"error": "Unauthorized or post not found"}, 403
+            
+        flash("Post updated successfully!", "success")
+        return redirect(url_for('core.dashboard'))
+    except Exception as e:
+        print(f"Error updating post: {e}")
+        flash(f"Error updating post: {str(e)}", "error")
+        return redirect(url_for('core.dashboard'))
+
+@core.route('/posts/<post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    
+    apply_supabase_auth_token()
+    
+    try:
+        result = supabase.table('posts').delete().eq("id", post_id).eq("user_id", user_id).execute()
+        
+        if not result.data:
+            return {"error": "Unauthorized or post not found"}, 403
+            
+        flash("Post deleted successfully!", "success")
+        return {"status": "deleted"}
+    except Exception as e:
+        print(f"Error deleting post: {e}")
+        return {"error": str(e)}, 500
+
+@core.route('/comments/<comment_id>/update', methods=['POST'])
+@login_required
+def update_comment(comment_id):
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    content = request.json.get('content')
+    
+    if not content:
+        return {"error": "Comment cannot be empty"}, 400
+        
+    apply_supabase_auth_token()
+    try:
+        result = supabase.table('comments').update({
+            "content": content,
+            "updated_at": "now()"
+        }).eq("id", comment_id).eq("user_id", user_id).execute()
+        
+        if not result.data:
+            return {"error": "Unauthorized or comment not found"}, 403
+            
+        return {"comment": result.data[0]}
+    except Exception as e:
+        print(f"Error updating comment: {e}")
+        return {"error": str(e)}, 500
+
+@core.route('/comments/<comment_id>/delete', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    
+    apply_supabase_auth_token()
+    try:
+        # Get the post_id before deleting so we can decrement count
+        comment = supabase.table('comments').select("post_id").eq("id", comment_id).eq("user_id", user_id).single().execute()
+        
+        if not comment.data:
+            return {"error": "Unauthorized or comment not found"}, 403
+            
+        post_id = comment.data['post_id']
+        
+        supabase.table('comments').delete().eq("id", comment_id).eq("user_id", user_id).execute()
+        
+        # Decrement comments_count
+        supabase.rpc('decrement_comments_count', {'row_id': post_id}).execute()
+        
+        return {"status": "deleted", "post_id": post_id}
+    except Exception as e:
+        print(f"Error deleting comment: {e}")
+        return {"error": str(e)}, 500
+
 @core.route('/posts/create', methods=['POST'])
 @login_required
 def create_post():
     user_session = session.get('user')
     user_id = user_session.get('id')
+    
+    # --- Rate Limiting (Spam Protection) ---
+    current_time = time.time()
+    last_post_time = session.get('last_post_time', 0)
+    if current_time - last_post_time < 30:  # 30 seconds limit
+        flash("You are posting too fast! Please wait a moment.", "warning")
+        return redirect(url_for('core.dashboard'))
+    
     access_token = session.get('access_token')
     
     content = request.form.get('content')
@@ -165,12 +292,14 @@ def create_post():
     location = request.form.get('location')
     status = request.form.get('status')
     event_date = request.form.get('event_date')
+    event_end_date = request.form.get('event_end_date')
     
     # Clean empty values
     price = float(price) if price and price.strip() else None
     location = location.strip() if location and location.strip() else None
     status = status.strip() if status and status.strip() else None
     event_date = event_date if event_date and event_date.strip() else None
+    event_end_date = event_end_date if event_end_date and event_end_date.strip() else None
     
     if not content and (not image_files or not image_files[0].filename):
         flash("Post content cannot be empty!", "error")
@@ -204,14 +333,18 @@ def create_post():
             "location": location,
             "status": status,
             "event_date": event_date,
+            "event_end_date": event_end_date,
             "image_url": image_urls[0] if image_urls else None,
             "image_urls": image_urls
         }
-        print(f"DEBUG: Attempting standard insert for user {user_id}: {post_data}")
         supabase.table('posts').insert(post_data).execute()
+        
+        # Update rate limit timestamp
+        session['last_post_time'] = current_time
+        
         flash("Post created successfully!", "success")
     except Exception as e:
-        print(f"CRITICAL: Standard post insertion failed: {str(e)}")
+        print(f"CRITICAL: Post insertion failed: {str(e)}")
         flash(f"Something went wrong: {str(e)}", "error")
         
     return redirect(url_for('core.dashboard'))
