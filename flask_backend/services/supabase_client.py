@@ -12,6 +12,9 @@ url: str = os.getenv("SUPABASE_URL")
 key: str = os.getenv("SUPABASE_KEY")
 db_url: str = os.getenv("DATABASE_URL")
 
+print("SUPABASE_URL:", url)
+print("SUPABASE_KEY:", key)
+
 # 1. Supabase Client (For Auth, Storage, Edge Functions)
 supabase: Client = create_client(url, key)
 
