@@ -34,6 +34,18 @@ def create_post():
     content = request.form.get('content')
     category = request.form.get('category', 'General')
     
+    # Extra fields
+    price = request.form.get('price')
+    location = request.form.get('location')
+    status = request.form.get('status')
+    event_date = request.form.get('event_date')
+    
+    # Clean empty values
+    price = float(price) if price and price.strip() else None
+    location = location.strip() if location and location.strip() else None
+    status = status.strip() if status and status.strip() else None
+    event_date = event_date if event_date and event_date.strip() else None
+    
     if not content:
         flash("Post content cannot be empty!", "error")
         return redirect(url_for('core.dashboard'))
@@ -42,7 +54,11 @@ def create_post():
         supabase.table('posts').insert({
             "user_id": user_id,
             "content": content,
-            "category": category
+            "category": category,
+            "price": price,
+            "location": location,
+            "status": status,
+            "event_date": event_date
         }).execute()
         flash("Post created successfully!", "success")
     except Exception as e:
