@@ -144,7 +144,7 @@
     background: var(--hh-gold-500);
     color: var(--hh-blue-900);
     font-size: 0.9rem;
-    font-weight: 800;
+    font-weight: 400;
     cursor: pointer;
     transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }

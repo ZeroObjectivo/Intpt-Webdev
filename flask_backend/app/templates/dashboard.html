@@ -55,16 +55,21 @@
                         <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar object-cover">
                         <span class="share-text capitalize">Hi {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}, ready to share?</span>
                     </div>
-                    <button class="btn-create-post" onclick="document.getElementById('createPostModal').classList.remove('hidden')">Create New Post</button>
+                    <button class="btn-create-post flex items-center gap-2 font-normal" onclick="document.getElementById('createPostModal').classList.remove('hidden')">
+                        <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 5v14m7-7H5"></path>
+                        </svg>
+                        <span>New Post</span>
+                    </button>
                 </div>
 
                 <div class="category-pills" aria-label="Post categories">
-                    <button class="pill rounded-full px-3 py-1 bg-[#1F2764] text-[#FFFFFF] text-sm font-semibold" type="button">All Post</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-semibold" type="button">General</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#FFECA7] text-[#6E3E1E] text-sm font-semibold" type="button">Lost & Found</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-semibold" type="button">Heron Business</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#C5DDFF] text-[#1A3C8D] text-sm font-semibold" type="button">Question</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-semibold" type="button">Events</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#1F2764] text-[#FFFFFF] text-sm font-normal" type="button">All Post</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-normal" type="button">General</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#FFECA7] text-[#6E3E1E] text-sm font-normal" type="button">Lost & Found</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-normal" type="button">Heron Business</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#C5DDFF] text-[#1A3C8D] text-sm font-normal" type="button">Question</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-normal" type="button">Events</button>
                 </div>
 
                 <div class="posts-list">
@@ -81,15 +86,15 @@
                                     </div>
                                 </div>
                                 {% if post_category == 'Lost & Found' %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#FFECA7] text-[#6E3E1E] text-xs font-semibold">Lost & Found</span>
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#FFECA7] text-[#6E3E1E] text-xs font-normal">Lost & Found</span>
                                 {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#BFFFDE] text-[#145C50] text-xs font-semibold">Heron Business</span>
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#BFFFDE] text-[#145C50] text-xs font-normal">Heron Business</span>
                                 {% elif post_category == 'Question' %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#C5DDFF] text-[#1A3C8D] text-xs font-semibold">Question</span>
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#C5DDFF] text-[#1A3C8D] text-xs font-normal">Question</span>
                                 {% elif post_category == 'Events' %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#533074] text-[#EDF1FF] text-xs font-semibold">Events</span>
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#533074] text-[#EDF1FF] text-xs font-normal">Events</span>
                                 {% else %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#D9D9D9] text-[#475569] text-xs font-semibold">General</span>
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#D9D9D9] text-[#475569] text-xs font-normal">General</span>
                                 {% endif %}
                             </div>
                             <div class="post-content">
@@ -131,7 +136,7 @@
                         <div class="trending-item">
                             <span class="trending-number">1</span>
                             <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-semibold">Events</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-normal">Events</span>
                                 <h4>Lorem Ipsum Event</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -139,7 +144,7 @@
                         <div class="trending-item">
                             <span class="trending-number">2</span>
                             <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-semibold">Heron Business</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-normal">Heron Business</span>
                                 <h4>Lorem Ipsum Event</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -147,7 +152,7 @@
                         <div class="trending-item">
                             <span class="trending-number">3</span>
                             <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-semibold">General</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-normal">General</span>
                                 <h4>SHOUTOUT TO MY CLASSMATES</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -199,16 +204,17 @@
 </div>
 
 <div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-[16px] w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
-        <div class="p-4 border-b flex justify-between items-center bg-[#F8F9FA]">
-            <h2 class="modal-heading">Create New Post</h2>
-            <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700" aria-label="Close create post modal">
+    <div class="bg-white rounded-[35px] w-full max-w-lg mx-6 my-8 px-8 py-7 shadow-xl">
+        <div class="flex flex-col gap-4">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xl font-bold text-slate-900">New Post</h2>
+                <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700" aria-label="Close create post modal">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-        <form action="{{ url_for('core.create_post') }}" method="POST" class="p-6">
-            <div class="mb-4">
-                <label class="form-label">Category</label>
+                </button>
+            </div>
+            <form action="{{ url_for('core.create_post') }}" method="POST" class="flex flex-col gap-4">
+            <div>
+                <label class="form-label text-slate-700">Category</label>
                 <select name="category" class="w-full p-3 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
                     <option value="General">General</option>
                     <option value="Lost & Found">Lost & Found</option>
@@ -217,15 +223,48 @@
                     <option value="Events">Events</option>
                 </select>
             </div>
-            <div class="mb-6">
-                <label class="form-label">What's on your mind?</label>
-                <textarea name="content" rows="4" required class="w-full p-4 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
+            <div>
+                <label class="form-label text-slate-700">What's on your mind?</label>
+                <textarea id="createPostContent" name="content" rows="4" required class="w-full p-4 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
             </div>
-            <div class="flex gap-4">
-                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="flex-1 py-3 px-6 rounded-[16px] border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
-                <button type="submit" class="flex-1 py-3 px-6 rounded-[16px] bg-umak-blue text-white font-bold hover:bg-opacity-90 transition-all shadow-lg shadow-blue-900/20">Post to Hub</button>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="px-5 py-2 text-sm rounded-md border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
+                <button id="createPostSubmit" type="submit" disabled class="px-5 py-2 text-sm rounded-md font-normal opacity-50 cursor-not-allowed bg-slate-300 text-slate-600 transition-all">Post</button>
             </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const contentInput = document.getElementById('createPostContent');
+        const submitButton = document.getElementById('createPostSubmit');
+
+        if (!contentInput || !submitButton) {
+            return;
+        }
+
+        const disabledClasses = ['opacity-50', 'cursor-not-allowed', 'bg-slate-300', 'text-slate-600'];
+        const activeClasses = ['bg-umak-blue', 'text-white', 'hover:bg-opacity-90', 'shadow-lg', 'shadow-blue-900/20'];
+
+        function updateSubmitState() {
+            const hasContent = contentInput.value.trim().length > 0;
+            submitButton.disabled = !hasContent;
+            submitButton.classList.toggle('cursor-not-allowed', !hasContent);
+            submitButton.classList.toggle('opacity-50', !hasContent);
+
+            if (hasContent) {
+                submitButton.classList.remove(...disabledClasses);
+                submitButton.classList.add(...activeClasses);
+            } else {
+                submitButton.classList.remove(...activeClasses);
+                submitButton.classList.add(...disabledClasses);
+            }
+        }
+
+        contentInput.addEventListener('input', updateSubmitState);
+        updateSubmitState();
+    });
+</script>
 {% endblock %}
