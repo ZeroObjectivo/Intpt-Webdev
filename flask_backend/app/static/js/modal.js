@@ -369,19 +369,59 @@ async function saveEditComment(commentId) {
 }
 
 async function deleteComment(commentId) {
-    if (!confirm('Delete this comment?')) return;
-
-    try {
-        const response = await fetch(`/comments/${commentId}/delete`, { method: 'POST' });
-        const data = await response.json();
-        if (data.status === 'deleted') {
-            document.getElementById(`comment-${commentId}`).remove();
-            if (currentPost) {
-                updateDashboardCount(currentPost.id, 'comments', -1);
+    showConfirmModal(
+        'Delete Comment?',
+        'Are you sure you want to delete this comment?',
+        async () => {
+            try {
+                const response = await fetch(`/comments/${commentId}/delete`, { method: 'POST' });
+                const data = await response.json();
+                if (data.status === 'deleted') {
+                    document.getElementById(`comment-${commentId}`).remove();
+                    if (currentPost) {
+                        updateDashboardCount(currentPost.id, 'comments', -1);
+                    }
+                }
+            } catch (error) {
+                console.error('Error deleting comment:', error);
             }
         }
-    } catch (error) {
-        console.error('Error deleting comment:', error);
+    );
+}
+
+// Custom Confirmation Modal Helpers
+function showConfirmModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const messageEl = document.getElementById('confirmMessage');
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    
+    titleEl.innerText = title;
+    messageEl.innerText = message;
+    
+    // Use a new button reference to clear old listeners
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    newConfirmBtn.onclick = async () => {
+        await onConfirm();
+        closeConfirmModal();
+    };
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeConfirmModal(event) {
+    const modal = document.getElementById('confirmModal');
+    // Allow closing if no event (manual call), clicking the overlay, or clicking any button
+    if (!event || event.target === modal || event.target.closest('button')) {
+        modal.classList.remove('active');
+        // Only restore body overflow if the main image modal is also closed
+        const imageModal = document.getElementById('imageModal');
+        if (!imageModal || imageModal.style.display !== 'flex') {
+            document.body.style.overflow = 'auto';
+        }
     }
 }
 

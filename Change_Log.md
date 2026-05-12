@@ -31,6 +31,10 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ### 2. Post Creation & Community Enhancements
 ### Added
+- **Custom Confirmation Modal:**
+    - Replaced native browser `confirm()` dialogs with a custom, themed system modal for all delete actions (posts and comments).
+    - Designed with a "soft-red" theme to provide clear visual warning while matching the project's aesthetic.
+    - Implemented a reusable `showConfirmModal` system with callback support for snapping actions.
 - **Post & Comment CRUD:**
     - Implemented full Edit and Delete functionality for users to manage their own content.
     - Added backend routes (`update_post`, `delete_post`, `update_comment`, `delete_comment`) with author-only security checks.
