@@ -84,14 +84,20 @@ def create_post():
         flash("Your login session expired. Please sign in again.", "error")
         return redirect(url_for('core.login'))
     
-    image_url = None
-    if image_files and image_files[0].filename:
-        try:
-            # Revert to single image logic temporarily to ensure stability
-            image_url = upload_single_image(image_files[0], user_id)
-        except Exception as e:
-            print(f"Error uploading image: {e}")
-            flash("Failed to upload image.", "warning")
+    # Authenticate the supabase client with the user's token
+    apply_supabase_auth_token()
+    
+    image_urls = []
+    if image_files:
+        for img_file in image_files:
+            if img_file.filename:
+                try:
+                    url = upload_single_image(img_file, user_id)
+                    if url:
+                        image_urls.append(url)
+                except Exception as e:
+                    print(f"Error uploading image {img_file.filename}: {e}")
+                    flash(f"Failed to upload image {img_file.filename}.", "warning")
 
     try:
         post_data = {
@@ -102,7 +108,8 @@ def create_post():
             "location": location,
             "status": status,
             "event_date": event_date,
-            "image_url": image_url
+            "image_url": image_urls[0] if image_urls else None,
+            "image_urls": image_urls
         }
         print(f"DEBUG: Attempting standard insert for user {user_id}: {post_data}")
         supabase.table('posts').insert(post_data).execute()

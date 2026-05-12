@@ -1,7 +1,32 @@
 # Project Change Log
-**Current Date:** May 12, 2026
+**Current Date:** May 13, 2026
 
 This document summarizes the recent major updates, bug fixes, and feature implementations for the Herons' Hub platform.
+
+---
+
+## [Unreleased] - 2026-05-13
+
+### 1. Supabase Storage RLS & Authentication Fix
+### Fixed
+- **Storage Upload Error:** Resolved "new row violates row-level security policy" (Unauthorized) error when uploading images with posts.
+- **Image Display on Cards:** Fixed issue where uploaded images were not appearing on post cards.
+    - Implemented `image_urls` (text array) column in the `posts` table via migration.
+    - Updated `create_post` route to populate both `image_url` (singular) and `image_urls` (plural) to ensure compatibility with existing templates.
+    - Enabled multi-image upload support in the backend.
+- **Backend Storage Authentication:** Updated `apply_supabase_auth_token` in `auth.py` to correctly propagate the user's JWT to the Supabase Storage client.
+
+### Changed
+- **Image Interactions:** Removed hover effects (scaling and brightness filters) from post images to maintain a cleaner, static appearance in the feed.
+- **Single-Image Layout:** Limited the maximum height of single-image posts to 400px, preventing cards from expanding excessively and improving feed readability.
+
+### Added
+- **Floating Post Modal:** Redesigned the post detail view to be a floating card.
+    - Implemented a centered `.modal-container` with heavy drop shadows and rounded corners.
+    - Set the background overlay to be semi-transparent with blur, keeping the dashboard visible.
+    - Positioned the close button to float elegantly above the modal card.
+    - Refined navigation arrows and internal spacing for a premium feel.
+- **Clickable Image Modal:** Implemented a Facebook-style expanded view for post images.
 
 ---
 

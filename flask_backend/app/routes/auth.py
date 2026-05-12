@@ -25,7 +25,15 @@ def apply_supabase_auth_token():
     if not access_token:
         return False
 
+    # Set for database operations
     supabase.postgrest.auth(access_token)
+    
+    # Set for storage operations
+    if hasattr(supabase, 'storage'):
+        # In storage3, headers are in _client.headers
+        if hasattr(supabase.storage, '_client') and hasattr(supabase.storage._client, 'headers'):
+            supabase.storage._client.headers.update({"Authorization": f"Bearer {access_token}"})
+    
     return True
 
 def refresh_supabase_auth():
