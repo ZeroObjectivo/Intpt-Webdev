@@ -30,6 +30,7 @@ def dashboard():
 def create_post():
     user_session = session.get('user')
     user_id = user_session.get('id')
+    access_token = session.get('access_token')
     
     content = request.form.get('content')
     category = request.form.get('category', 'General')
@@ -51,6 +52,10 @@ def create_post():
         return redirect(url_for('core.dashboard'))
     
     try:
+        # Authenticate request to satisfy RLS
+        if access_token:
+            supabase.postgrest.auth(access_token)
+            
         supabase.table('posts').insert({
             "user_id": user_id,
             "content": content,
