@@ -118,6 +118,8 @@ def upload_single_image(file, user_id):
     import time
     
     try:
+        print(f"DEBUG: File received: {file.filename}, Content-Type: {file.content_type}")
+        
         file_ext = file.filename.split('.')[-1]
         timestamp = int(time.time())
         filename = f"{user_id}/{timestamp}_{uuid.uuid4().hex}.{file_ext}"
@@ -125,6 +127,7 @@ def upload_single_image(file, user_id):
         
         file.seek(0)
         file_data = file.read()
+        print(f"DEBUG: Read {len(file_data)} bytes from file.")
         
         # Try uploading
         res = supabase.storage.from_(bucket_name).upload(
@@ -132,6 +135,7 @@ def upload_single_image(file, user_id):
             file=file_data,
             file_options={"content-type": file.content_type}
         )
+        print(f"DEBUG: Supabase upload response: {res}")
         return supabase.storage.from_(bucket_name).get_public_url(filename)
     except Exception as e:
         print(f"CRITICAL: Supabase storage upload failed: {str(e)}")
