@@ -64,4 +64,35 @@
     .card-glass {
         @apply bg-white/80 backdrop-blur-md border border-white shadow-strong;
     }
+
+    /* Facebook-style Image Grid */
+    .fb-grid {
+        display: grid;
+        gap: 4px;
+        border-radius: 16px;
+        overflow: hidden;
+        width: 100%;
+        margin-top: 12px;
+    }
+
+    .fb-grid-1 { grid-template-columns: 1fr; aspect-ratio: auto; }
+    .fb-grid-1 img { max-height: 500px; width: 100%; object-fit: cover; }
+    
+    .fb-grid-2 { grid-template-columns: 1fr 1fr; aspect-ratio: 16/9; }
+    .fb-grid-3 { grid-template-columns: 1.5fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 16/10; }
+    .fb-grid-3 > *:first-child { grid-row: span 2; }
+
+    .fb-grid-4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 2fr 1fr; aspect-ratio: 1; }
+    .fb-grid-4 > *:first-child { grid-column: span 3; }
+
+    .fb-grid-5 { grid-template-columns: repeat(6, 1fr); grid-template-rows: 1.2fr 1fr; aspect-ratio: 1; }
+    .fb-grid-5 > *:nth-child(1) { grid-column: span 3; }
+    .fb-grid-5 > *:nth-child(2) { grid-column: span 3; }
+    .fb-grid-5 > *:nth-child(3) { grid-column: span 2; }
+    .fb-grid-5 > *:nth-child(4) { grid-column: span 2; }
+    .fb-grid-5 > *:nth-child(5) { grid-column: span 2; }
+
+    .fb-grid img {
+        @apply w-full h-full object-cover transition-transform duration-500 hover:scale-105;
+    }
 }
