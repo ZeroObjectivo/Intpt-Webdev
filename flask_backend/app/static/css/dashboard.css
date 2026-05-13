@@ -259,13 +259,68 @@
     line-height: 1.62;
 }
 
-.post-image {
+/* Facebook-style Image Grid (Enhanced) */
+.fb-grid {
+    display: grid !important;
+    gap: 4px;
+    border-radius: 12px;
+    overflow: hidden;
     width: 100%;
-    max-height: 420px;
     margin-top: 12px;
-    border-radius: var(--hh-radius);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.fb-grid img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
 }
+
+.fb-grid .group:hover img {
+    /* Zoom effect removed */
+}
+
+.fb-grid-1 { 
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8fafc;
+    min-height: 200px;
+    max-height: 550px;
+    border: 1px solid rgba(0,0,0,0.03);
+}
+
+/* Ensure the inner wrapper also centers its content */
+.fb-grid-1 > div {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.fb-grid-1 img { 
+    width: auto !important;
+    height: auto !important;
+    max-width: 100%;
+    max-height: 550px;
+    object-fit: contain !important;
+    border-radius: 0; 
+}
+
+.fb-grid-2 { grid-template-columns: 1fr 1fr; aspect-ratio: 16/9; }
+.fb-grid-3 { grid-template-columns: 1.5fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 16/10; }
+.fb-grid-3 > *:first-child { grid-row: span 2; }
+
+.fb-grid-4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 2fr 1fr; aspect-ratio: 1; }
+.fb-grid-4 > *:first-child { grid-column: span 3; }
+
+.fb-grid-5 { grid-template-columns: repeat(6, 1fr); grid-template-rows: 1.2fr 1fr; aspect-ratio: 1; }
+.fb-grid-5 > *:nth-child(1) { grid-column: span 3; }
+.fb-grid-5 > *:nth-child(2) { grid-column: span 3; }
+.fb-grid-5 > *:nth-child(3) { grid-column: span 2; }
+.fb-grid-5 > *:nth-child(4) { grid-column: span 2; }
+.fb-grid-5 > *:nth-child(5) { grid-column: span 2; }
 
 .post-actions {
     display: flex;

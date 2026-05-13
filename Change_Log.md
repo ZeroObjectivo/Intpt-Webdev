@@ -7,11 +7,35 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ## [Unreleased] - 2026-05-14
 
-### 1. Front-end Integration
+### 1. Front-end Integration & Image Enhancements
+### Added
+- **Multiple Image Support:** Refactored post creation and display to support up to 5 images per post.
+- **Dynamic Image Grid:** Implemented a Facebook-style responsive grid (`fb-grid`) that adjusts layouts based on the number of images (1-5).
+- **Advanced Multi-Image Upload UI:** Implemented Facebook-style image management in the "Create Post" modal.
+    - Additive image selection (new selections append to current list).
+    - Drag-and-drop reordering of selected images.
+    - Individual image deletion from the preview grid.
+    - Dynamic "Add More" button within the preview container.
+    - Improved preview performance using `URL.createObjectURL`.
+    - Automatic synchronization of custom file order with the form submission using the `DataTransfer` API.
+- **Enhanced Post Creation Validation:** The "Post" button now dynamically enables/disables based on content or image presence, and validates category-specific required fields.
+- **Timezone Support:** Added `tzdata` dependency to handle Asia/Manila timezone correctly on Windows environments.
+
 ### Changed
 - **Branch Merge:** Merged `frontend` branch into `main`. This integration brings in all the latest UI components, admin dashboard features, and profile settings while preserving all existing backend features on `main`.
 - **CSS Assets:** Rebuilt `flask_backend/app/static/css/style.css` using Tailwind CSS to ensure full synchronization between the merged templates and the generated styles.
-- **Dependencies:** Added `tzdata` to `requirements.txt` to fix `ZoneInfoNotFoundError` on Windows systems.
+
+### Fixed
+- **Single Image Post Sizing:** Optimized the display for single-image posts to prevent cropping while capping the height at 550px. Images are now contained within a soft-slate background, matching Facebook's behavioral patterns for mixed aspect ratios.
+- **Image Interaction Polish:** Removed the unwanted zoom effect when hovering over post images in the feed for a cleaner, more professional look.
+- **Modal Trigger Logic:** Fixed a bug where clicking on single-image posts failed to open the image gallery modal due to an incorrect conditional check in the template.
+- **Post Card Image Grid Stacking:** Fixed an issue where post images would stack vertically by moving `fb-grid` styles to a dedicated `dashboard.css` file and ensuring high CSS specificity.
+- **Post Card Image Sizing:** Resolved issues where single post images would "overreact" to the card size by enforcing a `max-height: 500px` and unified object-fit behavior.
+- **Unified Image Rendering:** Refactored `dashboard.html` and `profile_settings.html` to use a consistent `fb-grid` system for both legacy `image_url` and new `image_urls` fields.
+
+### Changed
+- **Facebook-Style Grid Refinements:** Enhanced the `fb-grid` CSS in `input.css` with smoother transitions, hover effects, and more robust grid templates for 1-5 images.
+- **Image Modal Integration:** Synchronized single-image clicks to open the appropriate modal context (comment modal vs. image gallery) based on the image source.
 
 ---
 

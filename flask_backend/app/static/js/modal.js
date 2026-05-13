@@ -63,7 +63,9 @@ function openCommentModal(post) {
     
     modal.style.display = 'flex';
     
-    if (!post.image_urls || post.image_urls.length === 0) {
+    const hasImages = (post.image_urls && post.image_urls.length > 0) || post.image_url;
+    
+    if (!hasImages) {
         mainView.style.display = 'none';
         container.classList.add('no-image');
     } else {
@@ -181,11 +183,16 @@ function updateModalContent() {
             prevBtn.style.display = 'flex';
             nextBtn.style.display = 'flex';
         }
+    } else if (currentPost.image_url) {
+        modalImg.src = currentPost.image_url;
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
     }
 
     const avatar = document.getElementById('modalUserAvatar');
-    avatar.src = currentPost.profiles.avatar_url || "/static/images/Logo.png";
-    document.getElementById('modalUserName').innerText = currentPost.profiles.full_name;
+    const profile = currentPost.profiles || {};
+    avatar.src = profile.avatar_url || "/static/images/Logo.png";
+    document.getElementById('modalUserName').innerText = profile.full_name || 'Heron';
     document.getElementById('modalPostTime').innerText = formatPostTime(currentPost.created_at);
     document.getElementById('modalPostText').innerText = currentPost.content;
 

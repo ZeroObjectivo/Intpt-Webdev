@@ -205,14 +205,23 @@
                         </div>
                         <div class="post-content mt-4" id="post-content-{{ post.id }}">
                             <p class="text-slate-700 leading-relaxed">{{ post.content }}</p>
-                            {% if post.image_urls %}
-                            <div class="fb-grid mt-3 fb-grid-{{ post.image_urls|length if post.image_urls|length <= 5 else 5 }}">
-                                {% for url in post.image_urls %}
-                                <div class="cursor-pointer" onclick='openImageModal({{ post|tojson|safe }}, {{ loop.index0 }})'>
-                                    <img src="{{ url }}" class="w-full h-full object-cover">
+                            {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
+                            {% if post_images %}
+                                <div class="fb-grid mt-3 fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }}">
+                                    {% for url in post_images %}
+                                        {% if loop.index <= 5 %}
+                                            <div class="relative group overflow-hidden cursor-pointer w-full h-full" 
+                                                 onclick='{% if post.image_urls or post.image_url %}openImageModal({{ post|tojson|safe }}, {{ loop.index0 }}){% else %}openCommentModal({{ post|tojson|safe }}){% endif %}'>
+                                                <img src="{{ url }}" alt="Post image" class="w-full h-full object-cover rounded-lg">
+                                                {% if loop.index == 5 and post_images|length > 5 %}
+                                                    <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl rounded-lg">
+                                                        +{{ post_images|length - 5 }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
                                 </div>
-                                {% endfor %}
-                            </div>
                             {% endif %}
                         </div>
                         <!-- Edit Form (Hidden) -->

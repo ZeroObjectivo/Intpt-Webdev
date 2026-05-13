@@ -5,6 +5,24 @@
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+<style>
+    .drag-over {
+        border-color: #111942 !important;
+        transform: scale(1.05);
+        z-index: 30;
+    }
+    .dragging {
+        opacity: 0.4;
+        transform: scale(0.95);
+    }
+    .remove-btn {
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+    }
+    .remove-btn:hover {
+        background: #ef4444;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -142,23 +160,23 @@
                                 </div>
                                 {% endif %}
                                 <p>{{ post.content }}</p>
-                                {% if post.image_urls %}
-                                    <div class="fb-grid fb-grid-{{ post.image_urls|length if post.image_urls|length <= 5 else 5 }} mt-4">
-                                        {% for url in post.image_urls %}
+                                {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
+                                {% if post_images %}
+                                    <div class="fb-grid fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }} mt-4">
+                                        {% for url in post_images %}
                                             {% if loop.index <= 5 %}
-                                                <div class="relative group overflow-hidden cursor-pointer" onclick='openImageModal({{ post|tojson|safe }}, {{ loop.index0 }})'>
+                                                <div class="relative group overflow-hidden cursor-pointer w-full h-full" 
+                                                     onclick='{% if post.image_urls or post.image_url %}openImageModal({{ post|tojson|safe }}, {{ loop.index0 }}){% else %}openCommentModal({{ post|tojson|safe }}){% endif %}'>
                                                     <img src="{{ url }}" alt="Post image" class="w-full h-full object-cover rounded-lg">
-                                                    {% if loop.index == 5 and post.image_urls|length > 5 %}
+                                                    {% if loop.index == 5 and post_images|length > 5 %}
                                                         <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl rounded-lg">
-                                                            +{{ post.image_urls|length - 5 }}
+                                                            +{{ post_images|length - 5 }}
                                                         </div>
                                                     {% endif %}
                                                 </div>
                                             {% endif %}
                                         {% endfor %}
                                     </div>
-                                {% elif post.image_url %}
-                                    <img src="{{ post.image_url }}" class="post-image rounded-lg mt-4 cursor-pointer" alt="" onclick='openCommentModal({{ post|tojson|safe }})'>
                                 {% endif %}
                             </div>
 
@@ -278,101 +296,120 @@
     </div>
 </div>
 
-<div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-[35px] w-full max-w-lg mx-6 my-8 px-8 py-7 shadow-xl">
-        <div class="flex flex-col gap-4">
-            <div class="flex justify-between items-start">
-                <h2 class="text-xl font-bold text-slate-900">New Post</h2>
-                <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700" aria-label="Close create post modal">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+<div id="createPostModal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden backdrop-blur-[4px] transition-all duration-300">
+    <div class="bg-white rounded-[12px] w-full max-w-[500px] mx-4 shadow-[0_12px_28px_0_rgba(0,0,0,0.2),0_2px_4px_0_rgba(0,0,0,0.1)] animate-in fade-in zoom-in duration-200">
+        <!-- Header -->
+        <div class="relative flex items-center justify-center px-4 py-4 border-b border-slate-200">
+            <h2 class="text-[20px] font-bold text-slate-900 tracking-tight">Create post</h2>
+            <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="absolute right-4 top-1/2 -translate-y-1/2 bg-[#e4e6eb] hover:bg-[#d8dadf] text-[#606770] rounded-full p-2 transition-all duration-200 active:scale-95">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form id="createPostForm" action="{{ url_for('core.create_post') }}" method="POST" enctype="multipart/form-data" class="flex flex-col">
+            <div class="px-4 py-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
+                <!-- User Identity Section -->
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="relative">
+                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm">
+                        <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[15px] font-semibold text-slate-900 leading-none">{{ user.full_name }}</span>
+                        <div class="relative flex items-center gap-2">
+                            <span class="text-[12px] font-bold text-slate-500">Category:</span>
+                            <div class="relative flex items-center">
+                                <select id="createPostCategory" name="category" class="appearance-none bg-[#e4e6eb] hover:bg-[#d8dadf] text-[#4b4f56] text-[12px] font-bold px-2.5 py-1 pr-6 rounded-[6px] cursor-pointer transition-colors outline-none border-none">
+                                    <option value="General">General</option>
+                                    <option value="Lost & Found">Lost & Found</option>
+                                    <option value="Heron Business">Heron Business</option>
+                                    <option value="Question">Question</option>
+                                    <option value="Events">Events</option>
+                                </select>
+                                <svg class="w-2.5 h-2.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#606770]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Category Fields (Clean Styling) -->
+                <div class="mb-4 space-y-4">
+                    <div id="lostFoundFields" class="category-specific-fields hidden">
+                        <input type="hidden" name="status" value="Lost">
+                    </div>
+                    
+                    <div id="businessFields" class="category-specific-fields hidden space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
+                        <input id="businessProductName" name="product_name" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="What are you selling?">
+                        <div class="flex rounded-lg border border-slate-200 overflow-hidden focus-within:border-umak-blue/50 focus-within:ring-2 focus-within:ring-umak-blue/5 transition-all">
+                            <span class="bg-slate-100 px-4 flex items-center text-[12px] font-bold text-slate-500 border-r border-slate-200">PHP</span>
+                            <input id="businessPrice" name="price" type="number" step="0.01" class="flex-1 px-4 py-2.5 text-[14px] outline-none focus:bg-white" placeholder="Price">
+                        </div>
+                    </div>
+
+                    <div id="eventFields" class="category-specific-fields hidden space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
+                        <input id="eventTitle" name="event_title" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="Event Name">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="relative">
+                                <span class="absolute left-3 top-0.5 text-[9px] font-bold text-slate-400 uppercase">Start Time</span>
+                                <input id="eventDateTime" name="event_date" type="datetime-local" class="w-full rounded-lg border border-slate-200 px-3 pb-1.5 pt-4 text-[13px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all">
+                            </div>
+                            <input id="eventPlace" name="location" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="Where is it?">
+                        </div>
+                        <select id="hostingCollege" name="hosting_college" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] text-slate-600 outline-none focus:border-umak-blue/50 focus:bg-white transition-all appearance-none bg-white">
+                            <option value="">Which college is hosting?</option>
+                            <option value="CLAS - College of Liberal Arts and Sciences">CLAS</option>
+                            <option value="CHK - College of Human Kinetics">CHK</option>
+                            <option value="CBFS - College of Business and Financial Sciences">CBFS</option>
+                            <option value="CCIS - College of Computing and Information Sciences">CCIS</option>
+                            <option value="CITE - College of Innovative Teacher Education">CITE</option>
+                            <option value="CITE-HSU - Higher School ng UMak">HSU</option>
+                            <option value="CGPP - College of Governance and Public Policy">CGPP</option>
+                            <option value="CCSE - College of Construction Sciences and Engineering">CCSE</option>
+                            <option value="CET - College of Engineering Technology">CET</option>
+                            <option value="CTHM - College of Tourism and Hospitality Management">CTHM</option>
+                            <option value="CCAPS - College of Continuing, Advanced and Professional Studies">CCAPS</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Text Content Area -->
+                <textarea id="createPostContent" name="content" rows="3" required class="w-full resize-none border-none p-0 text-[22px] font-normal text-slate-800 placeholder-slate-400 outline-none focus:ring-0 mb-4 transition-all duration-300" placeholder="What's on your mind, {{ user.full_name.split(' ')[0] }}?"></textarea>
+
+                <!-- Media Preview Area (Enhanced Grid) -->
+                <div id="globalImageFeedback" class="hidden border border-slate-200 rounded-xl p-2.5 mb-4 bg-slate-50/50">
+                    <div class="flex items-center justify-between px-2 mb-2.5">
+                        <span id="globalImageFilename" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Selected Images</span>
+                        <div class="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-100 shadow-sm">
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span class="text-[10px] text-slate-500 font-medium">Reorder</span>
+                        </div>
+                    </div>
+                    <div id="imagePreviewContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <!-- Thumbnails injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Action Bar (Premium) -->
+            <div class="px-4 pb-4">
+                <div class="flex items-center justify-between border border-[#ced0d4] rounded-[8px] px-4 py-2 mb-4 shadow-sm hover:bg-slate-50 transition-colors group">
+                    <span class="text-[15px] font-semibold text-[#050505]">Add to your post</span>
+                    <div class="flex items-center gap-0.5">
+                        <input type="file" id="globalImageUpload" name="image" accept="image/*" multiple class="hidden">
+                        <button id="addImageTrigger" type="button" class="p-2 hover:bg-[#f2f2f2] rounded-full transition-all text-[#45bd62] active:scale-90" title="Photo/Video">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2zM5 19V5h14l.002 14H5z"></path><path d="m10 14-1-1-3 4h12l-5-7z"></path><circle cx="8.5" cy="8.5" r="1.5"></circle></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="createPostSubmit" type="submit" disabled class="w-full py-2.5 rounded-[6px] text-[15px] font-bold bg-slate-200 text-slate-400 cursor-not-allowed transition-all duration-200 active:scale-[0.98]">
+                    Post
                 </button>
             </div>
-            <form id="createPostForm" action="{{ url_for('core.create_post') }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-4">
-            <div>
-                <label class="form-label text-slate-700">Category</label>
-                <select id="createPostCategory" name="category" class="w-full p-3 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
-                    <option value="General">General</option>
-                    <option value="Lost & Found">Lost & Found</option>
-                    <option value="Heron Business">Heron Business</option>
-                    <option value="Question">Question</option>
-                    <option value="Events">Events</option>
-                </select>
-            </div>
-            <div id="lostFoundFields" class="category-specific-fields hidden">
-                <input type="hidden" name="status" value="Lost">
-            </div>
-            <div id="businessFields" class="category-specific-fields hidden grid gap-4">
-                <div>
-                    <label class="form-label text-slate-700" for="businessProductName">Product Name</label>
-                    <input id="businessProductName" name="product_name" type="text" class="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-umak-blue" placeholder="e.g., Calculus reviewer">
-                </div>
-                <div>
-                    <label class="form-label text-slate-700" for="businessPrice">Price</label>
-                    <div class="flex overflow-hidden rounded-lg border border-gray-200 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-umak-blue">
-                        <span class="flex items-center border-r border-gray-200 bg-slate-50 px-4 text-sm font-bold text-slate-500">PHP</span>
-                        <input id="businessPrice" name="price" type="number" min="0" step="0.01" class="min-w-0 flex-1 px-4 py-3 text-sm outline-none" placeholder="0.00">
-                    </div>
-                </div>
-            </div>
-            <div id="eventFields" class="category-specific-fields hidden grid gap-4">
-                <div>
-                    <label class="form-label text-slate-700" for="eventTitle">Event Title</label>
-                    <input id="eventTitle" name="event_title" type="text" class="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-umak-blue" placeholder="e.g., College orientation">
-                </div>
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label class="form-label text-slate-700" for="eventDateTime">Event Date and Time</label>
-                        <input id="eventDateTime" name="event_date" type="datetime-local" class="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-umak-blue">
-                    </div>
-                    <div>
-                        <label class="form-label text-slate-700" for="eventPlace">Event Place</label>
-                        <input id="eventPlace" name="location" type="text" class="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-umak-blue" placeholder="e.g., HPSB">
-                    </div>
-                </div>
-                <div>
-                    <label class="form-label text-slate-700" for="hostingCollege">Hosting College</label>
-                    <select id="hostingCollege" name="hosting_college" class="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-umak-blue">
-                        <option value="">Select hosting college</option>
-                        <option value="CLAS - College of Liberal Arts and Sciences">CLAS - College of Liberal Arts and Sciences</option>
-                        <option value="CHK - College of Human Kinetics">CHK - College of Human Kinetics</option>
-                        <option value="CBFS - College of Business and Financial Sciences">CBFS - College of Business and Financial Sciences</option>
-                        <option value="CCIS - College of Computing and Information Sciences">CCIS - College of Computing and Information Sciences</option>
-                        <option value="CITE - College of Innovative Teacher Education">CITE - College of Innovative Teacher Education</option>
-                        <option value="CITE-HSU - Higher School ng UMak">CITE-HSU - Higher School ng UMak</option>
-                        <option value="CGPP - College of Governance and Public Policy">CGPP - College of Governance and Public Policy</option>
-                        <option value="CCSE - College of Construction Sciences and Engineering">CCSE - College of Construction Sciences and Engineering</option>
-                        <option value="CET - College of Engineering Technology">CET - College of Engineering Technology</option>
-                        <option value="CTHM - College of Tourism and Hospitality Management">CTHM - College of Tourism and Hospitality Management</option>
-                        <option value="CCAPS - College of Continuing, Advanced and Professional Studies">CCAPS - College of Continuing, Advanced and Professional Studies</option>
-                    </select>
-                </div>
-            </div>
-            <div>
-                <label class="form-label text-slate-700">What's on your mind?</label>
-                <div class="relative rounded-lg border border-gray-200 bg-white transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-umak-blue">
-                    <textarea id="createPostContent" name="content" rows="4" required class="w-full resize-none rounded-lg border-none p-4 pb-12 outline-none transition-all focus:ring-0" placeholder="Share something with the Herons..."></textarea>
-                    <input type="file" id="globalImageUpload" name="image" accept="image/*" class="hidden">
-                    <button id="addImageTrigger" type="button" aria-label="Add image" class="absolute bottom-2 left-2 rounded-full p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-blue-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5V7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m3 15 4.2-4.2a2 2 0 0 1 2.8 0L14 14.8" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m12.5 13.3 1.5-1.5a2 2 0 0 1 2.8 0L21 16" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 8.5h.01" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M18 3.75v5.5M15.25 6.5h5.5" />
-                        </svg>
-                    </button>
-                    <div id="globalImageFeedback" class="global-image-feedback hidden">
-                        <img id="globalImagePreview" class="global-image-preview hidden" alt="Selected image preview">
-                        <span id="globalImageFilename" class="truncate"></span>
-                    </div>
-                </div>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="px-5 py-2 text-sm rounded-md border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
-                <button id="createPostSubmit" type="submit" disabled class="px-5 py-2 text-sm rounded-md font-normal opacity-50 cursor-not-allowed bg-slate-300 text-slate-600 transition-all">Post</button>
-            </div>
-            </form>
-        </div>
+        </form>
+    </div>
+</div>
+        </form>
     </div>
 </div>
 
@@ -464,15 +501,133 @@
         const addImageTrigger = document.getElementById('addImageTrigger');
         const globalImageUpload = document.getElementById('globalImageUpload');
         const globalImageFeedback = document.getElementById('globalImageFeedback');
-        const globalImagePreview = document.getElementById('globalImagePreview');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
         const globalImageFilename = document.getElementById('globalImageFilename');
 
         if (!form || !contentInput || !submitButton || !categorySelect) {
             return;
         }
 
-        const disabledClasses = ['opacity-50', 'cursor-not-allowed', 'bg-slate-300', 'text-slate-600'];
-        const activeClasses = ['bg-umak-blue', 'text-white', 'hover:bg-opacity-90', 'shadow-lg', 'shadow-blue-900/20'];
+        // --- Custom Image Management (Facebook style) ---
+        let selectedFiles = []; // Master list of File objects
+
+        function updateImageInput() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => dt.items.add(file));
+            globalImageUpload.files = dt.files;
+            
+            if (selectedFiles.length > 0) {
+                globalImageFeedback.classList.remove('hidden');
+                globalImageFilename.textContent = selectedFiles.length === 1 
+                    ? selectedFiles[0].name 
+                    : `${selectedFiles.length} images selected (drag to reorder)`;
+            } else {
+                globalImageFeedback.classList.add('hidden');
+            }
+            validateForm();
+        }
+
+        function renderPreviews() {
+            imagePreviewContainer.innerHTML = '';
+            
+            selectedFiles.forEach((file, index) => {
+                const card = document.createElement('div');
+                card.className = 'relative aspect-square bg-slate-100 rounded-xl overflow-hidden cursor-move border-2 border-transparent transition-all shadow-sm';
+                card.draggable = true;
+                card.dataset.index = index;
+
+                const img = document.createElement('img');
+                img.className = 'w-full h-full object-cover pointer-events-none';
+                img.src = URL.createObjectURL(file);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'remove-btn absolute top-1.5 right-1.5 text-white rounded-full w-6 h-6 flex items-center justify-center transition-all z-20 shadow-lg';
+                removeBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                
+                removeBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectedFiles.splice(index, 1);
+                    renderPreviews();
+                    updateImageInput();
+                };
+
+                // Drag and Drop Events
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', index);
+                    card.classList.add('dragging');
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                });
+
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    card.classList.add('drag-over');
+                });
+
+                card.addEventListener('dragleave', () => {
+                    card.classList.remove('drag-over');
+                });
+
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    card.classList.remove('drag-over');
+                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIndex = parseInt(card.dataset.index);
+                    
+                    if (!isNaN(fromIndex) && fromIndex !== toIndex) {
+                        const movedItem = selectedFiles.splice(fromIndex, 1)[0];
+                        selectedFiles.splice(toIndex, 0, movedItem);
+                        renderPreviews();
+                        updateImageInput();
+                    }
+                });
+
+                card.appendChild(img);
+                card.appendChild(removeBtn);
+                imagePreviewContainer.appendChild(card);
+            });
+
+            // Add "Plus" button if < 5
+            if (selectedFiles.length > 0 && selectedFiles.length < 5) {
+                const addMore = document.createElement('div');
+                addMore.className = 'aspect-square border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-umak-blue/30 transition-all text-slate-400 hover:text-umak-blue bg-white/50';
+                addMore.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>';
+                addMore.onclick = () => globalImageUpload.click();
+                imagePreviewContainer.appendChild(addMore);
+            }
+        }
+
+        addImageTrigger.onclick = () => globalImageUpload.click();
+
+        globalImageUpload.onchange = () => {
+            const newFiles = Array.from(globalImageUpload.files);
+            
+            newFiles.forEach(file => {
+                if (selectedFiles.length < 5) {
+                    // Prevent exact duplicates
+                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                        selectedFiles.push(file);
+                    }
+                }
+            });
+
+            if (selectedFiles.length >= 5 && newFiles.length > 0) {
+                if (selectedFiles.length === 5) alert('Maximum 5 images allowed.');
+            }
+
+            // Reset input so change fires even for same file
+            globalImageUpload.value = '';
+            
+            renderPreviews();
+            updateImageInput();
+        };
+
+        const disabledClasses = ['bg-slate-200', 'text-slate-400', 'cursor-not-allowed'];
+        const activeClasses = ['bg-[#111942]', 'text-white', 'hover:bg-opacity-90', 'shadow-lg', 'shadow-blue-900/20'];
 
         function getFieldValue(field) {
             return field ? field.value.trim() : '';
@@ -496,33 +651,20 @@
 
         function validateActiveCategory() {
             const hasText = getFieldValue(contentInput).length > 0;
-            const hasImages = globalImageUpload.files.length > 0;
+            const hasImages = selectedFiles.length > 0;
 
-            if (!hasText && !hasImages) {
-                return false;
-            }
+            if (!hasText && !hasImages) return false;
 
             switch (getActiveCategory()) {
-                case 'Lost & Found':
-                    return true;
-                case 'Heron Business':
-                    return Boolean(getFieldValue(businessProductName) && getFieldValue(businessPrice));
-                case 'Events':
-                    return Boolean(
-                        getFieldValue(eventTitle)
-                        && getFieldValue(eventDateTime)
-                        && getFieldValue(eventPlace)
-                        && getFieldValue(hostingCollege)
-                    );
-                default:
-                    return true;
+                case 'Lost & Found': return true;
+                case 'Heron Business': return Boolean(getFieldValue(businessProductName) && getFieldValue(businessPrice));
+                case 'Events': return Boolean(getFieldValue(eventTitle) && getFieldValue(eventDateTime) && getFieldValue(eventPlace) && getFieldValue(hostingCollege));
+                default: return true;
             }
         }
 
         function validateForm() {
-            const isValid = validateActiveCategory();
-            setSubmitButtonState(isValid);
-            return isValid;
+            setSubmitButtonState(validateActiveCategory());
         }
 
         function hideCategoryFields() {
@@ -532,9 +674,7 @@
         function showActiveCategoryFields() {
             hideCategoryFields();
             const activeGroup = categoryFieldMap[categorySelect.value];
-            if (activeGroup) {
-                activeGroup.classList.remove('hidden');
-            }
+            if (activeGroup) activeGroup.classList.remove('hidden');
         }
 
         function initCategoryToggle() {
@@ -545,85 +685,16 @@
             showActiveCategoryFields();
         }
 
-        function initImageUpload() {
-            if (!addImageTrigger || !globalImageUpload || !globalImageFeedback || !globalImagePreview || !globalImageFilename) {
-                return;
-            }
-
-            addImageTrigger.addEventListener('click', () => {
-                globalImageUpload.click();
-            });
-
-            globalImageUpload.addEventListener('change', () => {
-                const files = Array.from(globalImageUpload.files);
-                
-                if (files.length === 0) {
-                    globalImageFeedback.classList.add('hidden');
-                    globalImagePreview.classList.add('hidden');
-                    globalImagePreview.removeAttribute('src');
-                    globalImageFilename.textContent = '';
-                    validateForm();
-                    return;
-                }
-
-                globalImageFilename.textContent = files.length === 1 ? files[0].name : `${files.length} files selected`;
-                globalImageFeedback.classList.remove('hidden');
-
-                if (files[0].type.startsWith('image/')) {
-                    if (globalImagePreview.src) {
-                        URL.revokeObjectURL(globalImagePreview.src);
-                    }
-                    globalImagePreview.src = URL.createObjectURL(files[0]);
-                    globalImagePreview.classList.remove('hidden');
-                } else {
-                    globalImagePreview.classList.add('hidden');
-                    globalImagePreview.removeAttribute('src');
-                }
-                validateForm();
-            });
-        }
-
         function initFormValidation() {
-            const fieldsToValidate = [
-                contentInput,
-                categorySelect,
-                businessProductName,
-                businessPrice,
-                eventTitle,
-                eventDateTime,
-                eventPlace,
-                hostingCollege
-            ].filter(Boolean);
-
+            const fieldsToValidate = [contentInput, categorySelect, businessProductName, businessPrice, eventTitle, eventDateTime, eventPlace, hostingCollege].filter(Boolean);
             fieldsToValidate.forEach((field) => {
                 field.addEventListener('input', validateForm);
                 field.addEventListener('change', validateForm);
             });
-
             validateForm();
         }
 
-        function clearImageFeedback() {
-            if (!globalImageUpload || !globalImageFeedback || !globalImagePreview || !globalImageFilename) {
-                return;
-            }
-
-            if (globalImagePreview.src) {
-                URL.revokeObjectURL(globalImagePreview.src);
-            }
-
-            globalImageFeedback.classList.add('hidden');
-            globalImagePreview.classList.add('hidden');
-            globalImagePreview.removeAttribute('src');
-            globalImageFilename.textContent = '';
-            globalImageUpload.value = '';
-        }
-
-        // Functional Submission - Remove mock handler
-        // The form will submit via regular POST as defined in the HTML
-
         initCategoryToggle();
-        initImageUpload();
         initFormValidation();
     });
 </script>

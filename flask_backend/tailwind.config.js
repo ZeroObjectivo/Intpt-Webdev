@@ -4,6 +4,13 @@ module.exports = {
     "./app/templates/**/*.html",
     "./app/static/js/**/*.js",
   ],
+  safelist: [
+    'fb-grid-1',
+    'fb-grid-2',
+    'fb-grid-3',
+    'fb-grid-4',
+    'fb-grid-5',
+  ],
   theme: {
     extend: {
       colors: {
