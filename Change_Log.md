@@ -1,7 +1,16 @@
 # Herons' Hub Community Platform - Update Log
-**Date:** May 13, 2026
+**Date:** May 14, 2026
 
 This document summarizes the recent major updates, bug fixes, and feature implementations for the Herons' Hub platform.
+
+---
+
+## [Unreleased] - 2026-05-14
+
+### 1. Front-end Integration
+### Changed
+- **Branch Merge:** Merged `frontend` branch into `main`. This integration brings in all the latest UI components, admin dashboard features, and profile settings while preserving all existing backend features on `main`.
+- **CSS Assets:** Rebuilt `flask_backend/app/static/css/style.css` using Tailwind CSS to ensure full synchronization between the merged templates and the generated styles.
 
 ---
 
