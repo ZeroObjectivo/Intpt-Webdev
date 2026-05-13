@@ -12,26 +12,26 @@
         <div class="dashboard-container">
             <aside class="primary-sidebar" aria-label="Primary navigation">
                 <nav class="primary-nav">
-                    <a href="{{ url_for('core.dashboard') }}" class="primary-nav-link active" aria-current="page">
+                    <a href="{{ url_for('core.dashboard') }}" class="primary-nav-link rounded-lg active" aria-current="page" data-nav-item>
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1V10.5Z"></path>
                         </svg>
                         <span>Home Feed</span>
                     </a>
-                    <a href="#" class="primary-nav-link">
+                    <a href="#" class="primary-nav-link rounded-lg" data-nav-item>
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12l-1 12H7L6 8Z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 8a3 3 0 0 1 6 0"></path>
                         </svg>
                         <span>Marketplace</span>
                     </a>
-                    <a href="#" class="primary-nav-link">
+                    <a href="#" class="primary-nav-link rounded-lg" data-nav-item>
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"></path>
                         </svg>
                         <span>Events</span>
                     </a>
-                    <a href="#" class="primary-nav-link">
+                    <a href="#" class="primary-nav-link rounded-lg" data-nav-item>
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 17v-5"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8h.01"></path>
@@ -39,7 +39,7 @@
                         </svg>
                         <span>About</span>
                     </a>
-                    <a href="#" class="primary-nav-link">
+                    <a href="#" class="primary-nav-link rounded-lg" data-nav-item>
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6 1.8 1.8 0 0 0-.5 1.25V21a2 2 0 0 1-4 0v-.09A1.8 1.8 0 0 0 8 19.4a1.8 1.8 0 0 0-1.98.36l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.8 1.8 0 0 0 3.6 15a1.8 1.8 0 0 0-.6-1 1.8 1.8 0 0 0-1.25-.5H1.7a2 2 0 0 1 0-4h.09A1.8 1.8 0 0 0 3.6 8a1.8 1.8 0 0 0-.36-1.98l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.8 1.8 0 0 0 8 3.6a1.8 1.8 0 0 0 1-.6A1.8 1.8 0 0 0 9.5 1.75V1.7a2 2 0 0 1 4 0v.09A1.8 1.8 0 0 0 15 3.6a1.8 1.8 0 0 0 1.98-.36l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.8 1.8 0 0 0 19.4 8c.16.39.37.72.6 1 .35.31.79.5 1.25.5h.05a2 2 0 0 1 0 4h-.09A1.8 1.8 0 0 0 19.4 15Z"></path>
@@ -63,13 +63,13 @@
                     </button>
                 </div>
 
-                <div class="category-pills" aria-label="Post categories">
-                    <button class="pill rounded-full px-3 py-1 bg-[#1F2764] text-[#FFFFFF] text-sm font-normal" type="button">All Post</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-normal" type="button">General</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#FFECA7] text-[#6E3E1E] text-sm font-normal" type="button">Lost & Found</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-normal" type="button">Heron Business</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#C5DDFF] text-[#1A3C8D] text-sm font-normal" type="button">Question</button>
-                    <button class="pill rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-normal" type="button">Events</button>
+                <div class="category-pills" aria-label="Post categories" role="group">
+                    <button class="pill rounded-full px-3 py-1 bg-[#111942] text-[#C7CDE6] text-sm font-bold my-[5px] active" type="button" aria-pressed="true" data-category-tag>All Post</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]" type="button" aria-pressed="false" data-category-tag>General</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]" type="button" aria-pressed="false" data-category-tag>Lost & Found</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]" type="button" aria-pressed="false" data-category-tag>Heron Business</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]" type="button" aria-pressed="false" data-category-tag>Question</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]" type="button" aria-pressed="false" data-category-tag>Events</button>
                 </div>
 
                 <div class="posts-list">
@@ -82,19 +82,19 @@
                                     <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
                                     <div class="post-user-info">
                                         <p class="post-author-name capitalize">{{ post.profiles.full_name | title }}</p>
-                                        <span class="post-meta">Posted {{ post.created_at[:10] }}</span>
+                                        <span class="post-meta">Posted {{ post.relative_created_at }}</span>
                                     </div>
                                 </div>
                                 {% if post_category == 'Lost & Found' %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#FFECA7] text-[#6E3E1E] text-xs font-normal">Lost & Found</span>
+                                    <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Lost & Found</span>
                                 {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#BFFFDE] text-[#145C50] text-xs font-normal">Heron Business</span>
+                                    <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Heron Business</span>
                                 {% elif post_category == 'Question' %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#C5DDFF] text-[#1A3C8D] text-xs font-normal">Question</span>
+                                    <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Question</span>
                                 {% elif post_category == 'Events' %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#533074] text-[#EDF1FF] text-xs font-normal">Events</span>
+                                    <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Events</span>
                                 {% else %}
-                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#D9D9D9] text-[#475569] text-xs font-normal">General</span>
+                                    <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">General</span>
                                 {% endif %}
                             </div>
                             <div class="post-content">
@@ -136,7 +136,7 @@
                         <div class="trending-item">
                             <span class="trending-number">1</span>
                             <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-normal">Events</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">Events</span>
                                 <h4>Lorem Ipsum Event</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -144,7 +144,7 @@
                         <div class="trending-item">
                             <span class="trending-number">2</span>
                             <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-normal">Heron Business</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">Heron Business</span>
                                 <h4>Lorem Ipsum Event</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -152,7 +152,7 @@
                         <div class="trending-item">
                             <span class="trending-number">3</span>
                             <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-normal">General</span>
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">General</span>
                                 <h4>SHOUTOUT TO MY CLASSMATES</h4>
                                 <span class="likes">2.4k Likes</span>
                             </div>
@@ -276,6 +276,44 @@
 
         contentInput.addEventListener('input', updateSubmitState);
         updateSubmitState();
+
+        const navItems = document.querySelectorAll('[data-nav-item]');
+        navItems.forEach((item, index) => {
+            if (index === 0 && !document.querySelector('[data-nav-item].active')) {
+                item.classList.add('active');
+                item.setAttribute('aria-current', 'page');
+            }
+
+            item.addEventListener('click', (event) => {
+                event.preventDefault();
+                navItems.forEach((navItem) => {
+                    navItem.classList.remove('active');
+                    navItem.removeAttribute('aria-current');
+                });
+                item.classList.add('active');
+                item.setAttribute('aria-current', 'page');
+            });
+        });
+
+        const activeTagClasses = ['bg-[#111942]', 'text-[#C7CDE6]', 'active'];
+        const inactiveTagClasses = ['bg-[#C7CDE6]', 'text-[#111942]'];
+        const categoryTags = document.querySelectorAll('[data-category-tag]');
+
+        function setActiveCategoryTag(activeTag) {
+            categoryTags.forEach((tag) => {
+                tag.classList.remove(...activeTagClasses, ...inactiveTagClasses);
+                tag.setAttribute('aria-pressed', 'false');
+                tag.classList.add(...inactiveTagClasses);
+            });
+
+            activeTag.classList.remove(...inactiveTagClasses);
+            activeTag.classList.add(...activeTagClasses);
+            activeTag.setAttribute('aria-pressed', 'true');
+        }
+
+        categoryTags.forEach((tag) => {
+            tag.addEventListener('click', () => setActiveCategoryTag(tag));
+        });
     });
 </script>
 {% endblock %}

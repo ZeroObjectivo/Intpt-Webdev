@@ -62,7 +62,7 @@
     gap: 12px;
     min-height: 44px;
     padding: 10px 12px;
-    border-radius: var(--hh-radius);
+    border-radius: 8px;
     color: var(--hh-blue-500);
     font-size: 0.94rem;
     font-weight: 700;
@@ -78,7 +78,6 @@
 .primary-nav-link.active {
     background: var(--hh-blue-500);
     color: var(--hh-surface);
-    box-shadow: inset 4px 0 0 var(--hh-gold-500);
 }
 
 .primary-nav-link.active:hover {
@@ -174,6 +173,22 @@
 .pill:hover {
     filter: brightness(0.98);
     transform: translateY(-1px);
+}
+
+.category-pills .pill {
+    background-color: #C7CDE6;
+    color: #111942;
+}
+
+.category-pills .pill.active {
+    background-color: #111942 !important;
+    color: #C7CDE6 !important;
+}
+
+.category-tag,
+.post-category-tag {
+    background-color: #C7CDE6 !important;
+    color: #111942 !important;
 }
 
 .posts-list {

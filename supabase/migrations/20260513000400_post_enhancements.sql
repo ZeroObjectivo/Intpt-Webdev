@@ -19,10 +19,12 @@ CREATE TABLE IF NOT EXISTS public.reports (
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticated users to report
+DROP POLICY IF EXISTS "Users can report posts" ON public.reports;
 CREATE POLICY "Users can report posts" ON public.reports
 FOR INSERT WITH CHECK (auth.uid() = reporter_id);
 
 -- Only admins can view reports (assuming 'admin' or 'super_admin' roles)
+DROP POLICY IF EXISTS "Admins can view reports" ON public.reports;
 CREATE POLICY "Admins can view reports" ON public.reports
 FOR SELECT USING (
     EXISTS (

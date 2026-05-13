@@ -8,8 +8,63 @@ from .auth import (
 from services.supabase_client import supabase
 import datetime
 import time
+from zoneinfo import ZoneInfo
 
 core = Blueprint('core', __name__)
+
+DISPLAY_TIMEZONE = ZoneInfo("Asia/Manila")
+
+def parse_post_datetime(value):
+    if not value:
+        return None
+
+    if isinstance(value, datetime.datetime):
+        created_at = value
+    else:
+        raw_value = str(value).strip()
+        if raw_value.endswith("Z"):
+            raw_value = f"{raw_value[:-1]}+00:00"
+        created_at = datetime.datetime.fromisoformat(raw_value)
+
+    if created_at.tzinfo is None:
+        return created_at.replace(tzinfo=datetime.timezone.utc)
+
+    return created_at.astimezone(datetime.timezone.utc)
+
+def format_relative_time(created_at, now=None):
+    created_at = parse_post_datetime(created_at)
+    if created_at is None:
+        return ""
+
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=datetime.timezone.utc)
+    else:
+        now = now.astimezone(datetime.timezone.utc)
+
+    delta = now - created_at
+    seconds = max(int(delta.total_seconds()), 0)
+
+    if seconds < 60:
+        return "Just now"
+    if seconds < 3600:
+        minutes = seconds // 60
+        unit = "min" if minutes == 1 else "mins"
+        return f"{minutes} {unit} ago"
+    if seconds < 86400:
+        hours = seconds // 3600
+        unit = "hr" if hours == 1 else "hrs"
+        return f"{hours} {unit} ago"
+
+    created_local = created_at.astimezone(DISPLAY_TIMEZONE)
+    now_local = now.astimezone(DISPLAY_TIMEZONE)
+    if created_local.date() == now_local.date() - datetime.timedelta(days=1):
+        return f"Yesterday at {created_local.strftime('%I:%M %p').lstrip('0')}"
+
+    if created_local.year == now_local.year:
+        return created_local.strftime("%b %d").replace(" 0", " ")
+
+    return created_local.strftime("%b %d, %Y").replace(" 0", " ")
 
 @core.route('/')
 def home():
@@ -190,6 +245,7 @@ def load_dashboard_data(user_id, category=None):
         # Ensure counts are initialized if null
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = post.get('comments_count') or 0
+        post['relative_created_at'] = format_relative_time(post.get('created_at'))
 
     # 4. Fetch Trending Posts (Top 3 by likes_count)
     trending_response = supabase.table('posts').select("content, category, likes_count").order("likes_count", desc=True).limit(3).execute()

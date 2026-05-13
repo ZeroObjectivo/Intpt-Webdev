@@ -115,17 +115,23 @@ class FakeSelectQuery:
                 },
             )()
 
+        if self.table_name == "likes":
+            return type("Response", (), {"data": []})()
+
         return type(
             "Response",
             (),
             {
                 "data": [
                     {
+                        "id": "post-123",
                         "profiles": {"full_name": "Test Heron", "avatar_url": None},
                         "category": "General",
                         "created_at": "2026-05-12T00:00:00Z",
                         "content": "Recovered after refresh",
                         "image_url": None,
+                        "likes_count": 0,
+                        "comments_count": 0,
                     }
                 ]
             },
@@ -170,6 +176,13 @@ class CreatePostTest(unittest.TestCase):
                 "user_id": "user-123",
                 "content": "Hello Herons",
                 "category": "General",
+                "price": None,
+                "location": None,
+                "status": None,
+                "event_date": None,
+                "event_end_date": None,
+                "image_url": None,
+                "image_urls": [],
             },
         )
 
