@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, session, request, redirect, url_for, flash, jsonify
 from app.routes.auth import login_required, apply_supabase_auth_token
 from services.supabase_client import supabase
 from functools import wraps
@@ -10,7 +10,7 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user = session.get('user')
-        if not user or user.get('role') not in ['admin', 'super_admin']:
+        if not user or user.get('role') not in ['admin', 'super_admin', 'superadmin']:
             flash("Unauthorized access. Admin privileges required.", "error")
             return redirect(url_for('core.dashboard'))
         return f(*args, **kwargs)

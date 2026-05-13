@@ -530,12 +530,18 @@ function cancelReply() {
 }
 
 async function toggleLike(postId, btn) {
+    if (btn.disabled) return; // Prevent spamming
+    
     const icon = btn.querySelector('svg');
     const countSpan = btn.querySelector('.likes-count');
     let count = parseInt(countSpan.innerText || '0');
     
     const isLiked = btn.classList.contains('text-red-500');
     
+    // Disable button during request
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+
     // Optimistic update
     if (isLiked) {
         btn.classList.remove('text-red-500');
@@ -566,6 +572,18 @@ async function toggleLike(postId, btn) {
         console.error('Error toggling like:', error);
         // Revert on error
         if (countSpan) countSpan.innerText = count;
+        if (isLiked) {
+            btn.classList.add('text-red-500');
+            btn.classList.remove('text-slate-400');
+            icon.classList.add('fill-current');
+        } else {
+            btn.classList.remove('text-red-500');
+            btn.classList.add('text-slate-400');
+            icon.classList.remove('fill-current');
+        }
+    } finally {
+        btn.disabled = false;
+        btn.style.opacity = '';
     }
 }
 

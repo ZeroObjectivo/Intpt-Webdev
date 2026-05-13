@@ -34,6 +34,11 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Dynamic Sidebar Features:** Fully implemented the "Trending Now" and "Upcoming Events" sidebar sections.
     - **Trending Now:** Now dynamically fetches the top 3 posts by like count. Clicking a trending topic opens the interactive comment modal for that specific post.
     - **Upcoming Events:** Now dynamically fetches the next 3 scheduled events. Implemented server-side parsing for date components (day, month) and automatic status determination (Ongoing vs. Upcoming).
+- **Admin User Management NameError:** Resolved a `NameError: name 'request' is not defined` that occurred when searching for users in the admin dashboard by adding the missing `request` import from Flask in `admin.py`.
+- **Interaction Counts & Spam Protection:** Fixed several issues related to post likes and comments.
+    - **Spam Prevention:** Updated `toggle_like` route with a check-then-act pattern to prevent double-counting or rapid spamming from inflating like counts.
+    - **Dangling Counts:** Implemented database triggers (`on_like_deleted` and `on_comment_deleted`) that automatically decrement post counters whenever a record is removed from the `likes` or `comments` tables. This ensures counts remain accurate even if a user is deleted or an admin removes content.
+    - **Count Synchronization:** Added a `sync_all_post_counts` RPC function and a migration (`20260513000700_fix_interaction_counts.sql`) to recalculate and fix any existing discrepancies in the database.
 - **Single Image Post Sizing:** Optimized the display for single-image posts to prevent cropping while capping the height at 550px. Images are now contained within a soft-slate background, matching Facebook's behavioral patterns for mixed aspect ratios.
 - **Image Interaction Polish:** Removed the unwanted zoom effect when hovering over post images in the feed for a cleaner, more professional look.
 - **Modal Trigger Logic:** Fixed a bug where clicking on single-image posts failed to open the image gallery modal due to an incorrect conditional check in the template.

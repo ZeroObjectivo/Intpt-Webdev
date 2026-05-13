@@ -303,17 +303,17 @@ def toggle_like(post_id):
         existing = supabase.table('likes').select("id").eq("post_id", post_id).eq("user_id", user_id).execute()
         
         if len(existing.data) > 0:
-            # Unlike
+            # Unlike: Remove from DB. Trigger handles decrement.
             supabase.table('likes').delete().eq("post_id", post_id).eq("user_id", user_id).execute()
-            # Decrement likes_count
-            supabase.rpc('decrement_likes_count', {'row_id': post_id}).execute()
             return {"status": "unliked", "post_id": post_id}
         else:
-            # Like
-            supabase.table('likes').insert({"post_id": post_id, "user_id": user_id}).execute()
-            # Increment likes_count
-            supabase.rpc('increment_likes_count', {'row_id': post_id}).execute()
-            return {"status": "liked", "post_id": post_id}
+            # Like: Insert into DB. Trigger handles increment.
+            try:
+                supabase.table('likes').insert({"post_id": post_id, "user_id": user_id}).execute()
+                return {"status": "liked", "post_id": post_id}
+            except Exception as e:
+                # If it failed (e.g. unique constraint), it might already be liked
+                return {"status": "liked", "post_id": post_id}
             
     except Exception as e:
         print(f"Error toggling like: {e}")
@@ -346,7 +346,7 @@ def add_comment(post_id):
         
     apply_supabase_auth_token()
     try:
-        # Insert comment
+        # Insert comment. Trigger handles increment.
         comment_data = {
             "post_id": post_id,
             "user_id": user_id,
@@ -356,9 +356,6 @@ def add_comment(post_id):
             comment_data["parent_id"] = parent_id
             
         comment_response = supabase.table('comments').insert(comment_data).execute()
-        
-        # Increment comments_count
-        supabase.rpc('increment_comments_count', {'row_id': post_id}).execute()
         
         # Fetch the inserted comment with profile info
         new_comment = supabase.table('comments')\
@@ -475,9 +472,6 @@ def delete_comment(comment_id):
         post_id = comment.data['post_id']
         
         supabase.table('comments').delete().eq("id", comment_id).eq("user_id", user_id).execute()
-        
-        # Decrement comments_count
-        supabase.rpc('decrement_comments_count', {'row_id': post_id}).execute()
         
         return {"status": "deleted", "post_id": post_id}
     except Exception as e:
