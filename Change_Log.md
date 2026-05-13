@@ -12,6 +12,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Multiple Image Support:** Refactored post creation and display to support up to 5 images per post.
 - **Dynamic Image Grid:** Implemented a Facebook-style responsive grid (`fb-grid`) that adjusts layouts based on the number of images (1-5).
 - **Advanced Multi-Image Upload UI:** Implemented Facebook-style image management in the "Create Post" modal.
+    - Added a dynamic **Image Limit Counter** (e.g., "1/5") that provides real-time feedback on the number of selected images and highlights in red when the maximum limit is reached.
     - Additive image selection (new selections append to current list).
     - Drag-and-drop reordering of selected images.
     - Individual image deletion from the preview grid.
@@ -32,7 +33,11 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Post Card Image Grid Stacking:** Fixed an issue where post images would stack vertically by moving `fb-grid` styles to a dedicated `dashboard.css` file and ensuring high CSS specificity.
 - **Post Card Image Sizing:** Resolved issues where single post images would "overreact" to the card size by enforcing a `max-height: 500px` and unified object-fit behavior.
 - **Unified Image Rendering:** Refactored `dashboard.html` and `profile_settings.html` to use a consistent `fb-grid` system for both legacy `image_url` and new `image_urls` fields.
-- **Post View Background Blur:** Adjusted the post modal background to be blurred instead of black when viewing a post without images, improving visual continuity with the dashboard. (References: `modal.js`, `modal.css`)
+- **Post View Background Blur:** Adjusted the post modal background to be blurred instead of black when viewing a post without images, improving visual continuity with the dashboard.
+- **Unified Modal UI:** Relocated the post view close button to the top-right corner of the side panel, adopting the same circular, light-gray style as the "Create Post" modal for a more consistent user experience.
+- **Reliable Counter Synchronization:** Fixed a bug where comment and like counters on the dashboard feed were not reliably updating when modified within the modal.
+    - Added `data-post-id` attributes to all post cards in `dashboard.html`.
+    - Refactored `updateDashboardCount` in `modal.js` to use the new ID-based selectors, ensuring immediate and accurate UI updates across both the feed and the expanded view. (References: `dashboard.html`, `modal.js`)
 
 ### Changed
 - **Facebook-Style Grid Refinements:** Enhanced the `fb-grid` CSS in `input.css` with smoother transitions, hover effects, and more robust grid templates for 1-5 images.

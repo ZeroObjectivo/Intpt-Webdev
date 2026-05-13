@@ -570,15 +570,22 @@ async function toggleLike(postId, btn) {
 }
 
 function updateDashboardCount(postId, type, delta) {
-    const posts = document.querySelectorAll('.post-card');
-    posts.forEach(post => {
-        // This is a bit hacky but works for now
-        // Ideally we should have data-post-id on the post-card
-        const commentBtn = post.querySelector(`button[onclick*="${postId}"] .comments-count`);
-        if (commentBtn && type === 'comments') {
-            commentBtn.innerText = parseInt(commentBtn.innerText) + delta;
+    const post = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+    if (!post) return;
+    
+    if (type === 'comments') {
+        const commentCountSpan = post.querySelector('.comments-count');
+        if (commentCountSpan) {
+            const currentCount = parseInt(commentCountSpan.innerText || '0');
+            commentCountSpan.innerText = Math.max(0, currentCount + delta);
         }
-    });
+    } else if (type === 'likes') {
+        const likesCountSpan = post.querySelector('.likes-count');
+        if (likesCountSpan) {
+            const currentCount = parseInt(likesCountSpan.innerText || '0');
+            likesCountSpan.innerText = Math.max(0, currentCount + delta);
+        }
+    }
 }
 
 function updateModalActions(post) {
@@ -594,24 +601,24 @@ function updateModalActions(post) {
     }
 
     likeBtn.onclick = () => {
+        const isCurrentlyLiked = likeBtn.classList.contains('text-red-500');
         toggleLike(post.id, likeBtn);
+        
         // Sync with dashboard
-        const dashBtn = document.querySelector(`.post-card button[onclick*="toggleLike('${post.id}'"]`);
-        if (dashBtn) {
-            const isLiked = likeBtn.classList.contains('text-red-500');
-            const icon = dashBtn.querySelector('svg');
-            const countSpan = dashBtn.querySelector('.likes-count');
-            if (isLiked) {
-                dashBtn.classList.add('text-red-500');
+        const dashCard = document.querySelector(`.post-card[data-post-id="${post.id}"]`);
+        if (dashCard) {
+            const dashLikeBtn = dashCard.querySelector('.like-btn');
+            const icon = dashLikeBtn.querySelector('svg');
+            
+            // Toggle classes to match modal state (post-toggleLike)
+            if (!isCurrentlyLiked) { // was not liked, now liked
+                dashLikeBtn.classList.add('text-red-500');
                 icon.classList.add('fill-current');
-            } else {
-                dashBtn.classList.remove('text-red-500');
+                updateDashboardCount(post.id, 'likes', 1);
+            } else { // was liked, now unliked
+                dashLikeBtn.classList.remove('text-red-500');
                 icon.classList.remove('fill-current');
-            }
-            // Update dashboard count
-            if (countSpan) {
-                const currentDashCount = parseInt(countSpan.innerText);
-                countSpan.innerText = isLiked ? currentDashCount + 1 : Math.max(0, currentDashCount - 1);
+                updateDashboardCount(post.id, 'likes', -1);
             }
         }
     };

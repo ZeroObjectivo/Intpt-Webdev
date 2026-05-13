@@ -107,27 +107,35 @@
     overflow-y: auto;
     border-left: 1px solid #ddd;
     box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    position: relative;
 }
 
 .modal-close {
     position: absolute;
     top: 12px;
     right: 12px;
-    color: #fff;
-    background: rgba(0, 0, 0, 0.5);
+    color: #606770;
+    background: #e4e6eb;
     cursor: pointer;
     z-index: 2020;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     transition: all 0.2s;
+    border: none;
+    outline: none;
 }
 
 .modal-close:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: #d8dadf;
+    color: #1c1e21;
+}
+
+.modal-close:active {
+    transform: scale(0.95);
 }
 
 /* FB Style Header */

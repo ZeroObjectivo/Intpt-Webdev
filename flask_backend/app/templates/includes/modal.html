@@ -1,9 +1,5 @@
 <!-- Image Modal (Facebook Theater View) -->
 <div id="imageModal" class="image-modal" onclick="closeImageModal(event)">
-    <span class="modal-close" onclick="closeImageModal(event)">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-    </span>
-    
     <div class="modal-container">
         <div class="modal-main-view">
             <div class="modal-controls">
@@ -28,7 +24,10 @@
             </button>
         </div>
 
-        <div class="modal-side-panel">
+        <div class="modal-side-panel relative">
+            <button class="modal-close" onclick="closeImageModal(event)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
             <div class="modal-post-header">
                 <img id="modalUserAvatar" src="" alt="">
                 <div>
