@@ -103,6 +103,93 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn("item.addEventListener('click'", self.template)
         self.assertIn("tag.addEventListener('click'", self.template)
 
+    def test_create_post_modal_has_dynamic_category_fields(self):
+        self.assertIn('id="createPostForm"', self.template)
+        self.assertIn('enctype="multipart/form-data"', self.template)
+        self.assertIn('id="createPostCategory"', self.template)
+        self.assertIn('id="lostFoundFields" class="category-specific-fields hidden"', self.template)
+        self.assertIn('id="businessFields" class="category-specific-fields hidden', self.template)
+        self.assertIn('id="eventFields" class="category-specific-fields hidden', self.template)
+        self.assertIn('<input type="hidden" name="status" value="Lost">', self.template)
+        self.assertNotIn('value="Found"', self.template)
+        self.assertNotIn('role="radiogroup"', self.template)
+        self.assertIn('name="product_name"', self.template)
+        self.assertIn('name="price" type="number"', self.template)
+        self.assertIn('name="event_title"', self.template)
+        self.assertIn('name="event_date" type="datetime-local"', self.template)
+        self.assertIn('name="location" type="text"', self.template)
+        self.assertIn('name="hosting_college"', self.template)
+        self.assertIn("function initCategoryToggle()", self.template)
+        self.assertIn("categorySelect.addEventListener('change'", self.template)
+        self.assertIn("function hideCategoryFields()", self.template)
+        self.assertIn("function showActiveCategoryFields()", self.template)
+        self.assertNotIn("function setLostFoundStatus(activeOption)", self.template)
+        self.assertNotIn(".lost-found-status-option", self.css)
+
+    def test_create_post_modal_has_image_upload_and_mock_submission_js(self):
+        self.assertIn('id="globalImageUpload" name="image" accept="image/*" class="hidden"', self.template)
+        self.assertIn('id="addImageTrigger"', self.template)
+        self.assertIn('id="globalImageFilename"', self.template)
+        self.assertIn('id="globalImagePreview"', self.template)
+        self.assertIn("function initImageUpload()", self.template)
+        self.assertIn("addImageTrigger.addEventListener('click'", self.template)
+        self.assertIn("globalImageUpload.click()", self.template)
+        self.assertIn("globalImageUpload.addEventListener('change'", self.template)
+        self.assertIn("function initFormValidation()", self.template)
+        self.assertIn("function validateActiveCategory()", self.template)
+        self.assertIn("case 'Lost & Found':", self.template)
+        self.assertIn("payload.status = 'Lost'", self.template)
+        self.assertIn("case 'Heron Business':", self.template)
+        self.assertIn("case 'Events':", self.template)
+        self.assertIn("function handleMockSubmission()", self.template)
+        self.assertIn("event.preventDefault()", self.template)
+        self.assertIn("console.log('New post mock submission:', payload)", self.template)
+        self.assertIn("function resetFormState()", self.template)
+        self.assertIn(".global-image-feedback", self.css)
+        self.assertIn(".global-image-preview", self.css)
+
+    def test_event_hosting_college_options_are_exact(self):
+        expected_options = [
+            "CLAS - College of Liberal Arts and Sciences",
+            "CHK - College of Human Kinetics",
+            "CBFS - College of Business and Financial Sciences",
+            "CCIS - College of Computing and Information Sciences",
+            "CITE - College of Innovative Teacher Education",
+            "CITE-HSU - Higher School ng UMak",
+            "CGPP - College of Governance and Public Policy",
+            "CCSE - College of Construction Sciences and Engineering",
+            "CET - College of Engineering Technology",
+            "CTHM - College of Tourism and Hospitality Management",
+            "CCAPS - College of Continuing, Advanced and Professional Studies",
+        ]
+
+        for option in expected_options:
+            self.assertIn(f'<option value="{option}">{option}</option>', self.template)
+
+    def test_dashboard_feed_removes_static_structured_mockups(self):
+        self.assertNotIn("Structured Post Examples", self.template)
+        self.assertNotIn("mock-post-examples", self.template)
+        self.assertNotIn("mock-post-card", self.template)
+        self.assertNotIn("mock-post-image", self.template)
+        self.assertNotIn(".mock-post-examples", self.css)
+        self.assertNotIn(".mock-post-card", self.css)
+        self.assertNotIn(".business-product-summary", self.css)
+        self.assertNotIn(".event-detail-card", self.css)
+
+    def test_dashboard_right_sidebar_is_sticky(self):
+        self.assertIn('class="dashboard-container min-h-screen"', self.template)
+        self.assertIn('class="sidebar sticky top-20 h-full"', self.template)
+
+        container_rule = re.search(r"\.dashboard-container\s*\{(?P<body>.*?)\}", self.css, re.S)
+        self.assertIsNotNone(container_rule)
+        self.assertIn("min-height: calc(100vh - 56px)", container_rule.group("body"))
+
+        sidebar_rule = re.search(r"\.sidebar\s*\{(?P<body>.*?)\}", self.css, re.S)
+        self.assertIsNotNone(sidebar_rule)
+        self.assertIn("position: sticky", sidebar_rule.group("body"))
+        self.assertIn("top: 112px", sidebar_rule.group("body"))
+        self.assertIn("max-height: calc(100vh - 112px)", sidebar_rule.group("body"))
+
     def test_dashboard_uses_relative_post_timestamp_value(self):
         self.assertIn("post.relative_created_at", self.template)
         self.assertNotIn("post.created_at[:10]", self.template)
