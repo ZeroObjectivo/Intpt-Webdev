@@ -37,6 +37,7 @@ function openImageModal(post, index, updateHash = true) {
     const mainView = modal.querySelector('.modal-main-view');
     
     modal.style.display = 'flex';
+    modal.classList.remove('no-image');
     mainView.style.display = 'flex';
     container.classList.remove('no-image');
     document.body.style.overflow = 'hidden';
@@ -67,9 +68,11 @@ function openCommentModal(post) {
     
     if (!hasImages) {
         mainView.style.display = 'none';
+        modal.classList.add('no-image');
         container.classList.add('no-image');
     } else {
         mainView.style.display = 'flex';
+        modal.classList.remove('no-image');
         container.classList.remove('no-image');
     }
     

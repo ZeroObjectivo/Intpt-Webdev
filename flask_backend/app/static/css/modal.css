@@ -326,7 +326,13 @@
 
 .modal-container.no-image {
     justify-content: center;
-    background: rgba(0, 0, 0, 0.4);
+    background: transparent;
+}
+
+.image-modal.no-image {
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .modal-container.no-image .modal-side-panel {
@@ -336,6 +342,7 @@
     margin: auto;
     border-radius: 20px;
     border-left: none;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 @media (max-width: 900px) {

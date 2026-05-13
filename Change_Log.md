@@ -32,6 +32,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Post Card Image Grid Stacking:** Fixed an issue where post images would stack vertically by moving `fb-grid` styles to a dedicated `dashboard.css` file and ensuring high CSS specificity.
 - **Post Card Image Sizing:** Resolved issues where single post images would "overreact" to the card size by enforcing a `max-height: 500px` and unified object-fit behavior.
 - **Unified Image Rendering:** Refactored `dashboard.html` and `profile_settings.html` to use a consistent `fb-grid` system for both legacy `image_url` and new `image_urls` fields.
+- **Post View Background Blur:** Adjusted the post modal background to be blurred instead of black when viewing a post without images, improving visual continuity with the dashboard. (References: `modal.js`, `modal.css`)
 
 ### Changed
 - **Facebook-Style Grid Refinements:** Enhanced the `fb-grid` CSS in `input.css` with smoother transitions, hover effects, and more robust grid templates for 1-5 images.
