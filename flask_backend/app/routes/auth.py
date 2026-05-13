@@ -172,8 +172,12 @@ def set_session():
         if not profile_check.data:
             return redirect(url_for('auth.onboarding'))
         
+        # If exists, fetch full profile to get role and other details
+        profile_res = supabase.table('profiles').select("*").eq("id", user.id).single().execute()
+        
         # If exists, finalize session and go to dashboard
         session['user'] = session.pop('temp_user')
+        session['user'].update(profile_res.data) # Sync DB profile (including role) to session
         return redirect(url_for('core.dashboard'))
         
     except Exception as e:

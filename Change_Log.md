@@ -31,6 +31,14 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ### 2. Post Creation & Community Enhancements
 ### Added
+- **Admin Dashboard Features:**
+    - Implemented a comprehensive Admin Dashboard with real-time statistics for users, posts, reports, and recent activities.
+    - **User Management:** Created a full directory view with search and filtering capabilities. Added detailed user management pages to view profiles, activity history (posts), and sanctions (warnings).
+    - **Content Moderation:** Implemented category-specific content management views to review and moderate all posts.
+    - **Verification Disputes:** Added a system for admins to manage login verification disputes from students.
+    - **Admin Logs & Warnings:** Implemented backend tracking for admin actions and a warning system for users.
+    - **Database Migration:** Added a new migration (`20260513000600_admin_features.sql`) to support `admin_logs`, `verification_disputes`, `warnings`, and enhanced `profiles` fields.
+    - **UI/UX Updates:** Enhanced the Admin Hub sidebar and dashboard with dynamic links and interactive elements.
 - **Profile Settings Page:**
     - Created a dedicated settings area for users to manage their academic and contact information.
     - Fields include: College (dropdown), Course, Year Level, Bio, and Contact Number.
@@ -62,6 +70,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Storage Upload Error:** Resolved "new row violates row-level security policy" (Unauthorized) error when uploading images with posts.
 - **Image Display on Cards:** Fixed issue where uploaded images were not appearing on post cards.
 - **Backend Storage Authentication:** Updated `apply_supabase_auth_token` in `auth.py` to correctly propagate the user's JWT to the Supabase Storage client.
+- **Profile Settings Save Button:** Fixed a bug where the "Save Changes" button in the profile settings was always grayed out due to incorrect form selection in JavaScript. Added a specific ID to the settings form to ensure correct change tracking.
 
 ### Changed
 - **Image Interactions:** Removed hover effects (scaling and brightness filters) from post images to maintain a cleaner, static appearance in the feed.

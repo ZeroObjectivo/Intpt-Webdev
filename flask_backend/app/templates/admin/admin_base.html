@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard | Herons' Hub{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    
+    <!-- Custom CSS (compiled Tailwind) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/metropolis" rel="stylesheet">
+    
+    <style>
+        :root {
+            --admin-primary: #0038a8;
+            --admin-secondary: #001035;
+            --admin-accent: #3b82f6;
+            --admin-bg: #f8fafc;
+            --sidebar-width: 260px;
+        }
+
+        body {
+            background-color: var(--admin-bg);
+            font-family: 'Metropolis', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background-color: var(--admin-secondary);
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 50;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .sidebar-logo {
+            width: 32px;
+            height: 32px;
+        }
+
+        .sidebar-title {
+            color: white;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            font-size: 1.125rem;
+            text-transform: uppercase;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0.75rem;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            color: #94a3b8;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .nav-item.active {
+            background-color: var(--admin-primary);
+            color: white;
+        }
+
+        .nav-dropdown-btn {
+            justify-content: space-between;
+        }
+
+        .nav-dropdown-content {
+            display: none;
+            padding-left: 2.75rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 0.5rem 0;
+            color: #64748b;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            color: white;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Top Header */
+        .admin-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .admin-search {
+            background: white;
+            border-radius: 1rem;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 300px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .admin-search input {
+            border: none;
+            outline: none;
+            font-size: 0.875rem;
+            width: 100%;
+        }
+
+        /* Rounded Boxes */
+        .stat-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: 1px solid #f1f5f9;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card.expanded {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 900;
+            color: var(--admin-secondary);
+        }
+
+        /* Favorites bar */
+        .fav-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .fav-item {
+            background: white;
+            border-radius: 1rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #f1f5f9;
+        }
+
+        .fav-item:hover {
+            border-color: var(--admin-primary);
+            background: #eff6ff;
+        }
+
+        .fav-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 0.75rem;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--admin-primary);
+        }
+
+        .fav-text {
+            font-weight: 800;
+            font-size: 0.8125rem;
+            color: #1e293b;
+        }
+    </style>
+    {% block admin_styles %}{% endblock %}
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="{{ url_for('static', filename='images/Logo.png') }}" class="sidebar-logo" alt="">
+            <span class="sidebar-title">Admin Hub</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                Home
+            </a>
+
+            <div class="nav-group">
+                <div class="nav-item nav-dropdown-btn" onclick="toggleDropdown('moderation-drop')">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        Moderation
+                    </div>
+                    <svg class="w-4 h-4 transition-transform dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div id="moderation-drop" class="nav-dropdown-content">
+                    <a href="{{ url_for('admin.manage_users') }}" class="dropdown-item">User Management</a>
+                    <a href="{{ url_for('admin.manage_disputes') }}" class="dropdown-item">Verification Disputes</a>
+                    <a href="{{ url_for('admin.manage_forbidden_words') }}" class="dropdown-item">Profanity Filter</a>
+                    <a href="#" class="dropdown-item">Reports Queue</a>
+                </div>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-item nav-dropdown-btn" onclick="toggleDropdown('content-drop')">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Content
+                    </div>
+                    <svg class="w-4 h-4 transition-transform dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div id="content-drop" class="nav-dropdown-content">
+                    <a href="{{ url_for('admin.content_management', category='All') }}" class="dropdown-item">All Posts</a>
+                    <a href="{{ url_for('admin.content_management', category='General') }}" class="dropdown-item">General</a>
+                    <a href="{{ url_for('admin.content_management', category='Marketplace') }}" class="dropdown-item">Marketplace</a>
+                </div>
+            </div>
+
+            <a href="#" class="nav-item">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="flex items-center gap-3">
+                <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" class="w-10 h-10 rounded-xl object-cover" alt="">
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-xs font-black text-white truncate">{{ user.full_name }}</p>
+                    <p class="text-[10px] font-bold text-slate-500 truncate">{{ user.role|upper }}</p>
+                </div>
+                <a href="{{ url_for('core.profile_settings') }}" class="text-slate-500 hover:text-white transition-colors" title="Exit Admin Hub">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="admin-top-bar">
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 tracking-tight">{% block header_title %}Dashboard Overview{% endblock %}</h2>
+                <p class="text-sm text-slate-400 font-bold">Welcome back, Admin!</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="admin-search">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" placeholder="Search profiles, posts, reports...">
+                </div>
+                <button class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100 text-slate-400 relative">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                </button>
+            </div>
+        </header>
+
+        {% block admin_content %}{% endblock %}
+    </main>
+
+    <script>
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            const btn = dropdown.previousElementSibling;
+            const arrow = btn.querySelector('.dropdown-arrow');
+            
+            dropdown.classList.toggle('show');
+            arrow.style.transform = dropdown.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+    </script>
+    {% block admin_scripts %}{% endblock %}
+</body>
+</html>
