@@ -106,7 +106,7 @@ def view_profile(target_user_id):
     apply_supabase_auth_token()
     
     try:
-        profile, posts, activity = load_profile_data(target_user_id)
+        profile, posts, activity = load_profile_data(target_user_id, viewer_id=current_user_id)
         # Check if the viewer owns this profile
         is_own_profile = (current_user_id == target_user_id)
         
@@ -126,7 +126,7 @@ def view_profile(target_user_id):
 def profile_settings():
     return redirect(url_for('core.view_profile', target_user_id=session.get('user').get('id')))
 
-def load_profile_data(user_id):
+def load_profile_data(user_id, viewer_id=None):
     # 1. Fetch User Profile
     profile_response = supabase.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
@@ -138,14 +138,23 @@ def load_profile_data(user_id):
         .order("created_at", desc=True).execute()
     posts = posts_response.data
     
-    # Ensure counts and user_has_liked for own posts
+    # Optimize: Fetch all likes by viewer for these posts in one query
+    liked_post_ids = set()
+    if viewer_id:
+        post_ids = [p['id'] for p in posts]
+        if post_ids:
+            likes_res = supabase.table('likes').select("post_id").eq("user_id", viewer_id).in_("post_id", post_ids).execute()
+            liked_post_ids = {l['post_id'] for l in likes_res.data}
+
+    # Ensure counts and user_has_liked
     for post in posts:
-        post['user_has_liked'] = True # If it's my post, I can see it, but I still need to check likes table if I actually liked it
-        # Actually, let's do a real check for likes
-        like_check = supabase.table('likes').select("id").eq("post_id", post['id']).eq("user_id", user_id).execute()
-        post['user_has_liked'] = len(like_check.data) > 0
+        post['user_has_liked'] = post['id'] in liked_post_ids
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = post.get('comments_count') or 0
+        post['relative_created_at'] = format_relative_time(post.get('created_at'))
+
+    # 3. Fetch Activity Log
+    # ... rest of the function ...
 
     # 3. Fetch Activity Log (Recent Likes and Comments by the user)
     # Get recent likes on other people's posts
@@ -236,13 +245,15 @@ def load_dashboard_data(user_id, category=None):
     posts_response = query.order("created_at", desc=True).limit(20).execute()
     posts = posts_response.data
 
-    # 3. For each post, check if the current user has liked it
-    # and ensure counts are present
+    # 3. Fetch likes for all posts in one go to avoid N+1
+    post_ids = [p['id'] for p in posts]
+    liked_post_ids = set()
+    if post_ids:
+        likes_res = supabase.table('likes').select("post_id").eq("user_id", user_id).in_("post_id", post_ids).execute()
+        liked_post_ids = {l['post_id'] for l in likes_res.data}
+
     for post in posts:
-        # Check if current user liked this post
-        like_check = supabase.table('likes').select("id").eq("post_id", post['id']).eq("user_id", user_id).execute()
-        post['user_has_liked'] = len(like_check.data) > 0
-        
+        post['user_has_liked'] = post['id'] in liked_post_ids
         # Ensure counts are initialized if null
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = post.get('comments_count') or 0
@@ -254,9 +265,14 @@ def load_dashboard_data(user_id, category=None):
         .order("likes_count", desc=True).limit(3).execute()
     trending = trending_response.data
 
+    trending_ids = [p['id'] for p in trending]
+    trending_liked_ids = set()
+    if trending_ids:
+        t_likes_res = supabase.table('likes').select("post_id").eq("user_id", user_id).in_("post_id", trending_ids).execute()
+        trending_liked_ids = {l['post_id'] for l in t_likes_res.data}
+
     for t_post in trending:
-        like_check = supabase.table('likes').select("id").eq("post_id", t_post['id']).eq("user_id", user_id).execute()
-        t_post['user_has_liked'] = len(like_check.data) > 0
+        t_post['user_has_liked'] = t_post['id'] in trending_liked_ids
         t_post['likes_count'] = t_post.get('likes_count') or 0
         t_post['comments_count'] = t_post.get('comments_count') or 0
         t_post['relative_created_at'] = format_relative_time(t_post.get('created_at'))

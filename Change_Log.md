@@ -7,7 +7,19 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ## [Unreleased] - 2026-05-14
 
-### 1. Front-end Integration & Image Enhancements
+### 1. Interaction Logic & Data Optimization
+#### Fixed
+- **Like Button UI:** Fixed an issue where the Like heart would show as grayed out even if the user had already liked the post. It now correctly remains red (filled) on initial page load and in the modal.
+- **Accurate Comment Counting:** Adjusted the comment counting logic to only include top-level comments in the `comments_count` field, ensuring the displayed count matches the number of comments the user sees (excluding replies by default).
+- **Stale Modal Data:** Fixed a bug where opening the comment modal would show outdated like/comment counts or statuses because it was using static data from the time of page render. The modal now synchronizes with the latest live dashboard state upon opening.
+- **Global Interaction Sync:** Enhanced `updateDashboardCount` and `toggleLike` in `modal.js` to ensure that likes and comment counts are synchronized across all instances of a post on the page (main feed, trending sidebar, and profile page).
+- **Profile Like Check:** Fixed a backend bug in `load_profile_data` where the `user_has_liked` check was incorrectly performed against the profile owner's ID instead of the current viewer's ID.
+
+#### Added
+- **Profile Interactions:** Added Like and Comment action buttons to the post cards on the User Profile page, allowing for direct interaction from the timeline.
+- **Bulk Likes Fetching:** Optimized the backend to fetch all like statuses for displayed posts in a single query, eliminating the N+1 database performance bottleneck.
+
+### 2. Front-end Integration & Image Enhancements
 ### Added
 - **Multiple Image Support:** Refactored post creation and display to support up to 5 images per post.
 - **Dynamic Image Grid:** Implemented a Facebook-style responsive grid (`fb-grid`) that adjusts layouts based on the number of images (1-5).
