@@ -167,11 +167,77 @@ def update_user_role(user_id):
 @admin_required
 def content_management(category):
     apply_supabase_auth_token()
-    query = supabase.table('posts').select("*, profiles(full_name)")
+    query = supabase.table('posts').select("*, profiles(full_name, avatar_url)")
     if category != 'All':
         query = query.eq('category', category)
     res = query.order('created_at', desc=True).execute()
     return render_template('admin/content_manage.html', posts=res.data, category=category, user=session.get('user'))
+
+@admin.route('/admin/posts/<post_id>/likers')
+@login_required
+@admin_required
+def get_post_likers(post_id):
+    apply_supabase_auth_token()
+    res = supabase.table('likes').select("profiles(id, full_name, avatar_url)").eq('post_id', post_id).execute()
+    likers = [item['profiles'] for item in res.data if item.get('profiles')]
+    return jsonify({"likers": likers})
+
+@admin.route('/admin/posts/<post_id>/flag', methods=['POST'])
+@login_required
+@admin_required
+def flag_post(post_id):
+    apply_supabase_auth_token()
+    try:
+        supabase.table('posts').update({"is_flagged": True}).eq("id", post_id).execute()
+        return jsonify({"status": "success", "message": "Post flagged."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@admin.route('/admin/comments/<comment_id>/flag', methods=['POST'])
+@login_required
+@admin_required
+def flag_comment(comment_id):
+    apply_supabase_auth_token()
+    try:
+        supabase.table('comments').update({"is_flagged": True}).eq("id", comment_id).execute()
+        return jsonify({"status": "success", "message": "Comment flagged."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@admin.route('/admin/warn-user', methods=['POST'])
+@login_required
+@admin_required
+def warn_user():
+    apply_supabase_auth_token()
+    data = request.json
+    user_id = data.get('user_id')
+    post_id = data.get('post_id')
+    reason = data.get('reason')
+    message = data.get('message')
+
+    if not all([user_id, reason, message]):
+        return jsonify({"status": "error", "message": "Missing required fields."}), 400
+
+    try:
+        # 1. Insert into warnings table
+        supabase.table('warnings').insert({
+            "user_id": user_id,
+            "admin_id": session['user']['id'],
+            "reason": reason,
+            "post_id": post_id
+        }).execute()
+
+        # 2. Insert into notifications table
+        supabase.table('notifications').insert({
+            "user_id": user_id,
+            "title": "Community Warning",
+            "message": message,
+            "type": "warning"
+        }).execute()
+
+        return jsonify({"status": "success", "message": "Warning sent successfully."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @admin.route('/admin/disputes')
 @login_required

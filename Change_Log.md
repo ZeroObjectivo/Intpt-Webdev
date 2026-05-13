@@ -25,9 +25,22 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Delete Functionality:** Added the ability to remove words from the filter with immediate database synchronization.
 - **RLS Security Policies:** Created migration `20260514000100_setup_forbidden_words.sql` to ensure admins have proper SELECT/INSERT/DELETE permissions on the filter table.
 
+### Content Moderation Enhancements
+### Added
+- **Vertical Post Layout:** Redesigned the Content Moderation page to display posts in a vertical, single-column feed for better readability.
+- **Enhanced Filtering:** Expanded the category filter to include 'Lost & Found', 'Buy & Sell', 'Question', and 'Events'.
+- **Admin Post Modal:** Integrated the dashboard's post modal into the moderation hub with admin-only features.
+    - **Likers List:** Admins can now see a full list of users who liked a post.
+    - **Post & Comment Flagging:** Added the ability to flag inappropriate posts and comments for further review.
+- **Warning Workflow:** Implemented a new "Warn Author" system.
+    - **Reason Selection:** Modal for selecting specific violation reasons (Inappropriate Language, Harassment, Spam, etc.).
+    - **Auto-generated Messages:** Provides editable templates for warning notifications based on the selected reason.
+- **Notifications System:** Created a new `notifications` database table to track system alerts and user warnings.
+- **Status Tracking:** Added `is_flagged` status to both posts and comments for improved moderation tracking.
+
 ### Fixed
-- **Role Update Failure:** Resolved an issue where role changes were not persisting to the database due to Row Level Security (RLS) restrictions on the `profiles` table. The backend now uses a service role client for these operations.
-- **Data Desync:** Fixed an issue where the Profanity Filter page incorrectly reported "No forbidden words" despite data being present in the database.
+- **Profile Photo Visibility:** Resolved an issue where profile photos were not displaying correctly in the moderation feed.
+- **Multiple Image Support:** Fixed the moderation hub to properly display and allow expansion of all attached photos in a post.
 
 ---
 
