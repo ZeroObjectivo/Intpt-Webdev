@@ -226,69 +226,45 @@
                 <section class="sidebar-section">
                     <h2 class="sidebar-heading">Trending Now</h2>
                     <div class="trending-list">
-                        <div class="trending-item">
-                            <span class="trending-number">1</span>
-                            <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">Events</span>
-                                <h4>Lorem Ipsum Event</h4>
-                                <span class="likes">2.4k Likes</span>
+                        {% if trending %}
+                            {% for item in trending %}
+                            <div class="trending-item cursor-pointer" onclick='openCommentModal({{ item|tojson|safe }})'>
+                                <span class="trending-number">{{ loop.index }}</span>
+                                <div class="trending-details">
+                                    <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-[10px] font-black uppercase tracking-widest my-[5px]">
+                                        {{ item.category or 'General' }}
+                                    </span>
+                                    <h4 class="text-slate-800 font-bold text-sm line-clamp-2">{{ item.content }}</h4>
+                                    <span class="likes text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ item.likes_count or 0 }} Likes</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="trending-item">
-                            <span class="trending-number">2</span>
-                            <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">Heron Business</span>
-                                <h4>Lorem Ipsum Event</h4>
-                                <span class="likes">2.4k Likes</span>
-                            </div>
-                        </div>
-                        <div class="trending-item">
-                            <span class="trending-number">3</span>
-                            <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">General</span>
-                                <h4>SHOUTOUT TO MY CLASSMATES</h4>
-                                <span class="likes">2.4k Likes</span>
-                            </div>
-                        </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-xs text-slate-400 font-bold p-4">No trending topics yet.</p>
+                        {% endif %}
                     </div>
                 </section>
 
                 <section class="sidebar-section">
                     <h2 class="sidebar-heading">Upcoming Events</h2>
                     <div class="event-list">
-                        <div class="event-card">
-                            <div class="event-date">
-                                <span class="event-day">11</span>
-                                <span class="event-month">May</span>
+                        {% if upcoming_events %}
+                            {% for event in upcoming_events %}
+                            <div class="event-card cursor-pointer" onclick='openCommentModal({{ event|tojson|safe }})'>
+                                <div class="event-date">
+                                    <span class="event-day">{{ event.day }}</span>
+                                    <span class="event-month">{{ event.month }}</span>
+                                </div>
+                                <div class="event-info">
+                                    <h4 class="line-clamp-1">{{ event.content }}</h4>
+                                    <p>{{ event.time_range }}<br>{{ event.location or 'UMak Campus' }}</p>
+                                </div>
+                                <div class="event-status status-{{ event.event_status }}">{{ event.event_status|capitalize }}</div>
                             </div>
-                            <div class="event-info">
-                                <h4>Presentation</h4>
-                                <p>3:00 PM - 6:00 PM<br>HPSB</p>
-                            </div>
-                            <div class="event-status status-ongoing">Ongoing</div>
-                        </div>
-                        <div class="event-card">
-                            <div class="event-date">
-                                <span class="event-day">13</span>
-                                <span class="event-month">May</span>
-                            </div>
-                            <div class="event-info">
-                                <h4>Culminating Activity</h4>
-                                <p>6:00 AM - 9:00 AM<br>HPSB</p>
-                            </div>
-                            <div class="event-status status-upcoming">Upcoming</div>
-                        </div>
-                        <div class="event-card">
-                            <div class="event-date">
-                                <span class="event-day">15</span>
-                                <span class="event-month">May</span>
-                            </div>
-                            <div class="event-info">
-                                <h4>Physics</h4>
-                                <p>3:00 PM - 6:00 PM<br>HPSB</p>
-                            </div>
-                            <div class="event-status status-upcoming">Upcoming</div>
-                        </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-xs text-slate-400 font-bold p-4">No upcoming events.</p>
+                        {% endif %}
                     </div>
                 </section>
             </aside>

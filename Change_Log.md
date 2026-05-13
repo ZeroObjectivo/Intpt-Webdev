@@ -27,6 +27,13 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **CSS Assets:** Rebuilt `flask_backend/app/static/css/style.css` using Tailwind CSS to ensure full synchronization between the merged templates and the generated styles.
 
 ### Fixed
+- **Admin Authorization (Superadmin Access):** Fixed an issue where users with the `superadmin` role (no underscore) were unable to access the admin dashboard.
+    - Updated `admin_required` decorator in `flask_backend/app/routes/admin.py` to support both `super_admin` and `superadmin` spellings.
+    - Updated role-based conditional rendering in `profile_settings.html` and `admin/users.html`.
+    - Updated Supabase RLS policies in `20260513000400_post_enhancements.sql` and `20260513000600_admin_features.sql` to include `superadmin` in the authorized roles list.
+- **Dynamic Sidebar Features:** Fully implemented the "Trending Now" and "Upcoming Events" sidebar sections.
+    - **Trending Now:** Now dynamically fetches the top 3 posts by like count. Clicking a trending topic opens the interactive comment modal for that specific post.
+    - **Upcoming Events:** Now dynamically fetches the next 3 scheduled events. Implemented server-side parsing for date components (day, month) and automatic status determination (Ongoing vs. Upcoming).
 - **Single Image Post Sizing:** Optimized the display for single-image posts to prevent cropping while capping the height at 550px. Images are now contained within a soft-slate background, matching Facebook's behavioral patterns for mixed aspect ratios.
 - **Image Interaction Polish:** Removed the unwanted zoom effect when hovering over post images in the feed for a cleaner, more professional look.
 - **Modal Trigger Logic:** Fixed a bug where clicking on single-image posts failed to open the image gallery modal due to an incorrect conditional check in the template.

@@ -80,10 +80,10 @@ def dashboard():
     apply_supabase_auth_token()
 
     try:
-        profile, posts, trending = load_dashboard_data(user_id, category)
+        profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category)
     except Exception as e:
         if is_jwt_expired_error(e) and refresh_supabase_auth():
-            profile, posts, trending = load_dashboard_data(user_id, category)
+            profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category)
         elif is_jwt_expired_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
@@ -96,6 +96,7 @@ def dashboard():
                            posts=posts, 
                            active_category=category, 
                            trending=trending,
+                           upcoming_events=upcoming_events,
                            now=datetime.datetime.utcnow())
 
 @core.route('/profile/<target_user_id>')
@@ -248,10 +249,47 @@ def load_dashboard_data(user_id, category=None):
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
 
     # 4. Fetch Trending Posts (Top 3 by likes_count)
-    trending_response = supabase.table('posts').select("content, category, likes_count").order("likes_count", desc=True).limit(3).execute()
+    trending_response = supabase.table('posts')\
+        .select("*, profiles(full_name, avatar_url)")\
+        .order("likes_count", desc=True).limit(3).execute()
     trending = trending_response.data
+
+    for t_post in trending:
+        like_check = supabase.table('likes').select("id").eq("post_id", t_post['id']).eq("user_id", user_id).execute()
+        t_post['user_has_liked'] = len(like_check.data) > 0
+        t_post['likes_count'] = t_post.get('likes_count') or 0
+        t_post['comments_count'] = t_post.get('comments_count') or 0
+        t_post['relative_created_at'] = format_relative_time(t_post.get('created_at'))
     
-    return profile, posts, trending
+    # 5. Fetch Upcoming Events (Next 3 by event_date)
+    # Using a simple filter for future events
+    events_response = supabase.table('posts')\
+        .select("*, profiles(full_name, avatar_url)")\
+        .eq('category', 'Events')\
+        .order("event_date", desc=False).limit(3).execute()
+    upcoming_events = events_response.data
+
+    # Add helper for status and date components
+    now_local = datetime.datetime.now(DISPLAY_TIMEZONE)
+    for event in upcoming_events:
+        if event.get('event_date'):
+            try:
+                e_date = parse_post_datetime(event['event_date']).astimezone(DISPLAY_TIMEZONE)
+                event['day'] = e_date.strftime('%d')
+                event['month'] = e_date.strftime('%b')
+                event['time_range'] = e_date.strftime('%I:%M %p')
+                
+                # Simple status logic
+                if e_date.date() == now_local.date():
+                    event['event_status'] = 'ongoing'
+                else:
+                    event['event_status'] = 'upcoming'
+            except:
+                event['day'] = '??'
+                event['month'] = '??'
+                event['event_status'] = 'upcoming'
+
+    return profile, posts, trending, upcoming_events
 
 @core.route('/posts/<post_id>/like', methods=['POST'])
 @login_required
