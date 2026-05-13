@@ -1,0 +1,382 @@
+/* Facebook Theater Style Modal */
+.image-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    overflow: hidden;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    position: relative;
+    flex-direction: row;
+}
+
+.modal-main-view {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    overflow: hidden;
+}
+
+.modal-controls {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    gap: 8px;
+    z-index: 1010;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.modal-main-view:hover .modal-controls {
+    opacity: 1;
+}
+
+.modal-control-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-control-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.modal-control-btn.active {
+    background: var(--hh-blue-500);
+    color: white;
+}
+
+.modal-image-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+}
+
+.modal-image-wrapper.zoomed {
+    cursor: grab;
+}
+
+.modal-image-wrapper.dragging {
+    cursor: grabbing;
+}
+
+.modal-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    pointer-events: none;
+}
+
+.modal-image-wrapper.zoomed .modal-image {
+    transition: transform 0.1s ease-out;
+}
+
+.modal-side-panel {
+    width: 360px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    border-left: 1px solid #ddd;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    z-index: 2020;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* FB Style Header */
+.modal-post-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+}
+
+.modal-post-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.modal-post-header h4 {
+    margin: 0;
+    color: var(--hh-blue-900);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.modal-post-header span {
+    display: block;
+    margin-top: 2px;
+    color: var(--hh-text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.modal-post-content {
+    padding: 16px;
+    color: var(--hh-text-main);
+    font-size: 0.94rem;
+    line-height: 1.62;
+}
+
+.modal-post-actions {
+    padding: 4px 12px;
+    border-top: 1px solid #ebedf0;
+    border-bottom: 1px solid #ebedf0;
+    margin: 0 12px;
+    display: flex;
+    justify-content: space-around;
+}
+
+.modal-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 4px;
+    color: #65676b;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modal-action-btn:hover {
+    background: #f2f2f2;
+}
+
+.modal-comments-section {
+    padding: 16px;
+    flex: 1;
+    background: #fff;
+    overflow-y: auto;
+}
+
+#modalCommentsList {
+    margin-top: 8px;
+}
+
+.modal-comment-input {
+    background: white;
+    z-index: 10;
+}
+
+#commentTextarea {
+    transition: all 0.2s;
+    min-height: 36px;
+    max-height: 120px;
+}
+
+#modalCommentsList h5 {
+    margin: 0;
+    color: var(--hh-blue-900);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+#modalCommentsList p {
+    margin: 2px 0 0;
+    color: var(--hh-text-main);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.comment-replies {
+    margin-left: 44px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.view-replies-btn {
+    margin-left: 44px;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #65676b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: fit-content;
+}
+
+.view-replies-btn:hover {
+    background: #f2f2f2;
+}
+
+.view-replies-btn svg {
+    transition: transform 0.2s;
+}
+
+.view-replies-btn.active svg {
+    transform: rotate(180deg);
+}
+
+.modal-side-panel .modal-action-btn.text-red-500 {
+    color: #ef4444;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.modal-comments-section::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-comments-section::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-comments-section::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.modal-comments-section::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+.modal-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    z-index: 1005;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+}
+
+.modal-main-view:hover .modal-nav {
+    opacity: 1;
+}
+
+.modal-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-prev { left: 16px; }
+.modal-next { right: 16px; }
+
+.modal-container.no-image {
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.modal-container.no-image .modal-side-panel {
+    width: 600px;
+    max-width: 95%;
+    height: 90%;
+    margin: auto;
+    border-radius: 20px;
+    border-left: none;
+}
+
+@media (max-width: 900px) {
+    .modal-container {
+        flex-direction: column;
+    }
+    .modal-main-view {
+        height: 50vh;
+        flex: none;
+    }
+    .modal-side-panel {
+        width: 100%;
+        flex: 1;
+        border-left: none;
+        border-top: 1px solid #ddd;
+    }
+    .modal-close {
+        background: rgba(0,0,0,0.5);
+    }
+}
+
+/* Custom Confirmation Modal */
+.confirm-modal {
+    display: none;
+    position: fixed;
+    z-index: 3000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+}
+
+.confirm-modal.active {
+    display: flex;
+}
+
+.confirm-modal.active .confirm-content {
+    transform: scale(1);
+    opacity: 1;
+}
