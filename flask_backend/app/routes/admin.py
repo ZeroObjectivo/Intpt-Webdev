@@ -1,12 +1,22 @@
 import os
 from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify, request
 from app.routes.auth import login_required, apply_supabase_auth_token
-from services.supabase_client import supabase
+from services.supabase_client import supabase, supabase_service
 from supabase import create_client, Client
 from functools import wraps
 import datetime
 
 admin = Blueprint('admin', __name__)
+
+def get_service_client():
+    """
+    Helper to get a service role client that bypasses RLS.
+    Used for administrative actions that standard users shouldn't have permissions for.
+    """
+    if not supabase_service:
+        # Fallback to standard client if service key isn't configured
+        return supabase
+    return supabase_service
 
 def admin_required(f):
     @wraps(f)
@@ -130,13 +140,13 @@ def update_user_role(user_id):
         return redirect(url_for('admin.user_management', user_id=user_id))
     
     try:
-        # 1. Attempt to update the user profile role
-        # Using the standard client which carries the user's auth token
-        update_res = supabase.table('profiles').update({"role": new_role}).eq("id", user_id).execute()
+        # 1. Use the service client to bypass RLS policies for profile updates
+        admin_client = get_service_client()
+        update_res = admin_client.table('profiles').update({"role": new_role}).eq("id", user_id).execute()
         
-        # Check if update was successful (Supabase returns empty list if RLS blocks or no rows match)
+        # Check if update was successful
         if not update_res.data:
-            flash(f"Database update failed. This is likely due to Row Level Security (RLS) policies. Please ensure admins are allowed to update the profiles table.", "error")
+            flash(f"Database update failed. Please check system logs.", "error")
             return redirect(url_for('admin.user_management', user_id=user_id))
 
         # 2. Sync session if updating current user
@@ -144,17 +154,17 @@ def update_user_role(user_id):
             session['user']['role'] = new_role
             session.modified = True
         
-        # 3. Attempt to log the action
+        # 3. Attempt to log the action (also using service client)
         try:
             admin_id = session['user']['id']
-            supabase.table('admin_logs').insert({
+            admin_client.table('admin_logs').insert({
                 "admin_id": admin_id,
                 "action_type": "update_role",
                 "target_id": user_id,
                 "details": f"Updated role to {new_role}"
             }).execute()
         except Exception as log_e:
-            print(f"Audit Log Error (likely RLS): {str(log_e)}")
+            print(f"Audit Log Error: {str(log_e)}")
         
         flash(f"User role updated successfully to {new_role.replace('_', ' ').title()}.", "success")
     except Exception as e:
