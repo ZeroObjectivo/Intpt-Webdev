@@ -1,7 +1,33 @@
 # Herons' Hub Community Platform - Update Log
-**Date:** May 13, 2026
+**Date:** May 14, 2026
 
 This document summarizes the recent major updates, bug fixes, and feature implementations for the Herons' Hub platform.
+
+---
+
+## [Unreleased] - 2026-05-14
+
+### User Role Management
+### Added
+- **Redesigned Role Selection:** Replaced the simple dropdown with a click-to-edit interface in the User Management Actions page.
+    - **UI/UX Improvements:** Added an "Edit" mode with radio buttons for better clarity.
+    - **Confirmation Workflow:** Introduced "Save" and "Cancel" buttons to prevent accidental role changes.
+    - **System Alignment:** Designed the interface to match the project's modern aesthetic using custom Tailwind classes and Alpine.js for state management.
+    - **Smart Behavior:** Implemented a "click-outside" listener to automatically close the role selection when clicking elsewhere on the page.
+- **Service Role Integration:** Implemented a `get_service_client` helper in the admin routes to bypass Supabase RLS policies for administrative actions.
+- **Enhanced Navigation:** Added uniform "Back" buttons to all internal Admin Hub pages (User Directory, User Management, Content Moderation, Disputes, Profanity Filter) for seamless navigation.
+- **Unified Notifications:** Integrated the modern floating flash message system into the Admin Hub for consistent feedback across the platform.
+
+### Profanity Filter Management
+### Added
+- **Dynamic Word Management:** Enabled real-time syncing of the profanity filter with the `forbidden_words` database table.
+- **Add Word Functionality:** Implemented a new modal-based interface to add words to the global filter list.
+- **Delete Functionality:** Added the ability to remove words from the filter with immediate database synchronization.
+- **RLS Security Policies:** Created migration `20260514000100_setup_forbidden_words.sql` to ensure admins have proper SELECT/INSERT/DELETE permissions on the filter table.
+
+### Fixed
+- **Role Update Failure:** Resolved an issue where role changes were not persisting to the database due to Row Level Security (RLS) restrictions on the `profiles` table. The backend now uses a service role client for these operations.
+- **Data Desync:** Fixed an issue where the Profanity Filter page incorrectly reported "No forbidden words" despite data being present in the database.
 
 ---
 
@@ -31,6 +57,8 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ### 2. Post Creation & Community Enhancements
 ### Added
+- **Automated Verification Disputes:** Implemented automatic recording of login attempts from non-UMak email addresses into the `verification_disputes` table. This ensures that administrators can review and manage restricted access cases directly from the Admin Hub.
+- **Improved Restriction Feedback:** Updated the `unauthorized.html` page to inform users that their attempt has been logged and will be reviewed by administrators.
 - **Admin Dashboard Features:**
     - Implemented a comprehensive Admin Dashboard with real-time statistics for users, posts, reports, and recent activities.
     - **User Management:** Created a full directory view with search and filtering capabilities. Added detailed user management pages to view profiles, activity history (posts), and sanctions (warnings).
@@ -62,6 +90,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Dynamic Trending Now:** The "Trending Now" sidebar is now dynamically populated based on the `likes_count` of posts, showing the top 3 most liked items across all categories.
 
 ### Fixed
+- **Admin Authorization Stale Session:** Fixed an issue where promoted users (e.g., `super_admin`) received "Unauthorized access" errors when accessing the Admin Hub. Updated the `admin_required` decorator to fetch the latest role from the database if the session role is outdated, ensuring seamless access after role updates.
 - **Naive vs Aware Datetime Error:** Resolved `TypeError: can't subtract offset-naive and offset-aware datetimes` on the dashboard by ensuring the `now` variable passed to the template is offset-naive (UTC), matching the output of the `datetime_obj` filter.
 - **Modal Image Visibility:** Updated modal logic to hide the main image view when opening a post that contains no images (text-only posts).
 - **Dashboard Data Loading:** Updated `load_dashboard_data` to properly fetch `likes_count`, `comments_count`, and the `user_has_liked` status for the current session.
@@ -80,4 +109,4 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **UI Alignment:** Fixed the alignment of post image grids and badges in the dashboard.
 
 ---
-**Technical Note:** New migration files have been added to the `supabase/migrations/` directory. Ensure they are applied to the Supabase instance to enable the new database fields, reporting table, and RPC functions.
+**Technical Note:** New migration files have been added to the `supabase/migrations/` directory, including `20260514000000_admin_role_management_policies.sql` for RLS security. Ensure they are applied to the Supabase instance to enable the new database fields, reporting table, and RPC functions.

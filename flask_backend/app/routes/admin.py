@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify
+import os
+from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify, request
 from app.routes.auth import login_required, apply_supabase_auth_token
 from services.supabase_client import supabase
+from supabase import create_client, Client
 from functools import wraps
 import datetime
 
@@ -10,7 +12,24 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user = session.get('user')
-        if not user or user.get('role') not in ['admin', 'super_admin']:
+        if not user:
+            return redirect(url_for('core.login'))
+        
+        # Check database for latest role to avoid stale session issues
+        try:
+            profile_res = supabase.table('profiles').select("role").eq("id", user.get('id')).single().execute()
+            current_role = profile_res.data.get('role') if profile_res.data else user.get('role')
+            
+            # Update session role if it changed
+            if current_role != user.get('role'):
+                user['role'] = current_role
+                session['user'] = user
+                session.modified = True
+        except Exception as e:
+            print(f"Error verifying admin role: {e}")
+            current_role = user.get('role')
+
+        if current_role not in ['admin', 'super_admin']:
             flash("Unauthorized access. Admin privileges required.", "error")
             return redirect(url_for('core.dashboard'))
         return f(*args, **kwargs)
@@ -98,6 +117,51 @@ def user_management(user_id):
                            warnings=warnings_res.data,
                            user=session.get('user'))
 
+@admin.route('/admin/users/<user_id>/update-role', methods=['POST'])
+@login_required
+@admin_required
+def update_user_role(user_id):
+    apply_supabase_auth_token()
+    new_role = request.form.get('role')
+    
+    valid_roles = ['student', 'content_moderator', 'account_manager', 'admin', 'super_admin']
+    if new_role not in valid_roles:
+        flash("Invalid role selected.", "error")
+        return redirect(url_for('admin.user_management', user_id=user_id))
+    
+    try:
+        # 1. Attempt to update the user profile role
+        # Using the standard client which carries the user's auth token
+        update_res = supabase.table('profiles').update({"role": new_role}).eq("id", user_id).execute()
+        
+        # Check if update was successful (Supabase returns empty list if RLS blocks or no rows match)
+        if not update_res.data:
+            flash(f"Database update failed. This is likely due to Row Level Security (RLS) policies. Please ensure admins are allowed to update the profiles table.", "error")
+            return redirect(url_for('admin.user_management', user_id=user_id))
+
+        # 2. Sync session if updating current user
+        if user_id == session['user']['id']:
+            session['user']['role'] = new_role
+            session.modified = True
+        
+        # 3. Attempt to log the action
+        try:
+            admin_id = session['user']['id']
+            supabase.table('admin_logs').insert({
+                "admin_id": admin_id,
+                "action_type": "update_role",
+                "target_id": user_id,
+                "details": f"Updated role to {new_role}"
+            }).execute()
+        except Exception as log_e:
+            print(f"Audit Log Error (likely RLS): {str(log_e)}")
+        
+        flash(f"User role updated successfully to {new_role.replace('_', ' ').title()}.", "success")
+    except Exception as e:
+        flash(f"Error updating user role: {str(e)}", "error")
+        
+    return redirect(url_for('admin.user_management', user_id=user_id))
+
 @admin.route('/admin/content/<category>')
 @login_required
 @admin_required
@@ -148,5 +212,36 @@ def become_admin():
 @admin_required
 def manage_forbidden_words():
     apply_supabase_auth_token()
-    res = supabase.table('forbidden_words').select("*").execute()
+    res = supabase.table('forbidden_words').select("*").order('word').execute()
     return render_template('admin/forbidden_words.html', words=res.data, user=session.get('user'))
+
+@admin.route('/admin/forbidden-words/add', methods=['POST'])
+@login_required
+@admin_required
+def add_forbidden_word():
+    apply_supabase_auth_token()
+    word = request.form.get('word', '').strip().lower()
+    if not word:
+        flash("Word cannot be empty.", "error")
+        return redirect(url_for('admin.manage_forbidden_words'))
+    
+    try:
+        supabase.table('forbidden_words').insert({"word": word}).execute()
+        flash(f"Added '{word}' to forbidden words.", "success")
+    except Exception as e:
+        flash(f"Error adding word: {str(e)}", "error")
+    
+    return redirect(url_for('admin.manage_forbidden_words'))
+
+@admin.route('/admin/forbidden-words/<word>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_forbidden_word(word):
+    apply_supabase_auth_token()
+    try:
+        supabase.table('forbidden_words').delete().eq('word', word).execute()
+        flash(f"Removed '{word}' from forbidden words.", "success")
+    except Exception as e:
+        flash(f"Error removing word: {str(e)}", "error")
+    
+    return redirect(url_for('admin.manage_forbidden_words'))
