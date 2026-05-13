@@ -1,0 +1,36 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Profanity Filter | Admin Hub{% endblock %}
+
+{% block header_title %}Profanity Filter Management{% endblock %}
+
+{% block admin_content %}
+<div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h3 class="text-lg font-black text-slate-800">Forbidden Words</h3>
+            <p class="text-sm text-slate-400 font-bold">Manage the list of words automatically filtered from posts and comments.</p>
+        </div>
+        <button class="bg-umak-blue text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-200">
+            Add New Word
+        </button>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {% if words %}
+            {% for word in words %}
+            <div class="group bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center hover:border-umak-blue transition-all">
+                <span class="text-xs font-bold text-slate-700">{{ word.word }}</span>
+                <button class="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-span-full py-12 text-center">
+                <p class="text-slate-400 font-bold">No forbidden words added yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

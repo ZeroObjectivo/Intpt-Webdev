@@ -1,0 +1,206 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Admin Dashboard | Herons' Hub{% endblock %}
+
+{% block admin_content %}
+<!-- Favorites Bar (Admin's selected shortcuts) -->
+<div class="fav-bar">
+    <div class="fav-item" onclick="window.location.href='{{ url_for('admin.manage_users') }}'">
+        <div class="fav-icon bg-blue-50">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        </div>
+        <span class="fav-text">Manage Users</span>
+    </div>
+    <div class="fav-item" onclick="document.querySelectorAll('.stat-card')[2].click()">
+        <div class="fav-icon bg-rose-50 text-rose-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <span class="fav-text">Reports Queue</span>
+    </div>
+    <div class="fav-item" onclick="window.location.href='{{ url_for('admin.manage_disputes') }}'">
+        <div class="fav-icon bg-emerald-50 text-emerald-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <span class="fav-text">Verification Disputes</span>
+        {% if stats.disputes_count > 0 %}
+        <span class="ml-auto bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ stats.disputes_count }}</span>
+        {% endif %}
+    </div>
+    <div class="fav-item" onclick="window.location.href='{{ url_for('admin.manage_forbidden_words') }}'">
+        <div class="fav-icon bg-amber-50 text-amber-500">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        </div>
+        <span class="fav-text">Profanity Filter</span>
+    </div>
+</div>
+
+<!-- Main Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- 1. Registered Users -->
+    <div class="stat-card" onclick="toggleExpand(this)">
+        <div class="stat-label">Total Registered Users</div>
+        <div class="stat-value">{{ stats.total_users }}</div>
+        <div class="expanded-content hidden mt-6">
+            <h4 class="font-black text-slate-800 text-sm mb-4">User Directory</h4>
+            <div class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                {% for profile in stats.user_list[:10] %}
+                <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer" onclick="window.location.href='{{ url_for('admin.user_management', user_id=profile.id) }}'">
+                    <div class="flex items-center gap-3">
+                        <img src="{{ profile.avatar_url if profile.avatar_url else url_for('static', filename='images/Logo.png') }}" class="w-8 h-8 rounded-full object-cover">
+                        <div>
+                            <p class="text-[11px] font-black text-slate-800">{{ profile.full_name }}</p>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase">{{ profile.role }}</p>
+                        </div>
+                    </div>
+                    <svg class="w-3 h-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+                {% endfor %}
+            </div>
+            <button onclick="window.location.href='{{ url_for('admin.manage_users') }}'" class="mt-6 w-full py-2 bg-slate-50 text-[10px] font-black uppercase text-umak-blue rounded-xl border border-slate-100">View Full Directory</button>
+        </div>
+    </div>
+
+    <!-- 2. Total Posts -->
+    <div class="stat-card" onclick="toggleExpand(this)">
+        <div class="stat-label">Total Posts</div>
+        <div class="stat-value">{{ stats.total_posts }}</div>
+        <div class="expanded-content hidden mt-6">
+            <h4 class="font-black text-slate-800 text-sm mb-4">Posts by Category</h4>
+            <div class="space-y-3">
+                {% for item in stats.posts_by_category %}
+                <div class="group flex justify-between items-center text-xs p-2 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer" onclick="window.location.href='{{ url_for('admin.content_management', category=item.category) }}'">
+                    <span class="font-bold text-slate-500 group-hover:text-umak-blue">#{{ item.category }}</span>
+                    <span class="font-black text-slate-800">{{ item.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <button onclick="window.location.href='{{ url_for('admin.content_management', category='All') }}'" class="mt-6 w-full py-2 bg-slate-50 text-[10px] font-black uppercase text-umak-blue rounded-xl border border-slate-100">Manage Content</button>
+        </div>
+    </div>
+
+    <!-- 3. Posts Reported -->
+    <div class="stat-card" onclick="toggleExpand(this)">
+        <div class="stat-label">Posts Reported</div>
+        <div class="stat-value text-rose-600">{{ stats.reported_posts }}</div>
+        <div class="expanded-content hidden mt-6">
+            <h4 class="font-black text-slate-800 text-sm mb-4">Reports Queue</h4>
+            <div class="space-y-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                {% if stats.reports_list %}
+                    {% for report in stats.reports_list %}
+                    <div class="p-3 bg-rose-50 rounded-xl border border-rose-100 cursor-pointer hover:bg-rose-100 transition-colors">
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="text-[10px] font-black text-rose-600 uppercase">{{ report.reason }}</p>
+                            <span class="text-[9px] text-slate-400 font-bold">{{ report.created_at[:10] }}</span>
+                        </div>
+                        <p class="text-[11px] font-medium text-slate-600 line-clamp-1">"{{ report.posts.content if report.posts else 'Post content unavailable' }}"</p>
+                        <p class="text-[9px] text-slate-400 font-bold mt-1">Reporter: {{ report.profiles.full_name if report.profiles else 'Unknown' }}</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-xs text-slate-400 font-bold italic text-center py-4">No reports to review.</p>
+                {% endif %}
+            </div>
+            <button class="mt-6 w-full py-2 bg-rose-600 text-[10px] font-black uppercase text-white rounded-xl shadow-lg shadow-rose-200">Go to Moderation</button>
+        </div>
+    </div>
+
+    <!-- 4. Suspended/Banned -->
+    <div class="stat-card" onclick="toggleExpand(this)">
+        <div class="stat-label">Banned Accounts</div>
+        <div class="stat-value">{{ stats.banned_accounts }}</div>
+        <div class="expanded-content hidden mt-6">
+            <h4 class="font-black text-slate-800 text-sm mb-4">Account Status</h4>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">Suspended</span>
+                    <span class="font-black text-slate-800">0</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-slate-500">Banned</span>
+                    <span class="font-black text-slate-800">{{ stats.banned_accounts }}</span>
+                </div>
+            </div>
+            <button onclick="window.location.href='{{ url_for('admin.manage_users') }}'" class="mt-6 w-full py-2 bg-slate-50 text-[10px] font-black uppercase text-slate-600 rounded-xl border border-slate-100">Manage Sanctions</button>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Grid for Analytics and Recent Activities -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+    <!-- User Breakdown Chart Placeholder -->
+    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 lg:col-span-1">
+        <h3 class="text-lg font-black text-slate-800 mb-6">User Breakdown</h3>
+        <div class="aspect-square bg-slate-50 rounded-full flex items-center justify-center relative">
+            <div class="text-center">
+                <p class="text-2xl font-black text-umak-blue">{{ stats.total_users }}</p>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Users</p>
+            </div>
+        </div>
+        <div class="mt-8 space-y-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 bg-umak-blue rounded-full"></span>
+                    <span class="text-xs font-bold text-slate-600">CCIS Students</span>
+                </div>
+                <span class="text-xs font-black text-slate-800">42%</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 bg-blue-300 rounded-full"></span>
+                    <span class="text-xs font-bold text-slate-600">CAS Students</span>
+                </div>
+                <span class="text-xs font-black text-slate-800">28%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 lg:col-span-2">
+        <h3 class="text-lg font-black text-slate-800 mb-6">Recent Admin Activities</h3>
+        <div class="space-y-6">
+            {% if stats.recent_activities %}
+                {% for log in stats.recent_activities %}
+                <div class="flex gap-4">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-umak-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-slate-800">{{ log.action_type|replace('_', ' ')|title }}</p>
+                        <p class="text-xs text-slate-500 font-medium">{{ log.details }}</p>
+                        <p class="text-[10px] text-slate-400 font-bold mt-1 uppercase">Admin: {{ log.profiles.full_name if log.profiles else 'System' }} • {{ log.created_at[:10] }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="flex flex-col items-center justify-center py-8">
+                    <svg class="w-12 h-12 text-slate-100 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <p class="text-xs text-slate-400 font-bold italic">No recent admin logs found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+    function toggleExpand(card) {
+        // Toggle expanded class for layout
+        card.classList.toggle('expanded');
+        
+        // Find and toggle content visibility
+        const content = card.querySelector('.expanded-content');
+        content.classList.toggle('hidden');
+        
+        // If expanding, close others (optional but keeps it clean)
+        if (card.classList.contains('expanded')) {
+            document.querySelectorAll('.stat-card').forEach(c => {
+                if (c !== card && c.classList.contains('expanded')) {
+                    c.classList.remove('expanded');
+                    c.querySelector('.expanded-content').classList.add('hidden');
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

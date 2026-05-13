@@ -133,6 +133,18 @@
                 <span class="bg-slate-50 text-slate-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-100">
                     {{ user.role }}
                 </span>
+                
+                {% if is_own_profile and user.role != 'super_admin' %}
+                <form action="{{ url_for('admin.become_admin') }}" method="POST" class="inline">
+                    <button type="submit" class="bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition-colors">
+                        Switch to Admin
+                    </button>
+                </form>
+                {% elif is_own_profile and user.role == 'super_admin' %}
+                <a href="{{ url_for('admin.dashboard') }}" class="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100 hover:bg-indigo-100 transition-colors">
+                    Admin Dashboard
+                </a>
+                {% endif %}
             </div>
 
             {% if user.bio %}
@@ -256,7 +268,7 @@
 
         <!-- 3. Settings Tab -->
         <section id="settings" class="tab-content">
-            <form action="{{ url_for('core.update_profile') }}" method="POST" class="settings-card shadow-none border border-slate-100">
+            <form id="settingsForm" action="{{ url_for('core.update_profile') }}" method="POST" class="settings-card shadow-none border border-slate-100">
                 <div class="form-section">
                     <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                         <svg class="w-5 h-5 text-umak-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -386,7 +398,7 @@ async function confirmDeletePost(postId) {
 
 // Form Change Tracking
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('form');
+    const form = document.getElementById('settingsForm');
     const saveBtn = document.getElementById('saveBtn');
     if (form && saveBtn) {
         const initialState = new FormData(form);

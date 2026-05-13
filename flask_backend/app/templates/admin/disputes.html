@@ -1,0 +1,48 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Verification Disputes | Admin Hub{% endblock %}
+{% block header_title %}System Integrity{% endblock %}
+
+{% block admin_content %}
+<div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+    <div class="mb-8">
+        <h3 class="text-lg font-black text-slate-800">Verification Disputes</h3>
+        <p class="text-sm text-slate-400 font-bold">Manage requests from users who were unable to log in due to verification requirements.</p>
+    </div>
+
+    <div class="space-y-4">
+        {% if disputes %}
+            {% for d in disputes %}
+            <div class="p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-umak-blue">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-slate-800">{{ d.full_name or 'Unknown Name' }}</p>
+                        <p class="text-[10px] font-bold text-slate-400">{{ d.email }}</p>
+                        <p class="text-[11px] font-medium text-slate-500 mt-1">"{{ d.reason }}"</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100">
+                        {{ d.status }}
+                    </span>
+                    <div class="flex gap-2">
+                        <button class="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-100">Approve</button>
+                        <button class="px-4 py-2 bg-white text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200">Reject</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="py-12 text-center">
+                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <p class="text-slate-400 font-bold italic">No pending disputes found.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
