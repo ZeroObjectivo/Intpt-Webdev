@@ -200,7 +200,11 @@
         <div class="profile-info-section">
             <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="profile-avatar-giant">
             <h1 class="text-2xl font-black text-slate-800">{{ user.full_name }}</h1>
+            {% if is_own_profile %}
             <p class="text-slate-400 font-bold text-sm mb-4">{{ user.email }}</p>
+            {% else %}
+            <p class="text-slate-400 font-bold text-sm mb-4 uppercase tracking-wide">Public Profile</p>
+            {% endif %}
             
             <div class="flex justify-center flex-wrap gap-3 mb-6">
                 {% if user.college %}
@@ -236,8 +240,8 @@
         <!-- Dashboard Tabs -->
         <nav class="profile-tabs">
             <div class="tab-link active" onclick="switchTab('timeline', this)">Timeline</div>
-            <div class="tab-link" onclick="switchTab('activity', this)">Activity Log</div>
             {% if is_own_profile %}
+            <div class="tab-link" onclick="switchTab('activity', this)">Activity Log</div>
             <div class="tab-link" onclick="switchTab('settings', this)">Edit Profile</div>
             {% endif %}
         </nav>
@@ -359,6 +363,7 @@
             </div>
         </section>
 
+        {% if is_own_profile %}
         <!-- 2. Activity Tab -->
         <section id="activity" class="tab-content max-w-2xl mx-auto">
             {% if activity %}
@@ -388,7 +393,9 @@
                 </div>
             {% endif %}
         </section>
+        {% endif %}
 
+        {% if is_own_profile %}
         <!-- 3. Settings Tab -->
         <section id="settings" class="tab-content">
             <form id="settingsForm" action="{{ url_for('core.update_profile') }}" method="POST" class="settings-card shadow-none border border-slate-100">
@@ -464,6 +471,7 @@
                 </div>
             </form>
         </section>
+        {% endif %}
     </div>
 </div>
 

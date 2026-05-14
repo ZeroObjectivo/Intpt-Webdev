@@ -73,7 +73,7 @@
         border: 1px solid #cbd5e1;
         border-radius: 9999px;
         background: #ffffff;
-        overflow: hidden;
+        overflow: visible;
     }
 
     .hh-navbar .hh-search-wrap:hover {
@@ -100,6 +100,75 @@
     .hh-navbar .hh-search-wrap:focus-within .hh-search-icon {
         color: #64748b;
     }
+
+    .hh-navbar .hh-search-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        z-index: 90;
+        background: #ffffff;
+        border: 1px solid #d9e2ee;
+        border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+        max-height: 22rem;
+        overflow-y: auto;
+    }
+
+    .hh-navbar .hh-search-section-title {
+        padding: 0.5rem 0.9rem 0.25rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .hh-navbar .hh-search-item {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        width: 100%;
+        padding: 0.55rem 0.9rem;
+        color: #0f172a;
+        text-align: left;
+        transition: background-color 0.16s ease;
+    }
+
+    .hh-navbar .hh-search-item:hover {
+        background: #f1f5f9;
+    }
+
+    .hh-navbar .hh-search-avatar {
+        width: 1.9rem;
+        height: 1.9rem;
+        border-radius: 9999px;
+        object-fit: cover;
+        flex: 0 0 1.9rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .hh-navbar .hh-search-item-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.15;
+    }
+
+    .hh-navbar .hh-search-item-subtitle {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #64748b;
+        line-height: 1.2;
+    }
+
+    .hh-navbar .hh-search-empty {
+        padding: 0.75rem 0.9rem;
+        font-size: 0.76rem;
+        color: #64748b;
+        font-weight: 600;
+    }
 </style>
 
 <nav class="hh-navbar bg-umak-blue text-white py-4 px-6 mb-6 fixed top-0 left-0 w-full z-50 font-sans shadow-md" style="background-color: #001035;">
@@ -121,12 +190,16 @@
                             placeholder="Search..."
                             id="navbarSearchInput"
                             aria-label="Search posts"
+                            autocomplete="off"
                             class="hh-search-input w-full py-2 pl-10 pr-4 text-gray-700 rounded-full transition-all"
                         >
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="hh-search-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
+                        </div>
+                        <div id="navbarSearchDropdown" class="hh-search-dropdown hidden" role="listbox" aria-label="Search suggestions">
+                            <div id="navbarSearchDropdownContent"></div>
                         </div>
                     </div>
                     <a href="{{ url_for('core.dashboard') }}" class="hidden xl:block px-3 py-2 text-sm font-medium text-white hover:text-umak-yellow transition-colors whitespace-nowrap">Go to Dashboard</a>
@@ -248,8 +321,8 @@
                             <a href="{{ url_for('core.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Home Feed</a>
                             <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Marketplace</a>
                             <a href="{{ url_for('core.dashboard', category='Events') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Events</a>
-                            <a href="{{ url_for('core.dashboard', category='Scholarship') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Scholarship</a>
-                            <a href="{{ url_for('core.dashboard', category='UMak Coop') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">UMak Coop</a>
+                            <a href="{{ url_for('core.scholarship') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Scholarship</a>
+                            <a href="{{ url_for('core.umak_coop') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">UMak Coop</a>
                             <a href="{{ url_for('core.home') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">About</a>
                         </div>
                     </div>
@@ -394,15 +467,191 @@
                     };
 
                     const searchInput = document.getElementById('navbarSearchInput');
-                    if (searchInput) {
-                        // Client-side post search/filter
-                        searchInput.addEventListener('input', function() {
-                            const query = this.value.toLowerCase().trim();
-                            const posts = document.querySelectorAll('.post-card');
-                            posts.forEach(function(post) {
-                                const content = post.textContent.toLowerCase();
-                                post.style.display = (!query || content.includes(query)) ? '' : 'none';
+                    const searchContainer = document.getElementById('navbarSearchContainer');
+                    const searchDropdown = document.getElementById('navbarSearchDropdown');
+                    const searchDropdownContent = document.getElementById('navbarSearchDropdownContent');
+                    const defaultAvatar = '{{ url_for('static', filename='images/Logo.png') }}';
+
+                    if (searchInput && searchContainer && searchDropdown && searchDropdownContent) {
+                        let userSearchTimer = null;
+                        let searchRequestId = 0;
+                        let lastUsers = [];
+                        let lastPostMatches = [];
+                        let activeQuery = '';
+
+                        function closeSearchDropdown() {
+                            searchDropdown.classList.add('hidden');
+                        }
+
+                        function openSearchDropdown() {
+                            searchDropdown.classList.remove('hidden');
+                        }
+
+                        function filterPostCards(queryText) {
+                            const lowered = (queryText || '').toLowerCase().trim();
+                            const posts = Array.from(document.querySelectorAll('.post-card'));
+                            const matches = [];
+
+                            posts.forEach((post) => {
+                                const postText = (post.textContent || '').toLowerCase();
+                                const isMatch = !lowered || postText.includes(lowered);
+                                post.style.display = isMatch ? '' : 'none';
+
+                                if (lowered && isMatch && matches.length < 5) {
+                                    const postId = post.dataset.postId || '';
+                                    const authorEl = post.querySelector('.post-author-name') || post.querySelector('.post-user-info h4');
+                                    const contentEl = post.querySelector('.post-content p');
+                                    matches.push({
+                                        id: postId,
+                                        author: authorEl ? authorEl.textContent.trim() : 'Post',
+                                        snippet: contentEl ? contentEl.textContent.trim() : ''
+                                    });
+                                }
                             });
+
+                            return matches;
+                        }
+
+                        function renderSearchDropdown(queryText, users, postMatches) {
+                            const hasQuery = !!(queryText && queryText.trim());
+                            if (!hasQuery) {
+                                searchDropdownContent.innerHTML = '';
+                                closeSearchDropdown();
+                                return;
+                            }
+
+                            const safeQuery = escapeNotifHtml(queryText);
+                            const userItems = (users || []).map((user) => {
+                                const avatarUrl = user.avatar_url ? escapeNotifHtml(user.avatar_url) : defaultAvatar;
+                                const fullName = escapeNotifHtml(user.full_name || 'User');
+                                const subtitleBits = [user.college, user.course].filter(Boolean);
+                                const subtitle = subtitleBits.length ? escapeNotifHtml(subtitleBits.join(' | ')) : 'UMak student';
+                                const profileUrl = `/profile/${encodeURIComponent(user.id)}`;
+                                return `
+                                    <a href="${profileUrl}" class="hh-search-item" role="option">
+                                        <img src="${avatarUrl}" alt="" class="hh-search-avatar">
+                                        <div class="min-w-0">
+                                            <div class="hh-search-item-title truncate">${fullName}</div>
+                                            <div class="hh-search-item-subtitle truncate">${subtitle}</div>
+                                        </div>
+                                    </a>
+                                `;
+                            }).join('');
+
+                            const postItems = (postMatches || []).map((post) => {
+                                const safeAuthor = escapeNotifHtml(post.author || 'Post');
+                                const safeSnippet = escapeNotifHtml((post.snippet || '').slice(0, 72));
+                                const safePostId = escapeNotifHtml(post.id || '');
+                                return `
+                                    <button type="button" class="hh-search-item" role="option" data-search-kind="post" data-post-id="${safePostId}">
+                                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h5M6 19h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="hh-search-item-title truncate">${safeAuthor}</div>
+                                            <div class="hh-search-item-subtitle truncate">${safeSnippet || safeQuery}</div>
+                                        </div>
+                                    </button>
+                                `;
+                            }).join('');
+
+                            const hasUsers = (users || []).length > 0;
+                            const hasPosts = (postMatches || []).length > 0;
+                            const emptyState = !hasUsers && !hasPosts
+                                ? `<div class="hh-search-empty">No results for "${safeQuery}"</div>`
+                                : '';
+
+                            searchDropdownContent.innerHTML = `
+                                ${hasUsers ? `<div class="hh-search-section-title">Users</div>${userItems}` : ''}
+                                ${hasPosts ? `<div class="hh-search-section-title">Posts</div>${postItems}` : ''}
+                                ${emptyState}
+                            `;
+                            openSearchDropdown();
+                        }
+
+                        async function fetchUsersAndRender(queryText, postMatches) {
+                            const requestId = ++searchRequestId;
+                            try {
+                                const res = await fetch(`/search/users?q=${encodeURIComponent(queryText)}&limit=6`, {
+                                    headers: { 'Accept': 'application/json' }
+                                });
+
+                                if (res.status === 401) {
+                                    window.location.href = '/login';
+                                    return;
+                                }
+                                if (!res.ok) return;
+
+                                const payload = await res.json();
+                                if (requestId !== searchRequestId) return;
+                                const users = Array.isArray(payload.users) ? payload.users : [];
+                                lastUsers = users;
+                                renderSearchDropdown(queryText, users, postMatches);
+                            } catch (_e) {
+                                if (requestId !== searchRequestId) return;
+                                renderSearchDropdown(queryText, [], postMatches);
+                            }
+                        }
+
+                        searchInput.addEventListener('input', function() {
+                            const queryText = this.value.trim();
+                            activeQuery = queryText;
+                            const postMatches = filterPostCards(queryText);
+                            lastPostMatches = postMatches;
+
+                            if (!queryText) {
+                                lastUsers = [];
+                                renderSearchDropdown('', [], []);
+                                return;
+                            }
+
+                            renderSearchDropdown(queryText, lastUsers, postMatches);
+                            if (userSearchTimer) clearTimeout(userSearchTimer);
+                            userSearchTimer = setTimeout(() => {
+                                fetchUsersAndRender(queryText, postMatches);
+                            }, 180);
+                        });
+
+                        searchInput.addEventListener('focus', function() {
+                            if (activeQuery) {
+                                renderSearchDropdown(activeQuery, lastUsers, lastPostMatches);
+                            }
+                        });
+
+                        searchInput.addEventListener('keydown', function(e) {
+                            if (e.key === 'Escape') {
+                                closeSearchDropdown();
+                                return;
+                            }
+                            if (e.key === 'Enter') {
+                                const firstPost = searchDropdownContent.querySelector('[data-search-kind="post"]');
+                                if (firstPost) {
+                                    e.preventDefault();
+                                    firstPost.click();
+                                }
+                            }
+                        });
+
+                        searchDropdown.addEventListener('click', function(e) {
+                            const button = e.target.closest('[data-search-kind="post"]');
+                            if (!button) return;
+
+                            const postId = button.getAttribute('data-post-id');
+                            if (!postId) return;
+
+                            const target = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+                            if (!target) return;
+
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            target.classList.add('ring-2', 'ring-blue-500');
+                            setTimeout(() => target.classList.remove('ring-2', 'ring-blue-500'), 1200);
+                            closeSearchDropdown();
+                        });
+
+                        document.addEventListener('click', function(e) {
+                            if (!searchContainer.contains(e.target)) {
+                                closeSearchDropdown();
+                            }
                         });
                     }
 

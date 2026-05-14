@@ -427,6 +427,62 @@ def view_profile(target_user_id):
 def profile_settings():
     return redirect(url_for('core.view_profile', target_user_id=session.get('user').get('id')))
 
+@core.route('/search/users')
+@login_required
+def search_users():
+    query_text = (request.args.get('q') or '').strip()
+    if not query_text:
+        return jsonify({"status": "ok", "users": []})
+
+    limit_raw = request.args.get('limit', '8')
+    try:
+        limit = int(limit_raw)
+    except (TypeError, ValueError):
+        limit = 8
+    limit = max(1, min(limit, 20))
+
+    current_user_id = session.get('user', {}).get('id')
+
+    def run_search():
+        client = get_user_client()
+        query = client.table('profiles')\
+            .select("id, full_name, avatar_url, college, course")\
+            .ilike('full_name', f'%{query_text}%')
+
+        if current_user_id:
+            query = query.neq('id', current_user_id)
+
+        res = query.order('full_name').limit(limit).execute()
+        users = []
+
+        for row in (res.data or []):
+            full_name = (row.get('full_name') or '').strip()
+            if not full_name:
+                continue
+            users.append({
+                "id": row.get('id'),
+                "full_name": full_name,
+                "avatar_url": row.get('avatar_url'),
+                "college": row.get('college') or '',
+                "course": row.get('course') or '',
+            })
+
+        return users
+
+    try:
+        users = run_search()
+        return jsonify({"status": "ok", "users": users})
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            try:
+                users = run_search()
+                return jsonify({"status": "ok", "users": users})
+            except Exception:
+                return jsonify({"status": "error", "reason": "search_failed"}), 500
+        if is_jwt_error(e):
+            return jsonify({"status": "error", "reason": "session_expired"}), 401
+        return jsonify({"status": "error", "reason": "search_failed"}), 500
+
 def load_profile_data(user_id, viewer_id=None):
     client = get_user_client()
 
@@ -455,39 +511,41 @@ def load_profile_data(user_id, viewer_id=None):
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
         attach_embed_metadata(post)
 
-    likes_activity = client.table('likes')\
-        .select("created_at, posts(id, content, category)")\
-        .eq("user_id", user_id)\
-        .order("created_at", desc=True).limit(10).execute()
-
-    comments_activity = client.table('comments')\
-        .select("id, created_at, content, post_id, posts(id, content, category)")\
-        .eq("user_id", user_id)\
-        .order("created_at", desc=True).limit(10).execute()
-
     activity = []
-    for l in likes_activity.data:
-        if l.get('posts'):
-            activity.append({
-                "type": "like",
-                "created_at": l['created_at'],
-                "post_id": l['posts']['id'],
-                "post_content": l['posts']['content'],
-                "category": l['posts']['category']
-            })
+    is_own_profile = str(viewer_id) == str(user_id)
+    if is_own_profile:
+        likes_activity = client.table('likes')\
+            .select("created_at, posts(id, content, category)")\
+            .eq("user_id", user_id)\
+            .order("created_at", desc=True).limit(10).execute()
 
-    for c in comments_activity.data:
-        if c.get('posts'):
-            activity.append({
-                "type": "comment",
-                "created_at": c['created_at'],
-                "content": c['content'],
-                "post_id": c['posts']['id'],
-                "post_content": c['posts']['content'],
-                "category": c['posts']['category']
-            })
+        comments_activity = client.table('comments')\
+            .select("id, created_at, content, post_id, posts(id, content, category)")\
+            .eq("user_id", user_id)\
+            .order("created_at", desc=True).limit(10).execute()
 
-    activity.sort(key=lambda x: x['created_at'], reverse=True)
+        for l in likes_activity.data:
+            if l.get('posts'):
+                activity.append({
+                    "type": "like",
+                    "created_at": l['created_at'],
+                    "post_id": l['posts']['id'],
+                    "post_content": l['posts']['content'],
+                    "category": l['posts']['category']
+                })
+
+        for c in comments_activity.data:
+            if c.get('posts'):
+                activity.append({
+                    "type": "comment",
+                    "created_at": c['created_at'],
+                    "content": c['content'],
+                    "post_id": c['posts']['id'],
+                    "post_content": c['posts']['content'],
+                    "category": c['posts']['category']
+                })
+
+        activity.sort(key=lambda x: x['created_at'], reverse=True)
 
     return profile, posts, activity[:20]
 
