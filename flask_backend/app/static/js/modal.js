@@ -535,10 +535,16 @@ function cancelReply() {
     }
 }
 
+// Global state to prevent spam clicking
+let isLiking = false;
+
 async function toggleLike(postId, btn) {
+    if (isLiking) return;
+    isLiking = true;
+
     const icon = btn.querySelector('svg');
     const countSpan = btn.querySelector('.likes-count');
-    let count = parseInt(countSpan.innerText || '0');
+    let count = parseInt(countSpan ? countSpan.innerText : '0');
     
     const isLiked = btn.classList.contains('text-red-500');
     
@@ -559,6 +565,13 @@ async function toggleLike(postId, btn) {
         const response = await fetch(`/posts/${postId}/like`, { method: 'POST' });
         const data = await response.json();
         
+        // Update currentPost state if in modal
+        if (currentPost && currentPost.id === postId) {
+            currentPost.user_has_liked = (data.status === 'liked');
+            currentPost.likes_count = (data.status === 'liked') ? count + 1 : Math.max(0, count - 1);
+        }
+
+        // Final sync based on server response
         if (data.status === 'liked') {
             btn.classList.add('text-red-500');
             btn.classList.remove('text-slate-400');
@@ -571,7 +584,19 @@ async function toggleLike(postId, btn) {
     } catch (error) {
         console.error('Error toggling like:', error);
         // Revert on error
-        if (countSpan) countSpan.innerText = count;
+        if (isLiked) {
+            btn.classList.add('text-red-500');
+            btn.classList.remove('text-slate-400');
+            icon.classList.add('fill-current');
+            if (countSpan) countSpan.innerText = count;
+        } else {
+            btn.classList.remove('text-red-500');
+            btn.classList.add('text-slate-400');
+            icon.classList.remove('fill-current');
+            if (countSpan) countSpan.innerText = count;
+        }
+    } finally {
+        isLiking = false;
     }
 }
 
@@ -595,9 +620,11 @@ function updateDashboardCount(postId, type, delta) {
 }
 
 function updateModalActions(post) {
-    const likeBtn = document.querySelector('.modal-side-panel .modal-action-btn:first-child');
-    const commentBtn = document.querySelector('.modal-side-panel .modal-action-btn:last-child');
+    const sidePanel = document.querySelector('.modal-side-panel');
+    const likeBtn = sidePanel.querySelector('.modal-action-btn:first-child');
+    const commentBtn = sidePanel.querySelector('.modal-action-btn:last-child');
 
+    // Set initial state
     if (post.user_has_liked) {
         likeBtn.classList.add('text-red-500');
         likeBtn.querySelector('svg').classList.add('fill-current');
@@ -606,27 +633,30 @@ function updateModalActions(post) {
         likeBtn.querySelector('svg').classList.remove('fill-current');
     }
 
-    likeBtn.onclick = () => {
-        const isCurrentlyLiked = likeBtn.classList.contains('text-red-500');
-        toggleLike(post.id, likeBtn);
+    likeBtn.onclick = async () => {
+        if (isLiking) return;
         
-        // Sync with dashboard
+        const isCurrentlyLiked = likeBtn.classList.contains('text-red-500');
+        
+        // Optimistically update dashboard UI
         const dashCard = document.querySelector(`.post-card[data-post-id="${post.id}"]`);
         if (dashCard) {
             const dashLikeBtn = dashCard.querySelector('.like-btn');
-            const icon = dashLikeBtn.querySelector('svg');
+            const dashIcon = dashLikeBtn.querySelector('svg');
             
-            // Toggle classes to match modal state (post-toggleLike)
-            if (!isCurrentlyLiked) { // was not liked, now liked
+            if (!isCurrentlyLiked) {
                 dashLikeBtn.classList.add('text-red-500');
-                icon.classList.add('fill-current');
+                dashIcon.classList.add('fill-current');
                 updateDashboardCount(post.id, 'likes', 1);
-            } else { // was liked, now unliked
+            } else {
                 dashLikeBtn.classList.remove('text-red-500');
-                icon.classList.remove('fill-current');
+                dashIcon.classList.remove('fill-current');
                 updateDashboardCount(post.id, 'likes', -1);
             }
         }
+
+        // Use the global toggleLike which handles the modal button's UI and API call
+        await toggleLike(post.id, likeBtn);
     };
 
     commentBtn.onclick = () => {

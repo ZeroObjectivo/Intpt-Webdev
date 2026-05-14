@@ -15,4 +15,10 @@ def run_migration(filename):
                 print(f"Error applying migration {filename}: {e}")
 
 if __name__ == "__main__":
-    run_migration('20260513000700_allow_dispute_insert.sql')
+    migrations = [
+        '20260513000700_allow_dispute_insert.sql',
+        '20260514000000_admin_role_management_policies.sql',
+        '20260514000300_add_flag_status.sql'
+    ]
+    for m in migrations:
+        run_migration(m)

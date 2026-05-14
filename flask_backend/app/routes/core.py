@@ -80,10 +80,10 @@ def dashboard():
     apply_supabase_auth_token()
 
     try:
-        profile, posts, trending = load_dashboard_data(user_id, category)
+        profile, posts, trending, events = load_dashboard_data(user_id, category)
     except Exception as e:
         if is_jwt_expired_error(e) and refresh_supabase_auth():
-            profile, posts, trending = load_dashboard_data(user_id, category)
+            profile, posts, trending, events = load_dashboard_data(user_id, category)
         elif is_jwt_expired_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
@@ -96,6 +96,7 @@ def dashboard():
                            posts=posts, 
                            active_category=category, 
                            trending=trending,
+                           events=events,
                            now=datetime.datetime.utcnow())
 
 @core.route('/profile/<target_user_id>')
@@ -247,11 +248,42 @@ def load_dashboard_data(user_id, category=None):
         post['comments_count'] = post.get('comments_count') or 0
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
 
-    # 4. Fetch Trending Posts (Top 3 by likes_count)
-    trending_response = supabase.table('posts').select("content, category, likes_count").order("likes_count", desc=True).limit(3).execute()
+    # 4. Fetch Trending Posts (Top 3 by likes_count, must have at least 1 like)
+    trending_response = supabase.table('posts')\
+        .select("content, category, likes_count")\
+        .gt("likes_count", 0)\
+        .order("likes_count", desc=True)\
+        .limit(3).execute()
     trending = trending_response.data
     
-    return profile, posts, trending
+    # 5. Fetch Upcoming Events (Top 3 by event_date, future only)
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    events_response = supabase.table('posts')\
+        .select("content, event_date, event_end_date, location")\
+        .eq("category", "Events")\
+        .gte("event_date", now_iso)\
+        .order("event_date", desc=False)\
+        .limit(3).execute()
+    upcoming_events = []
+    
+    for event in events_response.data:
+        try:
+            # Parse and convert to Manila time for display
+            dt = datetime.datetime.fromisoformat(event['event_date'].replace('Z', '+00:00')).astimezone(DISPLAY_TIMEZONE)
+            event['day'] = dt.strftime('%d')
+            event['month'] = dt.strftime('%b')
+            event['time_display'] = dt.strftime('%I:%M %p').lstrip('0')
+            
+            if event.get('event_end_date'):
+                edt = datetime.datetime.fromisoformat(event['event_end_date'].replace('Z', '+00:00')).astimezone(DISPLAY_TIMEZONE)
+                event['time_display'] += f" - {edt.strftime('%I:%M %p').lstrip('0')}"
+            
+            event['status'] = 'Upcoming'
+            upcoming_events.append(event)
+        except Exception as e:
+            print(f"Error formatting event: {e}")
+
+    return profile, posts, trending, upcoming_events
 
 @core.route('/posts/<post_id>/like', methods=['POST'])
 @login_required

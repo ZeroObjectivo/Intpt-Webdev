@@ -338,11 +338,18 @@
     border: 0;
     border-radius: var(--hh-radius);
     background: transparent;
-    color: var(--hh-text-muted);
     font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.16s ease, color 0.16s ease;
+}
+
+.action-item.text-red-500 {
+    color: #ef4444 !important;
+}
+
+.action-item.text-red-500 svg {
+    fill: currentColor !important;
 }
 
 .action-item:hover {

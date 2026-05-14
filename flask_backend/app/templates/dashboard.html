@@ -69,12 +69,17 @@
             </aside>
 
             <main class="feed-column">
-                <div class="share-box">
-                    <div class="share-box-user">
-                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar object-cover">
-                        <span class="share-text capitalize">Hi {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}, ready to share?</span>
-                    </div>
-                    <button class="btn-create-post flex items-center gap-2 font-normal" onclick="document.getElementById('createPostModal').classList.remove('hidden')">
+                    <div class="share-box">
+                        <div class="share-box-user flex-1 flex items-center min-w-0">
+                            <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar object-cover shrink-0">
+                            <input type="text" 
+                                   id="dummyShareInput"
+                                   oninput="openCreateModal(this.value); this.value='';"
+                                   onclick="openCreateModal()"
+                                   placeholder="Hi {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}, ready to share?"
+                                   class="flex-1 bg-slate-50 border border-slate-200 rounded-full py-2.5 px-5 text-sm font-semibold text-slate-500 cursor-text hover:bg-slate-100 transition-all outline-none capitalize">
+                        </div>
+                        <button class="btn-create-post flex items-center gap-2 font-normal shrink-0 ml-4" onclick="openCreateModal()">
                         <svg aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 5v14m7-7H5"></path>
                         </svg>
@@ -226,69 +231,47 @@
                 <section class="sidebar-section">
                     <h2 class="sidebar-heading">Trending Now</h2>
                     <div class="trending-list">
-                        <div class="trending-item">
-                            <span class="trending-number">1</span>
-                            <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">Events</span>
-                                <h4>Lorem Ipsum Event</h4>
-                                <span class="likes">2.4k Likes</span>
+                        {% if trending %}
+                            {% for item in trending %}
+                            <div class="trending-item">
+                                <span class="trending-number">{{ loop.index }}</span>
+                                <div class="trending-details">
+                                    <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-[10px] font-bold my-[2px]">{{ item.category }}</span>
+                                    <h4 class="line-clamp-2 text-sm font-bold text-slate-800 leading-snug">{{ item.content }}</h4>
+                                    <span class="likes text-[10px] font-bold text-slate-400">{{ item.likes_count }} Likes</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="trending-item">
-                            <span class="trending-number">2</span>
-                            <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">Heron Business</span>
-                                <h4>Lorem Ipsum Event</h4>
-                                <span class="likes">2.4k Likes</span>
+                            {% endfor %}
+                        {% else %}
+                            <div class="py-4 text-center">
+                                <p class="text-[11px] text-slate-400 italic">No trending posts yet.</p>
                             </div>
-                        </div>
-                        <div class="trending-item">
-                            <span class="trending-number">3</span>
-                            <div class="trending-details">
-                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-sm font-bold my-[5px]">General</span>
-                                <h4>SHOUTOUT TO MY CLASSMATES</h4>
-                                <span class="likes">2.4k Likes</span>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </section>
 
                 <section class="sidebar-section">
                     <h2 class="sidebar-heading">Upcoming Events</h2>
                     <div class="event-list">
-                        <div class="event-card">
-                            <div class="event-date">
-                                <span class="event-day">11</span>
-                                <span class="event-month">May</span>
+                        {% if events %}
+                            {% for event in events %}
+                            <div class="event-card">
+                                <div class="event-date">
+                                    <span class="event-day">{{ event.day }}</span>
+                                    <span class="event-month">{{ event.month }}</span>
+                                </div>
+                                <div class="event-info">
+                                    <h4 class="line-clamp-1" title="{{ event.content }}">{{ event.content }}</h4>
+                                    <p>{{ event.time_display }}<br>{{ event.location or 'UMak' }}</p>
+                                </div>
+                                <div class="event-status {% if event.status == 'Ongoing' %}status-ongoing{% else %}status-upcoming{% endif %}">{{ event.status }}</div>
                             </div>
-                            <div class="event-info">
-                                <h4>Presentation</h4>
-                                <p>3:00 PM - 6:00 PM<br>HPSB</p>
+                            {% endfor %}
+                        {% else %}
+                            <div class="py-4 text-center">
+                                <p class="text-[11px] text-slate-400 italic">No upcoming events.</p>
                             </div>
-                            <div class="event-status status-ongoing">Ongoing</div>
-                        </div>
-                        <div class="event-card">
-                            <div class="event-date">
-                                <span class="event-day">13</span>
-                                <span class="event-month">May</span>
-                            </div>
-                            <div class="event-info">
-                                <h4>Culminating Activity</h4>
-                                <p>6:00 AM - 9:00 AM<br>HPSB</p>
-                            </div>
-                            <div class="event-status status-upcoming">Upcoming</div>
-                        </div>
-                        <div class="event-card">
-                            <div class="event-date">
-                                <span class="event-day">15</span>
-                                <span class="event-month">May</span>
-                            </div>
-                            <div class="event-info">
-                                <h4>Physics</h4>
-                                <p>3:00 PM - 6:00 PM<br>HPSB</p>
-                            </div>
-                            <div class="event-status status-upcoming">Upcoming</div>
-                        </div>
+                        {% endif %}
                     </div>
                 </section>
             </aside>
@@ -432,6 +415,16 @@
 
 <script>
     // Post Action Helpers
+    function openCreateModal(initialText = '') {
+        const modal = document.getElementById('createPostModal');
+        const textarea = document.getElementById('createPostContent');
+        modal.classList.remove('hidden');
+        if (initialText && !textarea.value) {
+            textarea.value = initialText;
+        }
+        textarea.focus();
+    }
+
     function togglePostMenu(postId, event) {
         if (event) event.stopPropagation();
         const menu = document.getElementById(`post-menu-${postId}`);
