@@ -65,7 +65,8 @@ def login():
     """
     # redirect_to is where Supabase will send the user AFTER Google login
     # In local dev, this is our callback route
-    scheme = "https" if request.is_secure else "http"
+    # Behind a reverse proxy (DO App Platform), check X-Forwarded-Proto
+    scheme = request.headers.get('X-Forwarded-Proto', 'https' if request.is_secure else 'http')
     callback_url = f"{scheme}://{request.host}/auth/callback"
     
     try:
