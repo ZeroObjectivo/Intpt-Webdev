@@ -92,6 +92,19 @@ class SecurityHardeningTest(unittest.TestCase):
         self.assertIn("800ms ease-out", transition_template)
         self.assertIn("animations/flow1.json", transition_template)
 
+    def test_dashboard_realtime_sync_wiring(self):
+        core_routes = read_text("app/routes/core.py")
+        dashboard_template = read_text("app/templates/dashboard.html")
+        navbar_template = read_text("app/templates/includes/navbar.html")
+        realtime_js = read_text("app/static/js/realtime_sync.js")
+
+        self.assertIn("@core.route('/sync/dashboard/load'", core_routes)
+        self.assertIn("@core.route('/sync/realtime'", core_routes)
+        self.assertIn("window.dashboardSyncConfig", dashboard_template)
+        self.assertIn("js/realtime_sync.js", dashboard_template)
+        self.assertIn("window.renderNotificationMenu", navbar_template)
+        self.assertIn("/sync/realtime", realtime_js)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -82,24 +82,24 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"></path>
                             </svg>
-                            {% if unread_notifications_count > 0 %}
-                                <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-[#001035] rounded-full"></span>
-                            {% endif %}
+                            <span id="notification-unread-dot" class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-[#001035] rounded-full {% if unread_notifications_count <= 0 %}hidden{% endif %}"></span>
                         </button>
 
                         <!-- Notification Dropdown -->
                         <div id="notification-menu" class="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden hidden z-[60] border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
                             <div class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
                                 <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
-                                {% if unread_notifications_count > 0 %}
-                                    <span class="px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black">{{ unread_notifications_count }} New</span>
-                                {% endif %}
+                                <span id="notification-unread-count" class="px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">
+                                    {{ unread_notifications_count }} New
+                                </span>
                             </div>
                             
-                            <div class="max-h-[32rem] overflow-y-auto custom-scrollbar">
+                            <div class="max-h-[32rem] overflow-y-auto custom-scrollbar" id="notification-items-root">
+                                <div id="notification-items-container">
                                 {% if notifications %}
                                     {% for n in notifications %}
-                                        <div class="px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                        <div class="notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                             data-notification-id="{{ n.id }}"
                                              onclick="markAsRead('{{ n.id }}', this)">
                                             <div class="flex justify-between items-start mb-2">
                                                 <h4 class="text-[15px] font-black {% if not n.is_read %}text-umak-blue{% else %}text-slate-600{% endif %}">{{ n.title }}</h4>
@@ -108,17 +108,17 @@
                                             <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">{{ n.message }}</p>
                                         </div>
                                     {% endfor %}
-                                    <div class="p-4 bg-slate-50/30">
-                                        <button class="w-full py-3 text-[12px] font-black text-slate-400 uppercase tracking-widest hover:text-umak-blue transition-colors">View All Notifications</button>
-                                    </div>
-                                {% else %}
-                                    <div class="px-8 py-12 text-center">
-                                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <svg class="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                        </div>
-                                        <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
-                                    </div>
                                 {% endif %}
+                                </div>
+                                <div id="notification-empty-state" class="px-8 py-12 text-center {% if notifications %}hidden{% endif %}">
+                                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg class="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                    </div>
+                                    <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
+                                </div>
+                                <div id="notification-footer" class="p-4 bg-slate-50/30 {% if not notifications %}hidden{% endif %}">
+                                    <button class="w-full py-3 text-[12px] font-black text-slate-400 uppercase tracking-widest hover:text-umak-blue transition-colors">View All Notifications</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -138,6 +138,65 @@
                     const meta = document.querySelector('meta[name="csrf-token"]');
                     return meta ? meta.getAttribute('content') : '';
                 }
+
+                function escapeNotifHtml(value) {
+                    const text = String(value ?? '');
+                    return text
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                }
+
+                function updateNotificationBadge(unreadCount) {
+                    const dot = document.getElementById('notification-unread-dot');
+                    const count = document.getElementById('notification-unread-count');
+                    const hasUnread = unreadCount > 0;
+
+                    if (dot) dot.classList.toggle('hidden', !hasUnread);
+                    if (count) {
+                        count.classList.toggle('hidden', !hasUnread);
+                        count.textContent = `${unreadCount} New`;
+                    }
+                }
+
+                window.renderNotificationMenu = function(notifications, unreadCount) {
+                    const list = document.getElementById('notification-items-container');
+                    const empty = document.getElementById('notification-empty-state');
+                    const footer = document.getElementById('notification-footer');
+                    const items = Array.isArray(notifications) ? notifications : [];
+
+                    if (!list || !empty || !footer) return;
+
+                    if (items.length === 0) {
+                        list.innerHTML = '';
+                        empty.classList.remove('hidden');
+                        footer.classList.add('hidden');
+                        updateNotificationBadge(0);
+                        return;
+                    }
+
+                    list.innerHTML = items.map((n) => {
+                        const titleClass = n.is_read ? 'text-slate-600' : 'text-umak-blue';
+                        const createdAt = (n.created_at || '').slice(0, 10);
+                        return `
+                            <div class="notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                 data-notification-id="${escapeNotifHtml(n.id)}"
+                                 onclick="markAsRead('${escapeNotifHtml(n.id)}', this)">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="text-[15px] font-black ${titleClass}">${escapeNotifHtml(n.title || 'Notification')}</h4>
+                                    <span class="text-[11px] font-bold text-slate-300 uppercase">${escapeNotifHtml(createdAt)}</span>
+                                </div>
+                                <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">${escapeNotifHtml(n.message || '')}</p>
+                            </div>
+                        `;
+                    }).join('');
+
+                    empty.classList.add('hidden');
+                    footer.classList.remove('hidden');
+                    updateNotificationBadge(unreadCount);
+                };
 
                 document.addEventListener('DOMContentLoaded', function() {
                     const trigger = document.getElementById('profile-dropdown-trigger');
@@ -181,9 +240,14 @@
                             });
                             const data = await res.json();
                             if (data.status === 'success') {
-                                el.querySelector('h4').classList.remove('text-umak-blue');
-                                el.querySelector('h4').classList.add('text-slate-600');
-                                // Optionally update unread count UI
+                                const title = el ? el.querySelector('h4') : null;
+                                if (title && title.classList.contains('text-umak-blue')) {
+                                    title.classList.remove('text-umak-blue');
+                                    title.classList.add('text-slate-600');
+                                    const badge = document.getElementById('notification-unread-count');
+                                    const current = badge && badge.textContent ? parseInt(badge.textContent, 10) || 0 : 0;
+                                    updateNotificationBadge(Math.max(0, current - 1));
+                                }
                             }
                         } catch (e) { console.error(e); }
                     };
@@ -219,6 +283,42 @@
                                 const content = post.textContent.toLowerCase();
                                 post.style.display = (!query || content.includes(query)) ? '' : 'none';
                             });
+                        });
+                    }
+
+                    let notificationPollBusy = false;
+                    let lastAdminVersion = null;
+
+                    async function pollNotificationRealtime() {
+                        if (notificationPollBusy || document.hidden) return;
+                        notificationPollBusy = true;
+                        try {
+                            const res = await fetch('/sync/realtime', { headers: { 'Accept': 'application/json' } });
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            if (data && data.notifications) {
+                                window.renderNotificationMenu(data.notifications.items || [], Number(data.notifications.unread_count || 0));
+                            }
+                            if (data && data.admin && data.admin.version) {
+                                if (lastAdminVersion && lastAdminVersion !== data.admin.version) {
+                                    window.dispatchEvent(new CustomEvent('admin-sync-update', { detail: data.admin }));
+                                }
+                                lastAdminVersion = data.admin.version;
+                            }
+                        } catch (e) {
+                            console.error('Notification realtime sync failed:', e);
+                        } finally {
+                            notificationPollBusy = false;
+                        }
+                    }
+
+                    const isDashboardPage = !!document.querySelector('.dashboard-page');
+                    if (!isDashboardPage) {
+                        pollNotificationRealtime();
+                        setInterval(pollNotificationRealtime, 7000);
+                        window.addEventListener('focus', pollNotificationRealtime);
+                        document.addEventListener('visibilitychange', () => {
+                            if (!document.hidden) pollNotificationRealtime();
                         });
                     }
                 });

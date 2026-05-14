@@ -1,0 +1,191 @@
+(function () {
+    const dashboardPage = document.querySelector('.dashboard-page');
+    if (!dashboardPage || !window.currentUser || !window.currentUser.id) {
+        return;
+    }
+
+    const syncConfig = window.dashboardSyncConfig || {};
+    const activeCategory = syncConfig.activeCategory || '';
+    const pollIntervalMs = 7000;
+    let baselineStateVersion = null;
+    let latestAdminVersion = null;
+    let pollInProgress = false;
+    let reloadScheduled = false;
+
+    function getVisiblePostIds() {
+        return Array.from(document.querySelectorAll('.post-card[data-post-id]'))
+            .map((el) => el.dataset.postId)
+            .filter(Boolean);
+    }
+
+    function updateLikeButtonVisual(likeBtn, isLiked) {
+        if (!likeBtn) return;
+        const icon = likeBtn.querySelector('svg');
+        if (isLiked) {
+            likeBtn.classList.add('text-red-500');
+            likeBtn.classList.remove('text-slate-400');
+            if (icon) icon.classList.add('fill-current');
+        } else {
+            likeBtn.classList.remove('text-red-500');
+            likeBtn.classList.add('text-slate-400');
+            if (icon) icon.classList.remove('fill-current');
+        }
+    }
+
+    function syncPostCards(postRows) {
+        const postMap = new Map((postRows || []).map((row) => [row.id, row]));
+
+        document.querySelectorAll('.post-card[data-post-id]').forEach((card) => {
+            const postId = card.dataset.postId;
+            const row = postMap.get(postId);
+            if (!row) return;
+
+            const likeCount = card.querySelector('.likes-count');
+            const commentCount = card.querySelector('.comments-count');
+            const likeBtn = card.querySelector('.like-btn');
+
+            if (likeCount) likeCount.textContent = String(row.likes_count || 0);
+            if (commentCount) commentCount.textContent = String(row.comments_count || 0);
+            updateLikeButtonVisual(likeBtn, !!row.user_has_liked);
+        });
+
+        if (Array.isArray(window.allPosts)) {
+            const byId = new Map(window.allPosts.map((post) => [post.id, post]));
+            (postRows || []).forEach((row) => {
+                const post = byId.get(row.id);
+                if (!post) return;
+                post.likes_count = row.likes_count || 0;
+                post.comments_count = row.comments_count || 0;
+                post.user_has_liked = !!row.user_has_liked;
+            });
+        }
+    }
+
+    function syncTrendingLikes(postRows) {
+        const postMap = new Map((postRows || []).map((row) => [row.id, row]));
+
+        document.querySelectorAll('.trending-item[data-post-id]').forEach((item) => {
+            const postId = item.dataset.postId;
+            const row = postMap.get(postId);
+            if (!row) return;
+
+            const likesLabel = item.querySelector('.likes');
+            if (likesLabel) {
+                likesLabel.textContent = `${row.likes_count || 0} Likes`;
+            }
+        });
+    }
+
+    function syncNotifications(notificationsPayload) {
+        if (!notificationsPayload || typeof window.renderNotificationMenu !== 'function') {
+            return;
+        }
+        const items = Array.isArray(notificationsPayload.items) ? notificationsPayload.items : [];
+        const unreadCount = Number(notificationsPayload.unread_count || 0);
+        window.renderNotificationMenu(items, unreadCount);
+    }
+
+    function scheduleReload(message) {
+        if (reloadScheduled) return;
+        reloadScheduled = true;
+
+        if (typeof window.createToast === 'function') {
+            window.createToast(message, 'info');
+        }
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 1200);
+    }
+
+    function maybeRefreshForNewContent(state) {
+        if (!state || !state.version) return;
+
+        if (!baselineStateVersion) {
+            baselineStateVersion = state.version;
+            return;
+        }
+
+        if (baselineStateVersion !== state.version) {
+            baselineStateVersion = state.version;
+            scheduleReload('New posts, events, or trending updates detected. Refreshing.');
+        }
+    }
+
+    function buildSyncUrl(path, includePostIds) {
+        const params = new URLSearchParams();
+        if (activeCategory) {
+            params.set('category', activeCategory);
+        }
+        if (includePostIds) {
+            const postIds = getVisiblePostIds();
+            if (postIds.length) {
+                params.set('post_ids', postIds.join(','));
+            }
+        }
+        const qs = params.toString();
+        return qs ? `${path}?${qs}` : path;
+    }
+
+    async function fetchJson(url) {
+        const response = await fetch(url, {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+            throw new Error(`Sync request failed (${response.status})`);
+        }
+        return response.json();
+    }
+
+    async function runLoadSync() {
+        try {
+            const data = await fetchJson(buildSyncUrl('/sync/dashboard/load', false));
+            if (data && data.state && data.state.version) {
+                baselineStateVersion = data.state.version;
+            }
+        } catch (error) {
+            console.error('Dashboard load sync failed:', error);
+        }
+    }
+
+    async function runLiveSync() {
+        if (pollInProgress || document.hidden) return;
+        pollInProgress = true;
+
+        try {
+            const data = await fetchJson(buildSyncUrl('/sync/realtime', true));
+            syncNotifications(data.notifications);
+            syncPostCards(data.interactions ? data.interactions.posts : []);
+            syncTrendingLikes(data.interactions ? data.interactions.posts : []);
+            maybeRefreshForNewContent(data.state);
+
+            if (data.admin && data.admin.version) {
+                if (latestAdminVersion && latestAdminVersion !== data.admin.version && typeof window.createToast === 'function') {
+                    window.createToast('Admin interaction update detected.', 'info');
+                }
+                latestAdminVersion = data.admin.version;
+            }
+        } catch (error) {
+            console.error('Realtime sync failed:', error);
+        } finally {
+            pollInProgress = false;
+        }
+    }
+
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            runLiveSync();
+        }
+    });
+
+    window.addEventListener('focus', function () {
+        runLiveSync();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        runLoadSync().finally(function () {
+            runLiveSync();
+            window.setInterval(runLiveSync, pollIntervalMs);
+        });
+    });
+})();

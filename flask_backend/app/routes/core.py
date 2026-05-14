@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, request, redirect, url_for, flash
+from flask import Blueprint, render_template, session, request, redirect, url_for, flash, jsonify, make_response
 from .auth import (
     is_jwt_expired_error,
     login_required,
@@ -96,13 +96,18 @@ def dashboard():
         else:
             raise
 
-    return render_template('dashboard.html',
+    response = make_response(render_template('dashboard.html',
                            user=profile,
                            posts=posts,
                            active_category=category,
                            trending=trending,
                            events=upcoming_events,
-                           now=datetime.datetime.now(datetime.timezone.utc))
+                           now=datetime.datetime.now(datetime.timezone.utc)))
+    # Prevent stale dashboard snapshots from cache/CDN.
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @core.route('/profile/<target_user_id>')
 @login_required
@@ -308,6 +313,184 @@ def load_dashboard_data(user_id, category=None):
             print(f"Error formatting event: {e}")
 
     return profile, posts, trending, upcoming_events[:3]
+
+def parse_sync_post_ids(raw_ids):
+    if not raw_ids:
+        return []
+
+    parsed = []
+    for token in raw_ids.split(','):
+        value = token.strip()
+        if not value or len(value) > 64:
+            continue
+        if all(ch.isalnum() or ch == '-' for ch in value):
+            parsed.append(value)
+
+    # Keep payload small and bounded.
+    return parsed[:50]
+
+def build_dashboard_sync_state(client, category=None):
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    latest_query = client.table('posts').select("id, created_at")
+    if category:
+        latest_query = latest_query.eq('category', category)
+    latest_post_res = latest_query.order("created_at", desc=True).limit(1).execute()
+    latest_post = latest_post_res.data[0] if latest_post_res.data else {}
+
+    trending_res = client.table('posts')\
+        .select("id")\
+        .gt("likes_count", 0)\
+        .order("likes_count", desc=True)\
+        .order("created_at", desc=True)\
+        .limit(3).execute()
+    trending_ids = [row['id'] for row in (trending_res.data or [])]
+
+    events_res = client.table('posts')\
+        .select("id")\
+        .eq("category", "Events")\
+        .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")\
+        .order("event_date", desc=False)\
+        .limit(3).execute()
+    event_ids = [row['id'] for row in (events_res.data or [])]
+
+    state = {
+        "latest_post_id": latest_post.get('id'),
+        "latest_post_created_at": latest_post.get('created_at'),
+        "trending_ids": trending_ids,
+        "event_ids": event_ids,
+    }
+    state["version"] = "|".join([
+        str(state["latest_post_id"] or ""),
+        str(state["latest_post_created_at"] or ""),
+        ",".join(state["trending_ids"]),
+        ",".join(state["event_ids"]),
+    ])
+    return state
+
+def build_notification_payload(client, user_id):
+    notifications_res = client.table('notifications')\
+        .select("id, title, message, type, is_read, created_at")\
+        .eq('user_id', user_id)\
+        .order('created_at', desc=True)\
+        .limit(5).execute()
+
+    items = notifications_res.data or []
+    unread_count = len([n for n in items if not n.get('is_read')])
+
+    return {
+        "items": items,
+        "unread_count": unread_count,
+    }
+
+def build_interactions_payload(client, user_id, post_ids):
+    if not post_ids:
+        return []
+
+    posts_res = client.table('posts')\
+        .select("id, likes_count, comments_count")\
+        .in_("id", post_ids).execute()
+    posts = posts_res.data or []
+
+    liked_res = client.table('likes')\
+        .select("post_id")\
+        .eq("user_id", user_id)\
+        .in_("post_id", post_ids).execute()
+    liked_post_ids = {row['post_id'] for row in (liked_res.data or [])}
+
+    row_map = {}
+    for row in posts:
+        row_map[row['id']] = {
+            "id": row['id'],
+            "likes_count": row.get('likes_count') or 0,
+            "comments_count": row.get('comments_count') or 0,
+            "user_has_liked": row['id'] in liked_post_ids,
+        }
+
+    # Preserve front-end order.
+    ordered = []
+    for pid in post_ids:
+        if pid in row_map:
+            ordered.append(row_map[pid])
+    return ordered
+
+def build_admin_activity_payload(client):
+    try:
+        latest_report = client.table('reports').select("id, created_at").order('created_at', desc=True).limit(1).execute()
+        latest_warning = client.table('warnings').select("id, created_at").order('created_at', desc=True).limit(1).execute()
+        latest_dispute = client.table('verification_disputes').select("id, created_at, status").eq('status', 'pending').order('created_at', desc=True).limit(1).execute()
+
+        report_row = latest_report.data[0] if latest_report.data else {}
+        warning_row = latest_warning.data[0] if latest_warning.data else {}
+        dispute_row = latest_dispute.data[0] if latest_dispute.data else {}
+
+        version = "|".join([
+            str(report_row.get('id') or ""),
+            str(report_row.get('created_at') or ""),
+            str(warning_row.get('id') or ""),
+            str(warning_row.get('created_at') or ""),
+            str(dispute_row.get('id') or ""),
+            str(dispute_row.get('created_at') or ""),
+        ])
+
+        return {
+            "version": version,
+            "latest_report_id": report_row.get('id'),
+            "latest_warning_id": warning_row.get('id'),
+            "latest_dispute_id": dispute_row.get('id'),
+        }
+    except Exception as e:
+        print(f"Error building admin activity payload: {e}")
+        return {"version": ""}
+
+@core.route('/sync/dashboard/load', methods=['GET'])
+@login_required
+def sync_dashboard_load():
+    category = request.args.get('category')
+    client = get_user_client()
+
+    state = build_dashboard_sync_state(client, category=category)
+
+    response = jsonify({
+        "status": "ok",
+        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "state": state,
+    })
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
+
+@core.route('/sync/realtime', methods=['GET'])
+@login_required
+def sync_realtime():
+    category = request.args.get('category')
+    raw_post_ids = request.args.get('post_ids', '')
+    post_ids = parse_sync_post_ids(raw_post_ids)
+    user = session.get('user', {})
+    user_id = user.get('id')
+    role = (user.get('role') or '').lower()
+
+    client = get_user_client()
+
+    state = build_dashboard_sync_state(client, category=category)
+    notifications = build_notification_payload(client, user_id)
+    interactions = {
+        "posts": build_interactions_payload(client, user_id, post_ids)
+    }
+
+    payload = {
+        "status": "ok",
+        "fetched_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "state": state,
+        "notifications": notifications,
+        "interactions": interactions,
+    }
+
+    if role in ['admin', 'super_admin', 'superadmin', 'content_moderator', 'account_manager']:
+        payload["admin"] = build_admin_activity_payload(client)
+
+    response = jsonify(payload)
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 @core.route('/posts/<post_id>/like', methods=['POST'])
 @login_required

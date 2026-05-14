@@ -235,7 +235,7 @@
                     <div class="trending-list">
                         {% if trending %}
                             {% for item in trending %}
-                            <div class="trending-item cursor-pointer" onclick='openCommentModal({{ item|tojson|safe }})'>
+                            <div class="trending-item cursor-pointer" data-post-id="{{ item.id }}" onclick='openCommentModal({{ item|tojson|safe }})'>
                                 <span class="trending-number">{{ loop.index }}</span>
                                 <div class="trending-details">
                                     <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-[10px] font-bold my-[2px]">{{ item.category }}</span>
@@ -257,7 +257,7 @@
                     <div class="event-list">
                         {% if events %}
                             {% for event in events %}
-                            <div class="event-card cursor-pointer" onclick='openCommentModal({{ event|tojson|safe }})'>
+                            <div class="event-card cursor-pointer" data-post-id="{{ event.id }}" onclick='openCommentModal({{ event|tojson|safe }})'>
                                 <div class="event-date">
                                     <span class="event-day">{{ event.day }}</span>
                                     <span class="event-month">{{ event.month }}</span>
@@ -409,13 +409,18 @@
     // Global user data for interactions
     window.currentUser = {
         id: '{{ user.id }}',
-        full_name: '{{ user.full_name }}'
+        full_name: '{{ user.full_name }}',
+        role: '{{ user.role or "" }}'
+    };
+    window.dashboardSyncConfig = {
+        activeCategory: '{{ active_category or "" }}'
     };
 
     // Embed posts data for modal persistence on refresh
     window.allPosts = {{ posts|tojson|safe }};
 </script>
 <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/realtime_sync.js') }}"></script>
 
 <script>
     // Post Action Helpers
