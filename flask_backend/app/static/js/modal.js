@@ -15,6 +15,8 @@ let translateX = 0, translateY = 0;
 let currentScale = 1;
 let currentReplyTo = null;
 let modalCommentRefreshTimer = null;
+let modalCommentPollTimer = null;
+let currentCommentsSignature = '';
 
 function resetZoomState() {
     const wrapper = document.querySelector('.modal-image-wrapper');
@@ -67,7 +69,9 @@ function openImageModal(post, index, updateHash = true) {
         window.location.hash = `view-post-${post.id}-${index}`;
     }
 
+    currentCommentsSignature = '';
     fetchComments(post.id);
+    startModalCommentPolling(post.id);
 }
 
 function openCommentModal(post) {
@@ -109,7 +113,9 @@ function openCommentModal(post) {
     }
 
     document.body.style.overflow = 'hidden';
+    currentCommentsSignature = '';
     fetchComments(post.id);
+    startModalCommentPolling(post.id);
 }
 
 function closeImageModal(event) {
@@ -126,6 +132,8 @@ function closeImageModal(event) {
         if (window.location.hash.startsWith('#view-post-')) {
             history.pushState("", document.title, window.location.pathname + window.location.search);
         }
+        stopModalCommentPolling();
+        currentCommentsSignature = '';
     }
 }
 
@@ -275,53 +283,97 @@ function formatPostTime(timestamp) {
            date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
 
-async function fetchComments(postId) {
+function buildCommentsSignature(comments) {
+    return (comments || []).map((comment) => {
+        const stamp = comment.updated_at || comment.created_at || '';
+        return `${comment.id}:${stamp}:${comment.content || ''}`;
+    }).join('|');
+}
+
+function renderCommentsList(list, comments) {
+    if (comments.length > 0) {
+        list.innerHTML = '';
+
+        // Organize comments by parent_id
+        const topLevel = comments.filter((c) => !c.parent_id);
+        const replies = comments.filter((c) => c.parent_id);
+
+        topLevel.forEach((comment) => {
+            const commentEl = renderComment(comment);
+            list.appendChild(commentEl);
+
+            // Find and render replies for this comment
+            const commentReplies = replies.filter((r) => r.parent_id === comment.id);
+            if (commentReplies.length > 0) {
+                const repliesContainer = commentEl.querySelector('.comment-replies');
+                repliesContainer.style.display = 'none'; // Hide by default
+
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'view-replies-btn';
+                toggleBtn.onclick = () => toggleReplies(comment.id, toggleBtn);
+                toggleBtn.innerHTML = `
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <span>View ${commentReplies.length} ${commentReplies.length === 1 ? 'reply' : 'replies'}</span>
+                `;
+
+                // Insert button after the main comment body
+                commentEl.insertBefore(toggleBtn, repliesContainer);
+
+                commentReplies.forEach((reply) => {
+                    repliesContainer.appendChild(renderComment(reply, true));
+                });
+            }
+        });
+    } else {
+        list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-slate-400 italic">No comments yet. Be the first to reply!</p></div>';
+    }
+}
+
+function startModalCommentPolling(postId) {
+    stopModalCommentPolling();
+    if (!postId) return;
+
+    modalCommentPollTimer = setInterval(() => {
+        const modal = document.getElementById('imageModal');
+        if (!currentPost || String(currentPost.id) !== String(postId)) return;
+        if (!modal || modal.style.display !== 'flex' || document.hidden) return;
+        fetchComments(postId, { silent: true });
+    }, 4500);
+}
+
+function stopModalCommentPolling() {
+    if (modalCommentPollTimer) {
+        clearInterval(modalCommentPollTimer);
+        modalCommentPollTimer = null;
+    }
+}
+
+async function fetchComments(postId, options = {}) {
+    const { silent = false, force = false } = options;
     const list = document.getElementById('modalCommentsList');
-    list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-slate-400">Loading comments...</p></div>';
+    if (!list) return;
+    if (!silent) {
+        list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-slate-400">Loading comments...</p></div>';
+    }
     
     try {
         const response = await fetch(`/posts/${postId}/comments`);
+        if (!response.ok) throw new Error(`Comments request failed (${response.status})`);
         const data = await response.json();
-        
-        if (data.comments && data.comments.length > 0) {
-            list.innerHTML = '';
-            
-            // Organize comments by parent_id
-            const topLevel = data.comments.filter(c => !c.parent_id);
-            const replies = data.comments.filter(c => c.parent_id);
-            
-            topLevel.forEach(comment => {
-                const commentEl = renderComment(comment);
-                list.appendChild(commentEl);
-                
-                // Find and render replies for this comment
-                const commentReplies = replies.filter(r => r.parent_id === comment.id);
-                if (commentReplies.length > 0) {
-                    const repliesContainer = commentEl.querySelector('.comment-replies');
-                    repliesContainer.style.display = 'none'; // Hide by default
-                    
-                    const toggleBtn = document.createElement('button');
-                    toggleBtn.className = 'view-replies-btn';
-                    toggleBtn.onclick = () => toggleReplies(comment.id, toggleBtn);
-                    toggleBtn.innerHTML = `
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        <span>View ${commentReplies.length} ${commentReplies.length === 1 ? 'reply' : 'replies'}</span>
-                    `;
-                    
-                    // Insert button after the main comment body
-                    commentEl.insertBefore(toggleBtn, repliesContainer);
-                    
-                    commentReplies.forEach(reply => {
-                        repliesContainer.appendChild(renderComment(reply, true));
-                    });
-                }
-            });
-        } else {
-            list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-slate-400 italic">No comments yet. Be the first to reply!</p></div>';
+
+        const comments = Array.isArray(data.comments) ? data.comments : [];
+        const nextSignature = buildCommentsSignature(comments);
+        if (!force && currentCommentsSignature && nextSignature === currentCommentsSignature) {
+            return;
         }
+
+        currentCommentsSignature = nextSignature;
+        renderCommentsList(list, comments);
     } catch (error) {
         console.error('Error fetching comments:', error);
-        list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-red-400">Failed to load comments.</p></div>';
+        if (!silent) {
+            list.innerHTML = '<div class="text-center py-8"><p class="text-xs text-red-400">Failed to load comments.</p></div>';
+        }
     }
 }
 
@@ -754,12 +806,12 @@ function syncModalFromInteractionRows(rows) {
 
     // If other users added/removed comments while modal is open, refresh list.
     if (currentPost.comments_count !== previousCommentCount) {
-        fetchComments(currentPost.id);
+        fetchComments(currentPost.id, { silent: true, force: true });
     }
 }
 
 function scheduleModalCommentRefresh(postId) {
-    if (!postId || !currentPost || currentPost.id !== postId) return;
+    if (!postId || !currentPost || String(currentPost.id) !== String(postId)) return;
     const modal = document.getElementById('imageModal');
     if (!modal || modal.style.display !== 'flex') return;
 
@@ -768,7 +820,7 @@ function scheduleModalCommentRefresh(postId) {
     }
 
     modalCommentRefreshTimer = setTimeout(() => {
-        fetchComments(postId);
+        fetchComments(postId, { silent: true, force: true });
         modalCommentRefreshTimer = null;
     }, 280);
 }
