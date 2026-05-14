@@ -21,6 +21,26 @@
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <style>
+        @media (max-width: 1024px) {
+            body {
+                padding-top: 84px !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding-top: 74px !important;
+            }
+
+            #flash-container {
+                right: 0.5rem !important;
+                left: 0.5rem !important;
+                top: 5.25rem !important;
+            }
+        }
+    </style>
+
     {% block styles %}{% endblock %}
     </head>
     <body class="bg-slate-50 font-sans leading-normal tracking-normal text-slate-900 pt-[96px]">
