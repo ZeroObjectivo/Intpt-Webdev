@@ -7,12 +7,20 @@ from .auth import (
 from services.supabase_client import get_user_client
 import datetime
 import time
+import re
+from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
 
 core = Blueprint('core', __name__)
 
 DISPLAY_TIMEZONE = ZoneInfo("Asia/Manila")
 HERON_BUSINESS_CATEGORIES = ['Heron Business', 'Buy & Sell']
+EMBED_URL_RE = re.compile(r'https?://[^\s<>"\']+', re.IGNORECASE)
+YOUTUBE_ID_RE = re.compile(r'^[A-Za-z0-9_-]{6,}$')
+LOOM_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
+VIMEO_ID_RE = re.compile(r'^\d+$')
+DAILYMOTION_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
+TIKTOK_ID_RE = re.compile(r'^\d{8,}$')
 
 def normalize_dashboard_category(category):
     if category == 'Buy & Sell':
@@ -35,6 +43,138 @@ def parse_post_datetime(value):
         return created_at.replace(tzinfo=datetime.timezone.utc)
 
     return created_at.astimezone(datetime.timezone.utc)
+
+def parse_embed_timestamp(value):
+    if not value:
+        return None
+
+    raw = str(value).strip().lower()
+    if not raw:
+        return None
+
+    if raw.isdigit():
+        return int(raw)
+
+    match = re.fullmatch(r'(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?', raw)
+    if not match:
+        return None
+
+    hours = int(match.group(1) or 0)
+    minutes = int(match.group(2) or 0)
+    seconds = int(match.group(3) or 0)
+    total = hours * 3600 + minutes * 60 + seconds
+    return total or None
+
+def extract_embed_from_content(content):
+    if not content:
+        return None
+
+    for match in EMBED_URL_RE.finditer(str(content)):
+        source_url = match.group(0).rstrip('.,!?;:')
+        while source_url.endswith(')') and source_url.count('(') < source_url.count(')'):
+            source_url = source_url[:-1]
+
+        embed = extract_embed_from_url(source_url)
+        if embed:
+            return embed
+
+    return None
+
+def extract_embed_from_url(source_url):
+    try:
+        parsed = urlparse(source_url)
+    except ValueError:
+        return None
+
+    if parsed.scheme not in ('http', 'https') or not parsed.netloc:
+        return None
+
+    host = parsed.netloc.lower().split(':')[0]
+    path_parts = [segment for segment in parsed.path.split('/') if segment]
+    query = parse_qs(parsed.query)
+
+    provider = None
+    embed_url = None
+
+    if host in {'youtu.be', 'www.youtu.be', 'youtube.com', 'www.youtube.com', 'm.youtube.com'}:
+        video_id = None
+        if host.endswith('youtu.be') and path_parts:
+            video_id = path_parts[0]
+        elif path_parts and path_parts[0] == 'watch':
+            video_id = (query.get('v') or [None])[0]
+        elif len(path_parts) >= 2 and path_parts[0] in {'shorts', 'embed'}:
+            video_id = path_parts[1]
+
+        if video_id and YOUTUBE_ID_RE.fullmatch(video_id):
+            provider = 'youtube'
+            embed_url = f"https://www.youtube.com/embed/{video_id}"
+            start_seconds = parse_embed_timestamp((query.get('t') or [None])[0]) or parse_embed_timestamp((query.get('start') or [None])[0])
+            if start_seconds:
+                embed_url = f"{embed_url}?start={start_seconds}"
+
+    elif host.endswith('loom.com') and len(path_parts) >= 2 and path_parts[0] in {'share', 'embed'}:
+        video_id = path_parts[1]
+        if LOOM_ID_RE.fullmatch(video_id):
+            provider = 'loom'
+            embed_url = f"https://www.loom.com/embed/{video_id}"
+
+    elif host in {'vimeo.com', 'www.vimeo.com', 'player.vimeo.com'}:
+        video_id = None
+        if host == 'player.vimeo.com' and len(path_parts) >= 2 and path_parts[0] == 'video':
+            video_id = path_parts[1]
+        else:
+            numeric_segments = [part for part in path_parts if VIMEO_ID_RE.fullmatch(part)]
+            if numeric_segments:
+                video_id = numeric_segments[-1]
+
+        if video_id and VIMEO_ID_RE.fullmatch(video_id):
+            provider = 'vimeo'
+            embed_url = f"https://player.vimeo.com/video/{video_id}"
+
+    elif host in {'dailymotion.com', 'www.dailymotion.com', 'dai.ly'}:
+        video_id = None
+        if host == 'dai.ly' and path_parts:
+            video_id = path_parts[0]
+        elif len(path_parts) >= 2 and path_parts[0] in {'video', 'embed'}:
+            if path_parts[0] == 'video':
+                video_id = path_parts[1]
+            elif len(path_parts) >= 3 and path_parts[1] == 'video':
+                video_id = path_parts[2]
+
+        if video_id:
+            video_id = video_id.split('_')[0]
+
+        if video_id and DAILYMOTION_ID_RE.fullmatch(video_id):
+            provider = 'dailymotion'
+            embed_url = f"https://www.dailymotion.com/embed/video/{video_id}"
+
+    elif host.endswith('tiktok.com'):
+        video_id = None
+
+        if len(path_parts) >= 3 and path_parts[0].startswith('@') and path_parts[1] == 'video':
+            video_id = path_parts[2]
+        elif len(path_parts) >= 3 and path_parts[0] == 'embed' and path_parts[1] == 'v2':
+            video_id = path_parts[2]
+        elif len(path_parts) >= 3 and path_parts[0] == 'player' and path_parts[1] == 'v1':
+            video_id = path_parts[2]
+
+        if video_id and TIKTOK_ID_RE.fullmatch(video_id):
+            provider = 'tiktok'
+            embed_url = f"https://www.tiktok.com/player/v1/{video_id}"
+
+    if not embed_url:
+        return None
+
+    return {
+        "provider": provider,
+        "embed_url": embed_url,
+        "source_url": source_url
+    }
+
+def attach_embed_metadata(post):
+    if not isinstance(post, dict):
+        return
+    post['embed'] = extract_embed_from_content(post.get('content'))
 
 def format_relative_time(created_at, now=None):
     created_at = parse_post_datetime(created_at)
@@ -70,6 +210,25 @@ def format_relative_time(created_at, now=None):
         return created_local.strftime("%b %d").replace(" 0", " ")
 
     return created_local.strftime("%b %d, %Y").replace(" 0", " ")
+
+def load_catalog_page_data(user_id, category):
+    client = get_user_client()
+    profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
+    profile = profile_res.data
+
+    cards_res = client.table('posts')\
+        .select("id, content, category, event_title, price, location, status, created_at, profiles(full_name, avatar_url)")\
+        .eq("category", category)\
+        .order("created_at", desc=True)\
+        .limit(12).execute()
+    cards = cards_res.data or []
+
+    for card in cards:
+        card['relative_created_at'] = format_relative_time(card.get('created_at'))
+        card['title'] = (card.get('event_title') or card.get('content') or 'Untitled').strip()[:70]
+        attach_embed_metadata(card)
+
+    return profile, cards
 
 def build_comment_count_map(client, post_ids):
     if not post_ids:
@@ -121,6 +280,112 @@ def dashboard():
                            events=upcoming_events,
                            now=datetime.datetime.now(datetime.timezone.utc)))
     # Prevent stale dashboard snapshots from cache/CDN.
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@core.route('/scholarship')
+@login_required
+def scholarship():
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+
+    try:
+        profile, cards = load_catalog_page_data(user_id, 'Scholarship')
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            profile, cards = load_catalog_page_data(user_id, 'Scholarship')
+        elif is_jwt_error(e):
+            session.clear()
+            flash("Your login session expired. Please sign in again.", "error")
+            return redirect(url_for('core.login'))
+        else:
+            raise
+
+    placeholder_cards = [
+        {
+            "id": "scholarship-placeholder-1",
+            "title": "Academic Excellence Scholarship",
+            "summary": "Financial support for students with strong academic performance.",
+            "details": "Placeholder content: eligibility, requirements, and application period details.",
+            "status": "Open"
+        },
+        {
+            "id": "scholarship-placeholder-2",
+            "title": "Athletic Scholarship",
+            "summary": "Assistance for student-athletes representing the university.",
+            "details": "Placeholder content: sports coverage, requirements, and renewal terms.",
+            "status": "Upcoming"
+        },
+        {
+            "id": "scholarship-placeholder-3",
+            "title": "Need-Based Grant",
+            "summary": "Support program for students with verified financial need.",
+            "details": "Placeholder content: assessment process, grant amount, and deadlines.",
+            "status": "Open"
+        }
+    ]
+
+    response = make_response(render_template(
+        'scholarship.html',
+        user=profile,
+        cards=cards,
+        placeholder_cards=placeholder_cards
+    ))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@core.route('/umak-coop')
+@login_required
+def umak_coop():
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+
+    try:
+        profile, cards = load_catalog_page_data(user_id, 'UMak Coop')
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            profile, cards = load_catalog_page_data(user_id, 'UMak Coop')
+        elif is_jwt_error(e):
+            session.clear()
+            flash("Your login session expired. Please sign in again.", "error")
+            return redirect(url_for('core.login'))
+        else:
+            raise
+
+    placeholder_cards = [
+        {
+            "id": "coop-placeholder-1",
+            "title": "School Supplies Bundle",
+            "summary": "Notebook, pad paper, and basic writing set.",
+            "price_label": "PHP 199.00",
+            "status": "Available"
+        },
+        {
+            "id": "coop-placeholder-2",
+            "title": "UMak Hoodie",
+            "summary": "Official university hoodie for students.",
+            "price_label": "PHP 899.00",
+            "status": "Low Stock"
+        },
+        {
+            "id": "coop-placeholder-3",
+            "title": "ID Lace and Badge Holder",
+            "summary": "Daily campus essentials from UMak Coop.",
+            "price_label": "PHP 120.00",
+            "status": "Available"
+        }
+    ]
+
+    response = make_response(render_template(
+        'umak_coop.html',
+        user=profile,
+        cards=cards,
+        placeholder_cards=placeholder_cards
+    ))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -188,6 +453,7 @@ def load_profile_data(user_id, viewer_id=None):
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = comments_count_map.get(post['id'], 0)
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
+        attach_embed_metadata(post)
 
     likes_activity = client.table('likes')\
         .select("created_at, posts(id, content, category)")\
@@ -287,6 +553,7 @@ def load_dashboard_data(user_id, category=None):
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = comments_count_map.get(post['id'], 0)
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
+        attach_embed_metadata(post)
 
     trending_response = client.table('posts')\
         .select("*, profiles(full_name, avatar_url)")\
@@ -308,6 +575,7 @@ def load_dashboard_data(user_id, category=None):
         t_post['likes_count'] = t_post.get('likes_count') or 0
         t_post['comments_count'] = trending_comments_map.get(t_post['id'], 0)
         t_post['relative_created_at'] = format_relative_time(t_post.get('created_at'))
+        attach_embed_metadata(t_post)
 
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     events_response = client.table('posts')\
@@ -342,6 +610,7 @@ def load_dashboard_data(user_id, category=None):
             else:
                 event['status'] = 'Upcoming'
 
+            attach_embed_metadata(event)
             upcoming_events.append(event)
         except Exception as e:
             print(f"Error formatting event: {e}")
@@ -541,7 +810,7 @@ def sync_realtime():
         "interactions": interactions,
     }
 
-    if role in ['admin', 'super_admin', 'superadmin', 'content_moderator', 'account_manager']:
+    if role in ['admin', 'super_admin', 'superadmin', 'content_manager', 'content_moderator', 'account_manager']:
         payload["admin"] = build_admin_activity_payload(client)
 
     response = jsonify(payload)

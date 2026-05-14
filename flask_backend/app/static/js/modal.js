@@ -134,6 +134,10 @@ function closeImageModal(event) {
         }
         stopModalCommentPolling();
         currentCommentsSignature = '';
+        const embedIframe = document.getElementById('modalEmbedIframe');
+        if (embedIframe) {
+            embedIframe.src = '';
+        }
     }
 }
 
@@ -233,6 +237,8 @@ function updateModalContent() {
     }
 
     const avatar = document.getElementById('modalUserAvatar');
+    const embedContainer = document.getElementById('modalEmbedContainer');
+    const embedIframe = document.getElementById('modalEmbedIframe');
     const profile = currentPost.profiles || {};
     avatar.src = profile.avatar_url || "/static/images/Logo.png";
     document.getElementById('modalUserName').innerText = profile.full_name || 'Heron';
@@ -255,6 +261,17 @@ function updateModalContent() {
     
     if (currentPost.event_title) {
         document.getElementById('modalPostText').innerHTML = `<strong class="block text-slate-900 mb-1">${currentPost.event_title}</strong>` + currentPost.content;
+    }
+
+    if (embedContainer && embedIframe) {
+        const embedUrl = currentPost.embed && currentPost.embed.embed_url ? currentPost.embed.embed_url : '';
+        if (embedUrl) {
+            embedIframe.src = embedUrl;
+            embedContainer.classList.remove('hidden');
+        } else {
+            embedIframe.src = '';
+            embedContainer.classList.add('hidden');
+        }
     }
 
     if (currentPost.price) {

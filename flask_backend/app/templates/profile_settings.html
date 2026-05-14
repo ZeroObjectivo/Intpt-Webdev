@@ -284,6 +284,17 @@
                         </div>
                         <div class="post-content mt-4" id="post-content-{{ post.id }}">
                             <p class="text-slate-700 leading-relaxed">{{ post.content }}</p>
+                            {% if post.embed and post.embed.embed_url %}
+                                <div class="post-embed">
+                                    <iframe
+                                        src="{{ post.embed.embed_url }}"
+                                        title="Embedded {{ (post.embed.provider or 'media')|title }} content"
+                                        loading="lazy"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowfullscreen
+                                        referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                                </div>
+                            {% endif %}
                             {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
                             {% if post_images %}
                                 <div class="fb-grid mt-3 fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }}">

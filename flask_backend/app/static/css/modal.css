@@ -178,6 +178,20 @@
     line-height: 1.62;
 }
 
+.modal-embed {
+    margin-top: 10px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #d9dde6;
+    background: #ffffff;
+}
+
+.modal-embed iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+}
+
 .modal-post-actions {
     padding: 4px 12px;
     border-top: 1px solid #ebedf0;
