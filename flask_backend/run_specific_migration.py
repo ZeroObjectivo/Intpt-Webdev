@@ -18,7 +18,8 @@ if __name__ == "__main__":
     migrations = [
         '20260513000700_allow_dispute_insert.sql',
         '20260514000000_admin_role_management_policies.sql',
-        '20260514000300_add_flag_status.sql'
+        '20260514000300_add_flag_status.sql',
+        '20260514000400_add_event_title.sql'
     ]
     for m in migrations:
         run_migration(m)

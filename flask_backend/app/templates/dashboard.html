@@ -261,8 +261,8 @@
                                     <span class="event-month">{{ event.month }}</span>
                                 </div>
                                 <div class="event-info">
-                                    <h4 class="line-clamp-1" title="{{ event.content }}">{{ event.content }}</h4>
-                                    <p>{{ event.time_display }}<br>{{ event.location or 'UMak' }}</p>
+                                    <h4 class="line-clamp-1" title="{{ event.event_title or event.content }}">{{ event.event_title or 'Untitled Event' }}</h4>
+                                    <p>{{ event.time_display }}<br>{{ event.location or 'UMak Campus' }}</p>
                                 </div>
                                 <div class="event-status {% if event.status == 'Ongoing' %}status-ongoing{% else %}status-upcoming{% endif %}">{{ event.status }}</div>
                             </div>

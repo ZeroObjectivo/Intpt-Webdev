@@ -396,6 +396,7 @@ def update_post(post_id):
     
     content = request.form.get('content')
     category = request.form.get('category')
+    event_title = request.form.get('event_title')
     price = request.form.get('price')
     location = request.form.get('location')
     status = request.form.get('status')
@@ -413,6 +414,7 @@ def update_post(post_id):
         }
         
         if price is not None: update_data["price"] = float(price) if price.strip() else None
+        if event_title is not None: update_data["event_title"] = event_title.strip()
         if location is not None: update_data["location"] = location.strip()
         if status is not None: update_data["status"] = status.strip()
         if event_date is not None: update_data["event_date"] = event_date if event_date.strip() else None
@@ -518,6 +520,7 @@ def create_post():
     image_files = request.files.getlist('image')
     
     # Extra fields
+    event_title = request.form.get('event_title')
     price = request.form.get('price')
     location = request.form.get('location')
     status = request.form.get('status')
@@ -559,6 +562,7 @@ def create_post():
             "user_id": user_id,
             "content": content,
             "category": category,
+            "event_title": event_title,
             "price": price,
             "location": location,
             "status": status,
