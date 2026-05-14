@@ -230,7 +230,7 @@ function updateModalContent() {
     const cat = currentPost.category;
     if (cat === 'General') badge.classList.add('badge-general');
     else if (cat === 'Lost & Found') badge.classList.add('badge-lost-found');
-    else if (cat === 'Buy & Sell') badge.classList.add('badge-buy-sell');
+    else if (cat === 'Buy & Sell' || cat === 'Heron Business') badge.classList.add('badge-buy-sell');
     else if (cat === 'Question') badge.classList.add('badge-question');
     else if (cat === 'Events') badge.classList.add('badge-events');
 
