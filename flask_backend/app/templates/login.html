@@ -14,7 +14,7 @@
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 </head>
-<body class="login-page">
+<body class="login-page {{ 'admin-login' if is_admin_login else 'user-login' }}">
 
     <!-- Background Decoration -->
     <div class="bg-wrapper">

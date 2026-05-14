@@ -97,16 +97,22 @@ def create_app():
 
             # On the ADMIN domain (dev.heronshub.social)
             if host == admin_domain:
+                # Admin domain root should always land on its login screen.
+                if path == '/':
+                    return redirect('/login')
+
                 # Allow: login page, auth routes (login flow + callback)
                 allowed_prefixes = ('/login', '/auth/', '/admin/')
-                if path == '/' or path.startswith(allowed_prefixes):
+                if path.startswith(allowed_prefixes):
                     return None
 
                 # Logged-in non-admin trying to reach other pages → reject
                 user = session.get('user')
                 if user and user.get('role') not in ('admin', 'super_admin', 'superadmin'):
-                    scheme = request.headers.get('X-Forwarded-Proto', 'https')
-                    return redirect(f"{scheme}://{main_domain}/dashboard")
+                    if main_domain:
+                        scheme = request.headers.get('X-Forwarded-Proto', 'https')
+                        return redirect(f"{scheme}://{main_domain}/dashboard")
+                    return redirect('/login')
 
                 # Any other path on dev domain → send to main domain
                 if main_domain and not path.startswith(allowed_prefixes):

@@ -7,6 +7,7 @@ from .auth import (
 from services.supabase_client import get_user_client
 import datetime
 import time
+import os
 import re
 from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
@@ -1221,4 +1222,11 @@ def mark_notification_read(notification_id):
 
 @core.route('/login')
 def login():
-    return render_template('login.html')
+    admin_domain = (os.getenv('ADMIN_DOMAIN') or '').strip().lower()
+    host = request.host.split(':')[0].lower()
+    is_admin_login = bool(admin_domain and host == admin_domain)
+
+    return render_template(
+        'login.html',
+        is_admin_login=is_admin_login,
+    )

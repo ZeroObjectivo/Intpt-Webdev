@@ -84,6 +84,11 @@ body.login-page {
     margin-bottom: 2rem;
 }
 
+/* Admin domain: keep the same layout, only logo color shifts */
+body.login-page.admin-login .card-logo {
+    filter: sepia(0.9) saturate(1.7) hue-rotate(338deg) brightness(1.04);
+}
+
 .card-subtitle {
     color: #718096;
     font-size: 1.1rem;
