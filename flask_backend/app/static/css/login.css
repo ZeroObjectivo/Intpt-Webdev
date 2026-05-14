@@ -1,9 +1,4 @@
-:root {
-    --umak-blue: #001035;
-    --umak-blue-bright: #316CFF;
-    --slate-50: #F8FAFC;
-    --slate-900: #0F172A;
-}
+/* Variables are defined in input.css :root */
 
 * {
     margin: 0;

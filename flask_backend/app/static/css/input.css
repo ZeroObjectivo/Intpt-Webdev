@@ -9,7 +9,7 @@
         --umak-blue-light: #1E293B;
         --umak-blue-bright: #316CFF;
         --umak-yellow: #FFD700;
-        
+
         /* Neutral Palette */
         --slate-50: #F8FAFC;
         --slate-100: #F1F5F9;
@@ -27,6 +27,24 @@
         /* Shadows */
         --shadow-soft: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
         --shadow-strong: 0 30px 80px rgba(0, 0, 0, 0.1);
+
+        /* Dashboard/Modal aliases (unified from --hh-* system) */
+        --hh-blue-900: #01061c;
+        --hh-blue-800: #060e33;
+        --hh-blue-500: #28336b;
+        --hh-blue-300: #47528a;
+        --hh-gold-500: #fef760;
+        --hh-gold-800: #ddd311;
+        --hh-silver-300: #c0d5f0;
+        --hh-silver-500: #8bb0dc;
+        --hh-bg-main: #eef2fb;
+        --hh-surface: #ffffff;
+        --hh-text-main: #1a1d20;
+        --hh-text-muted: #6c757d;
+        --hh-border: #e2e8f0;
+        --hh-radius: 16px;
+        --hh-shadow-light: 0 2px 4px rgba(1, 6, 28, 0.05);
+        --hh-shadow-hover: 0 4px 12px rgba(1, 6, 28, 0.1);
     }
 
     body {

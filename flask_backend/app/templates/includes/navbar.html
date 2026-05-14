@@ -132,6 +132,16 @@
                             searchIcon.classList.add('text-gray-400');
                             searchIcon.classList.remove('text-blue-500');
                         });
+
+                        // Client-side post search/filter
+                        searchInput.addEventListener('input', function() {
+                            const query = this.value.toLowerCase().trim();
+                            const posts = document.querySelectorAll('.post-card');
+                            posts.forEach(function(post) {
+                                const content = post.textContent.toLowerCase();
+                                post.style.display = (!query || content.includes(query)) ? '' : 'none';
+                            });
+                        });
                     }
                 });
             </script>
