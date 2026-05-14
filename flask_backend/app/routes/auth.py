@@ -3,17 +3,34 @@ from services.supabase_client import supabase, engine
 from sqlalchemy import text
 from functools import wraps
 from postgrest.exceptions import APIError
+import time
 
 auth = Blueprint('auth', __name__)
 
 def login_required(f):
     """
-    Decorator to protect routes from unauthorized access.
+    Decorator to protect routes that require a logged-in user.
+    Handles session validation and token refreshing.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user' not in session:
+        if 'user' not in session or 'access_token' not in session:
             return redirect(url_for('core.login'))
+
+        # Check if the token is expired
+        expires_at = session.get('expires_at')
+        if expires_at and expires_at < time.time():
+            print("JWT token has expired. Attempting to refresh...")
+            if not refresh_supabase_auth():
+                # If refresh fails, clear session and force re-login
+                session.clear()
+                return redirect(url_for('core.login', error="session_expired"))
+
+        # Apply the (potentially refreshed) token to the Supabase client for this request
+        if not apply_supabase_auth_token():
+            session.clear()
+            return redirect(url_for('core.login', error="invalid_session"))
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -146,8 +163,18 @@ def set_session():
             # Handle Implicit Flow
             user_response = supabase.auth.get_user(access_token)
             user = user_response.user
+            # In implicit flow, we don't get expires_at directly, so we can't refresh.
+            # This flow is less common and secure. We'll proceed but without refresh capabilities.
         else:
             return "No valid session data found", 400
+
+        # Extract data if it exists
+        if 'session_data' in locals() and session_data:
+            access_token = session_data.access_token
+            refresh_token = session_data.refresh_token
+            expires_at = session_data.expires_at
+        else:
+            expires_at = None # Cannot determine expiry
 
         email = user.email
         
@@ -180,11 +207,14 @@ def set_session():
             return render_template('unauthorized.html', email=email)
 
         # 2. Check if user exists in profiles table
+        supabase.postgrest.auth(access_token) # Use token for this check
         profile_check = supabase.table('profiles').select("id").eq("id", user.id).execute()
         
         # Store tokens and basic user data in session
         session['access_token'] = access_token
         session['refresh_token'] = refresh_token
+        if expires_at:
+            session['expires_at'] = expires_at
         session['temp_user'] = {
             "id": user.id,
             "email": user.email,

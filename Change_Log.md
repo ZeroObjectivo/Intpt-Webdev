@@ -7,6 +7,13 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ## [Unreleased] - 2026-05-14
 
+### Added
+- **Real-Time Notifications:** Implemented real-time notifications using Supabase Realtime. New notifications now appear instantly without requiring a page refresh. The system pushes updates to the client, which dynamically updates the notification count and prepends the new notification to the dropdown list. A toast message is also displayed to the user. (References: `flask_backend/app/templates/base.html`, `flask_backend/app/__init__.py`, `flask_backend/app/templates/includes/navbar.html`)
+
+### Fixed
+- **Real-Time Notification Bug:** Fixed a bug that prevented real-time notifications from appearing without a page refresh. The client-side JavaScript was refactored to ensure the Supabase client is correctly initialized, to robustly handle UI updates (especially when going from 0 to 1+ notifications), and to include subscription status logging for easier debugging. A database migration was also added to explicitly enable Supabase Realtime on the `notifications` table, which was a likely root cause. (References: `flask_backend/app/templates/includes/navbar.html`, `supabase/migrations/20260514000800_enable_realtime_for_notifications.sql`)
+- **JWT Expiration Errors:** Fixed a critical bug causing "JWT expired" errors on protected routes. Implemented an automatic token refresh mechanism in the `login_required` decorator. The system now proactively refreshes expired tokens using the stored refresh token, ensuring the user session remains active and preventing interruptions. (References: `flask_backend/app/routes/auth.py`)
+
 ### 1. Interaction Logic & Data Optimization
 #### Fixed
 - **Like Button UI:** Fixed an issue where the Like heart would show as grayed out even if the user had already liked the post. It now correctly remains red (filled) on initial page load and in the modal.
