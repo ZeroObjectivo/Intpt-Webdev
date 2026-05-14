@@ -14,6 +14,7 @@ let startX, startY;
 let translateX = 0, translateY = 0;
 let currentScale = 1;
 let currentReplyTo = null;
+let modalCommentRefreshTimer = null;
 
 function resetZoomState() {
     const wrapper = document.querySelector('.modal-image-wrapper');
@@ -757,6 +758,21 @@ function syncModalFromInteractionRows(rows) {
     }
 }
 
+function scheduleModalCommentRefresh(postId) {
+    if (!postId || !currentPost || currentPost.id !== postId) return;
+    const modal = document.getElementById('imageModal');
+    if (!modal || modal.style.display !== 'flex') return;
+
+    if (modalCommentRefreshTimer) {
+        clearTimeout(modalCommentRefreshTimer);
+    }
+
+    modalCommentRefreshTimer = setTimeout(() => {
+        fetchComments(postId);
+        modalCommentRefreshTimer = null;
+    }, 280);
+}
+
 // Global Event Listeners
 document.addEventListener('keydown', (e) => {
     const modal = document.getElementById('imageModal');
@@ -845,4 +861,8 @@ window.addEventListener('hashchange', checkHashAndOpenModal);
 window.addEventListener('dashboard-interactions-sync', (event) => {
     const rows = event && event.detail ? event.detail.posts : [];
     syncModalFromInteractionRows(rows);
+});
+window.addEventListener('dashboard-comment-mutation', (event) => {
+    const postId = event && event.detail ? event.detail.postId : null;
+    scheduleModalCommentRefresh(postId);
 });

@@ -242,7 +242,15 @@
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, (payload) => {
                     const row = (payload && payload.new && payload.new.post_id) ? payload.new : (payload ? payload.old : null);
-                    if (row && row.post_id) queueInteractionRefresh(row.post_id);
+                    if (row && row.post_id) {
+                        queueInteractionRefresh(row.post_id);
+                        window.dispatchEvent(new CustomEvent('dashboard-comment-mutation', {
+                            detail: {
+                                postId: row.post_id,
+                                eventType: payload ? payload.eventType : null
+                            }
+                        }));
+                    }
                 })
                 .subscribe((status) => {
                     if (status === 'CHANNEL_ERROR') {
