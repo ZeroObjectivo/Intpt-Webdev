@@ -3,10 +3,7 @@
 .dashboard-page {
     position: relative;
     min-height: 100vh;
-    background:
-        radial-gradient(1200px 420px at 10% -20%, rgba(93, 109, 165, 0.35), transparent 55%),
-        radial-gradient(900px 380px at 90% 120%, rgba(83, 48, 116, 0.28), transparent 58%),
-        #101015;
+    background: var(--hh-bg-main);
     color: var(--hh-text-main);
     font-family: 'Metropolis', 'Inter', sans-serif;
 }
