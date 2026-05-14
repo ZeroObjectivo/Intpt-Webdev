@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, request, redirect, session, url_for, jsonify, render_template
 from services.supabase_client import supabase, engine, get_user_client
 from sqlalchemy import text
@@ -266,10 +267,26 @@ def set_session():
         # Fetch full profile to get role and other details
         profile_res = user_client.table('profiles').select("*").eq("id", user.id).single().execute()
 
+        # Admin domain gate: only admins can log in on dev.heronshub.social
+        admin_domain = os.getenv('ADMIN_DOMAIN', '').strip()
+        if admin_domain and request.host.split(':')[0] == admin_domain:
+            user_role = profile_res.data.get('role', '') if profile_res.data else ''
+            if user_role not in ('admin', 'super_admin', 'superadmin'):
+                session.clear()
+                supabase.auth.sign_out()
+                return render_template('unauthorized.html',
+                                       email=email,
+                                       admin_restricted=True)
+
         # Finalize session and go to post-login transition
         session['user'] = session.pop('temp_user')
         if profile_res.data:
             session['user'].update(profile_res.data)
+
+        # On admin domain, go straight to admin dashboard
+        if admin_domain and request.host.split(':')[0] == admin_domain:
+            return redirect(url_for('admin.dashboard'))
+
         return redirect(url_for('auth.post_login_transition'))
         
     except Exception as e:
