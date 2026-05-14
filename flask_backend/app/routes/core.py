@@ -457,9 +457,17 @@ def build_admin_activity_payload(client):
 @login_required
 def sync_dashboard_load():
     category = request.args.get('category')
-    client = get_user_client()
-
-    state = build_dashboard_sync_state(client, category=category)
+    try:
+        client = get_user_client()
+        state = build_dashboard_sync_state(client, category=category)
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            client = get_user_client()
+            state = build_dashboard_sync_state(client, category=category)
+        elif is_jwt_error(e):
+            return jsonify({"status": "error", "reason": "session_expired"}), 401
+        else:
+            return jsonify({"status": "error", "reason": "sync_failed"}), 500
 
     response = jsonify({
         "status": "ok",
@@ -479,13 +487,25 @@ def sync_realtime():
     user_id = user.get('id')
     role = (user.get('role') or '').lower()
 
-    client = get_user_client()
-
-    state = build_dashboard_sync_state(client, category=category)
-    notifications = build_notification_payload(client, user_id)
-    interactions = {
-        "posts": build_interactions_payload(client, user_id, post_ids)
-    }
+    try:
+        client = get_user_client()
+        state = build_dashboard_sync_state(client, category=category)
+        notifications = build_notification_payload(client, user_id)
+        interactions = {
+            "posts": build_interactions_payload(client, user_id, post_ids)
+        }
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            client = get_user_client()
+            state = build_dashboard_sync_state(client, category=category)
+            notifications = build_notification_payload(client, user_id)
+            interactions = {
+                "posts": build_interactions_payload(client, user_id, post_ids)
+            }
+        elif is_jwt_error(e):
+            return jsonify({"status": "error", "reason": "session_expired"}), 401
+        else:
+            return jsonify({"status": "error", "reason": "sync_failed"}), 500
 
     payload = {
         "status": "ok",

@@ -32,7 +32,7 @@
             overflow-x: hidden;
         }
 
-        /* Sidebar Styles */
+        /* ── Sidebar ── */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
@@ -41,13 +41,13 @@
             left: 0;
             top: 0;
             z-index: 50;
-            transition: all 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
         }
 
         .sidebar-header {
-            padding: 2rem 1.5rem;
+            padding: 1.75rem 1.5rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -68,7 +68,7 @@
 
         .sidebar-nav {
             flex: 1;
-            padding: 1rem 0.75rem;
+            padding: 0.75rem;
             overflow-y: auto;
         }
 
@@ -76,7 +76,7 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.875rem 1rem;
+            padding: 0.75rem 1rem;
             color: #94a3b8;
             border-radius: 0.75rem;
             font-weight: 700;
@@ -127,23 +127,64 @@
         }
 
         .sidebar-footer {
-            padding: 1.5rem;
+            padding: 1.25rem 1.5rem;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Main Content Styles */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-            min-height: 100vh;
+        /* ── Mobile sidebar overlay + hamburger ── */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(2px);
+            z-index: 49;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
         }
 
-        /* Top Header */
+        .hamburger-btn {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 60;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 0.75rem;
+            background: var(--admin-secondary);
+            color: white;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: background 0.2s ease;
+        }
+        .hamburger-btn:hover {
+            background: var(--admin-primary);
+        }
+
+        /* ── Main Content ── */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem 2.5rem;
+            min-height: 100vh;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── Top Header ── */
         .admin-top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
 
         .admin-search {
@@ -154,7 +195,15 @@
             align-items: center;
             gap: 0.5rem;
             width: 300px;
+            max-width: 100%;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .admin-search:focus-within {
+            border-color: var(--admin-accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .admin-search input {
@@ -164,66 +213,93 @@
             width: 100%;
         }
 
-        /* Rounded Boxes */
+        /* ── Section Dividers ── */
+        .admin-section {
+            margin-bottom: 2rem;
+        }
+
+        .admin-section-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            color: #94a3b8;
+            font-size: 0.6875rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .admin-section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        /* ── Stat Cards ── */
         .stat-card {
             background: white;
-            border-radius: 1.5rem;
+            border-radius: 1.25rem;
             padding: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
             border: 1px solid #f1f5f9;
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+            border-color: #e2e8f0;
         }
 
         .stat-card.expanded {
-            grid-column: span 2;
-            grid-row: span 2;
+            grid-column: 1 / -1;
         }
 
         .stat-label {
             color: #64748b;
-            font-size: 0.75rem;
-            font-weight: 900;
+            font-size: 0.6875rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             margin-bottom: 0.5rem;
         }
 
         .stat-value {
-            font-size: 1.875rem;
+            font-size: 2rem;
             font-weight: 900;
             color: var(--admin-secondary);
+            line-height: 1.1;
         }
 
-        /* Favorites bar */
+        /* ── Favorites bar ── */
         .fav-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 1rem;
+            margin-bottom: 0;
         }
 
         .fav-item {
             background: white;
             border-radius: 1rem;
-            padding: 1rem;
+            padding: 0.875rem 1rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             border: 1px solid #f1f5f9;
         }
 
         .fav-item:hover {
             border-color: var(--admin-primary);
             background: #eff6ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 56, 168, 0.08);
         }
 
         .fav-icon {
@@ -235,6 +311,7 @@
             align-items: center;
             justify-content: center;
             color: var(--admin-primary);
+            flex-shrink: 0;
         }
 
         .fav-text {
@@ -242,13 +319,114 @@
             font-size: 0.8125rem;
             color: #1e293b;
         }
+
+        /* ── Custom scrollbar ── */
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        /* ══════════════════════════════
+           Responsive Breakpoints
+           ══════════════════════════════ */
+
+        /* Tablet landscape / small desktop */
+        @media (max-width: 1200px) {
+            .main-content {
+                padding: 1.75rem 1.5rem;
+            }
+        }
+
+        /* Tablet portrait */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1.5rem 1.25rem;
+                padding-top: 4.5rem;
+            }
+
+            .fav-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .admin-search {
+                width: 220px;
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 1rem;
+                padding-top: 4.5rem;
+            }
+
+            .admin-top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .admin-search {
+                width: 100%;
+            }
+
+            .fav-bar {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.625rem;
+            }
+
+            .fav-item {
+                padding: 0.75rem;
+            }
+
+            .fav-text {
+                font-size: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 1.25rem;
+                border-radius: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Very small mobile */
+        @media (max-width: 400px) {
+            .fav-bar {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
     {% block admin_styles %}{% endblock %}
 </head>
 <body>
 
+    <!-- Mobile Hamburger Button -->
+    <button class="hamburger-btn" id="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="admin-sidebar">
         <div class="sidebar-header">
             <img src="{{ url_for('static', filename='images/Logo.png') }}" class="sidebar-logo" alt="">
             <span class="sidebar-title">Admin Hub</span>
@@ -334,7 +512,7 @@
                         {% endif %}
                     </button>
 
-                    <div id="notification-menu" class="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden hidden z-[60] border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div id="notification-menu" class="absolute right-0 mt-3 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl overflow-hidden hidden z-[60] border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
                             <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
                             {% if unread_notifications_count > 0 %}
@@ -430,11 +608,32 @@
                 }, 4000);
             });
         });
+        // Sidebar toggle for mobile
+        (function() {
+            const toggle = document.getElementById('sidebar-toggle');
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+
+            function openSidebar() {
+                sidebar.classList.add('open');
+                overlay.classList.add('active');
+            }
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+
+            if (toggle) toggle.addEventListener('click', () => {
+                sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+            });
+            if (overlay) overlay.addEventListener('click', closeSidebar);
+        })();
+
         function toggleDropdown(id) {
             const dropdown = document.getElementById(id);
             const btn = dropdown.previousElementSibling;
             const arrow = btn.querySelector('.dropdown-arrow');
-            
+
             dropdown.classList.toggle('show');
             arrow.style.transform = dropdown.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
         }

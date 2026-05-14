@@ -294,6 +294,7 @@
                         notificationPollBusy = true;
                         try {
                             const res = await fetch('/sync/realtime', { headers: { 'Accept': 'application/json' } });
+                            if (res.status === 401) { window.location.href = '/login'; return; }
                             if (!res.ok) return;
                             const data = await res.json();
                             if (data && data.notifications) {
@@ -368,32 +369,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentCount = parseInt(countBadge.textContent) || 0;
             countBadge.textContent = `${currentCount + 1} New`;
         }
-        
-        // 3. Remove "No notifications" message if it exists
-        const listContainer = document.getElementById('notification-list-container');
-        const emptyState = listContainer.querySelector('.notification-empty-state');
-        if (emptyState) {
-            emptyState.remove();
-        }
 
-        // 4. Prepend the new notification
+        // 3. Hide empty state if visible
+        const emptyState = document.getElementById('notification-empty-state');
+        if (emptyState) emptyState.classList.add('hidden');
+        const footer = document.getElementById('notification-footer');
+        if (footer) footer.classList.remove('hidden');
+
+        // 4. Prepend the new notification (escaped to prevent XSS)
+        const safeId = escapeNotifHtml(notif.id);
+        const safeTitle = escapeNotifHtml(notif.title || 'Notification');
+        const safeMessage = escapeNotifHtml(notif.message || '');
+        const createdDate = escapeNotifHtml(new Date(notif.created_at).toISOString().split('T')[0]);
+
         const newNotifEl = document.createElement('div');
-        newNotifEl.className = "px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group";
-        newNotifEl.setAttribute('onclick', `markAsRead('${notif.id}', this)`);
-
-        const createdDate = new Date(notif.created_at).toISOString().split('T')[0];
+        newNotifEl.className = "notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group";
+        newNotifEl.setAttribute('data-notification-id', notif.id);
+        newNotifEl.setAttribute('onclick', `markAsRead('${safeId}', this)`);
         newNotifEl.innerHTML = `
             <div class="flex justify-between items-start mb-2">
-                <h4 class="text-[15px] font-black text-umak-blue">${notif.title}</h4>
+                <h4 class="text-[15px] font-black text-umak-blue">${safeTitle}</h4>
                 <span class="text-[11px] font-bold text-slate-300 uppercase">${createdDate}</span>
             </div>
-            <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">${notif.message}</p>
+            <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">${safeMessage}</p>
         `;
-        listContainer.prepend(newNotifEl);
+        const listContainer = document.getElementById('notification-items-container');
+        if (listContainer) listContainer.prepend(newNotifEl);
 
         // 5. Show a toast message
         if (window.createToast) {
-            window.createToast(`<strong>${notif.title}</strong>`, 'info');
+            window.createToast(`<strong>${safeTitle}</strong>`, 'info');
         }
     }
 
