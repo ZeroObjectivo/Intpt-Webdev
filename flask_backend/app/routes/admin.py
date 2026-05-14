@@ -39,7 +39,7 @@ def admin_required(f):
             print(f"Error verifying admin role: {e}")
             current_role = user.get('role')
 
-        if current_role not in ['admin', 'super_admin']:
+        if current_role not in ['admin', 'super_admin', 'superadmin']:
             flash("Unauthorized access. Admin privileges required.", "error")
             return redirect(url_for('core.dashboard'))
         return f(*args, **kwargs)

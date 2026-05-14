@@ -233,7 +233,7 @@
                     <div class="trending-list">
                         {% if trending %}
                             {% for item in trending %}
-                            <div class="trending-item">
+                            <div class="trending-item cursor-pointer" onclick='openCommentModal({{ item|tojson|safe }})'>
                                 <span class="trending-number">{{ loop.index }}</span>
                                 <div class="trending-details">
                                     <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-[10px] font-bold my-[2px]">{{ item.category }}</span>
@@ -255,7 +255,7 @@
                     <div class="event-list">
                         {% if events %}
                             {% for event in events %}
-                            <div class="event-card">
+                            <div class="event-card cursor-pointer" onclick='openCommentModal({{ event|tojson|safe }})'>
                                 <div class="event-date">
                                     <span class="event-day">{{ event.day }}</span>
                                     <span class="event-month">{{ event.month }}</span>
@@ -392,9 +392,6 @@
                     Post
                 </button>
             </div>
-        </form>
-    </div>
-</div>
         </form>
     </div>
 </div>

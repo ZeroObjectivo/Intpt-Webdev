@@ -7,7 +7,19 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ## [Unreleased] - 2026-05-14
 
-### 1. Front-end Integration & Image Enhancements
+### 1. Interaction Logic & Data Optimization
+#### Fixed
+- **Like Button UI:** Fixed an issue where the Like heart would show as grayed out even if the user had already liked the post. It now correctly remains red (filled) on initial page load and in the modal.
+- **Accurate Comment Counting:** Adjusted the comment counting logic to only include top-level comments in the `comments_count` field, ensuring the displayed count matches the number of comments the user sees (excluding replies by default).
+- **Stale Modal Data:** Fixed a bug where opening the comment modal would show outdated like/comment counts or statuses because it was using static data from the time of page render. The modal now synchronizes with the latest live dashboard state upon opening.
+- **Global Interaction Sync:** Enhanced `updateDashboardCount` and `toggleLike` in `modal.js` to ensure that likes and comment counts are synchronized across all instances of a post on the page (main feed, trending sidebar, and profile page).
+- **Profile Like Check:** Fixed a backend bug in `load_profile_data` where the `user_has_liked` check was incorrectly performed against the profile owner's ID instead of the current viewer's ID.
+
+#### Added
+- **Profile Interactions:** Added Like and Comment action buttons to the post cards on the User Profile page, allowing for direct interaction from the timeline.
+- **Bulk Likes Fetching:** Optimized the backend to fetch all like statuses for displayed posts in a single query, eliminating the N+1 database performance bottleneck.
+
+### 2. Front-end Integration & Image Enhancements
 ### Added
 - **Multiple Image Support:** Refactored post creation and display to support up to 5 images per post.
 - **Dynamic Image Grid:** Implemented a Facebook-style responsive grid (`fb-grid`) that adjusts layouts based on the number of images (1-5).
@@ -27,6 +39,18 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **CSS Assets:** Rebuilt `flask_backend/app/static/css/style.css` using Tailwind CSS to ensure full synchronization between the merged templates and the generated styles.
 
 ### Fixed
+- **Admin Authorization (Superadmin Access):** Fixed an issue where users with the `superadmin` role (no underscore) were unable to access the admin dashboard.
+    - Updated `admin_required` decorator in `flask_backend/app/routes/admin.py` to support both `super_admin` and `superadmin` spellings.
+    - Updated role-based conditional rendering in `profile_settings.html` and `admin/users.html`.
+    - Updated Supabase RLS policies in `20260513000400_post_enhancements.sql` and `20260513000600_admin_features.sql` to include `superadmin` in the authorized roles list.
+- **Dynamic Sidebar Features:** Fully implemented the "Trending Now" and "Upcoming Events" sidebar sections.
+    - **Trending Now:** Now dynamically fetches the top 3 posts by like count. Clicking a trending topic opens the interactive comment modal for that specific post.
+    - **Upcoming Events:** Now dynamically fetches the next 3 scheduled events. Implemented server-side parsing for date components (day, month) and automatic status determination (Ongoing vs. Upcoming).
+- **Admin User Management NameError:** Resolved a `NameError: name 'request' is not defined` that occurred when searching for users in the admin dashboard by adding the missing `request` import from Flask in `admin.py`.
+- **Interaction Counts & Spam Protection:** Fixed several issues related to post likes and comments.
+    - **Spam Prevention:** Updated `toggle_like` route with a check-then-act pattern to prevent double-counting or rapid spamming from inflating like counts.
+    - **Dangling Counts:** Implemented database triggers (`on_like_deleted` and `on_comment_deleted`) that automatically decrement post counters whenever a record is removed from the `likes` or `comments` tables. This ensures counts remain accurate even if a user is deleted or an admin removes content.
+    - **Count Synchronization:** Added a `sync_all_post_counts` RPC function and a migration (`20260513000700_fix_interaction_counts.sql`) to recalculate and fix any existing discrepancies in the database.
 - **Single Image Post Sizing:** Optimized the display for single-image posts to prevent cropping while capping the height at 550px. Images are now contained within a soft-slate background, matching Facebook's behavioral patterns for mixed aspect ratios.
 - **Image Interaction Polish:** Removed the unwanted zoom effect when hovering over post images in the feed for a cleaner, more professional look.
 - **Modal Trigger Logic:** Fixed a bug where clicking on single-image posts failed to open the image gallery modal due to an incorrect conditional check in the template.

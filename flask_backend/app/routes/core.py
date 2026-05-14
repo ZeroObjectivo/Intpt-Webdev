@@ -80,10 +80,10 @@ def dashboard():
     apply_supabase_auth_token()
 
     try:
-        profile, posts, trending, events = load_dashboard_data(user_id, category)
+        profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category)
     except Exception as e:
         if is_jwt_expired_error(e) and refresh_supabase_auth():
-            profile, posts, trending, events = load_dashboard_data(user_id, category)
+            profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category)
         elif is_jwt_expired_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
@@ -96,7 +96,7 @@ def dashboard():
                            posts=posts, 
                            active_category=category, 
                            trending=trending,
-                           events=events,
+                           events=upcoming_events,
                            now=datetime.datetime.utcnow())
 
 @core.route('/profile/<target_user_id>')
@@ -106,7 +106,7 @@ def view_profile(target_user_id):
     apply_supabase_auth_token()
     
     try:
-        profile, posts, activity = load_profile_data(target_user_id)
+        profile, posts, activity = load_profile_data(target_user_id, viewer_id=current_user_id)
         # Check if the viewer owns this profile
         is_own_profile = (current_user_id == target_user_id)
         
@@ -126,7 +126,7 @@ def view_profile(target_user_id):
 def profile_settings():
     return redirect(url_for('core.view_profile', target_user_id=session.get('user').get('id')))
 
-def load_profile_data(user_id):
+def load_profile_data(user_id, viewer_id=None):
     # 1. Fetch User Profile
     profile_response = supabase.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
@@ -138,14 +138,20 @@ def load_profile_data(user_id):
         .order("created_at", desc=True).execute()
     posts = posts_response.data
     
-    # Ensure counts and user_has_liked for own posts
+    # Optimize: Fetch all likes by viewer for these posts in one query
+    liked_post_ids = set()
+    if viewer_id:
+        post_ids = [p['id'] for p in posts]
+        if post_ids:
+            likes_res = supabase.table('likes').select("post_id").eq("user_id", viewer_id).in_("post_id", post_ids).execute()
+            liked_post_ids = {l['post_id'] for l in likes_res.data}
+
+    # Ensure counts and user_has_liked
     for post in posts:
-        post['user_has_liked'] = True # If it's my post, I can see it, but I still need to check likes table if I actually liked it
-        # Actually, let's do a real check for likes
-        like_check = supabase.table('likes').select("id").eq("post_id", post['id']).eq("user_id", user_id).execute()
-        post['user_has_liked'] = len(like_check.data) > 0
+        post['user_has_liked'] = post['id'] in liked_post_ids
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = post.get('comments_count') or 0
+        post['relative_created_at'] = format_relative_time(post.get('created_at'))
 
     # 3. Fetch Activity Log (Recent Likes and Comments by the user)
     # Get recent likes on other people's posts
@@ -236,13 +242,15 @@ def load_dashboard_data(user_id, category=None):
     posts_response = query.order("created_at", desc=True).limit(20).execute()
     posts = posts_response.data
 
-    # 3. For each post, check if the current user has liked it
-    # and ensure counts are present
+    # 3. Fetch likes for all posts in one go to avoid N+1
+    post_ids = [p['id'] for p in posts]
+    liked_post_ids = set()
+    if post_ids:
+        likes_res = supabase.table('likes').select("post_id").eq("user_id", user_id).in_("post_id", post_ids).execute()
+        liked_post_ids = {l['post_id'] for l in likes_res.data}
+
     for post in posts:
-        # Check if current user liked this post
-        like_check = supabase.table('likes').select("id").eq("post_id", post['id']).eq("user_id", user_id).execute()
-        post['user_has_liked'] = len(like_check.data) > 0
-        
+        post['user_has_liked'] = post['id'] in liked_post_ids
         # Ensure counts are initialized if null
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = post.get('comments_count') or 0
@@ -250,16 +258,28 @@ def load_dashboard_data(user_id, category=None):
 
     # 4. Fetch Trending Posts (Top 3 by likes_count, must have at least 1 like)
     trending_response = supabase.table('posts')\
-        .select("content, category, likes_count")\
+        .select("*, profiles(full_name, avatar_url)")\
         .gt("likes_count", 0)\
         .order("likes_count", desc=True)\
         .limit(3).execute()
     trending = trending_response.data
+
+    trending_ids = [p['id'] for p in trending]
+    trending_liked_ids = set()
+    if trending_ids:
+        t_likes_res = supabase.table('likes').select("post_id").eq("user_id", user_id).in_("post_id", trending_ids).execute()
+        trending_liked_ids = {l['post_id'] for l in t_likes_res.data}
+
+    for t_post in trending:
+        t_post['user_has_liked'] = t_post['id'] in trending_liked_ids
+        t_post['likes_count'] = t_post.get('likes_count') or 0
+        t_post['comments_count'] = t_post.get('comments_count') or 0
+        t_post['relative_created_at'] = format_relative_time(t_post.get('created_at'))
     
     # 5. Fetch Upcoming Events (Top 3 by event_date, future only)
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     events_response = supabase.table('posts')\
-        .select("content, event_date, event_end_date, location")\
+        .select("*, profiles(full_name, avatar_url)")\
         .eq("category", "Events")\
         .gte("event_date", now_iso)\
         .order("event_date", desc=False)\
@@ -269,16 +289,22 @@ def load_dashboard_data(user_id, category=None):
     for event in events_response.data:
         try:
             # Parse and convert to Manila time for display
-            dt = datetime.datetime.fromisoformat(event['event_date'].replace('Z', '+00:00')).astimezone(DISPLAY_TIMEZONE)
+            dt = parse_post_datetime(event['event_date']).astimezone(DISPLAY_TIMEZONE)
             event['day'] = dt.strftime('%d')
             event['month'] = dt.strftime('%b')
             event['time_display'] = dt.strftime('%I:%M %p').lstrip('0')
             
             if event.get('event_end_date'):
-                edt = datetime.datetime.fromisoformat(event['event_end_date'].replace('Z', '+00:00')).astimezone(DISPLAY_TIMEZONE)
+                edt = parse_post_datetime(event['event_end_date']).astimezone(DISPLAY_TIMEZONE)
                 event['time_display'] += f" - {edt.strftime('%I:%M %p').lstrip('0')}"
             
-            event['status'] = 'Upcoming'
+            # Simple status logic
+            now_local = datetime.datetime.now(DISPLAY_TIMEZONE)
+            if dt.date() == now_local.date():
+                event['status'] = 'Ongoing'
+            else:
+                event['status'] = 'Upcoming'
+                
             upcoming_events.append(event)
         except Exception as e:
             print(f"Error formatting event: {e}")
@@ -297,17 +323,17 @@ def toggle_like(post_id):
         existing = supabase.table('likes').select("id").eq("post_id", post_id).eq("user_id", user_id).execute()
         
         if len(existing.data) > 0:
-            # Unlike
+            # Unlike: Remove from DB. Trigger handles decrement.
             supabase.table('likes').delete().eq("post_id", post_id).eq("user_id", user_id).execute()
-            # Decrement likes_count
-            supabase.rpc('decrement_likes_count', {'row_id': post_id}).execute()
             return {"status": "unliked", "post_id": post_id}
         else:
-            # Like
-            supabase.table('likes').insert({"post_id": post_id, "user_id": user_id}).execute()
-            # Increment likes_count
-            supabase.rpc('increment_likes_count', {'row_id': post_id}).execute()
-            return {"status": "liked", "post_id": post_id}
+            # Like: Insert into DB. Trigger handles increment.
+            try:
+                supabase.table('likes').insert({"post_id": post_id, "user_id": user_id}).execute()
+                return {"status": "liked", "post_id": post_id}
+            except Exception as e:
+                # If it failed (e.g. unique constraint), it might already be liked
+                return {"status": "liked", "post_id": post_id}
             
     except Exception as e:
         print(f"Error toggling like: {e}")
@@ -340,7 +366,7 @@ def add_comment(post_id):
         
     apply_supabase_auth_token()
     try:
-        # Insert comment
+        # Insert comment. Trigger handles increment.
         comment_data = {
             "post_id": post_id,
             "user_id": user_id,
@@ -350,9 +376,6 @@ def add_comment(post_id):
             comment_data["parent_id"] = parent_id
             
         comment_response = supabase.table('comments').insert(comment_data).execute()
-        
-        # Increment comments_count
-        supabase.rpc('increment_comments_count', {'row_id': post_id}).execute()
         
         # Fetch the inserted comment with profile info
         new_comment = supabase.table('comments')\
@@ -469,9 +492,6 @@ def delete_comment(comment_id):
         post_id = comment.data['post_id']
         
         supabase.table('comments').delete().eq("id", comment_id).eq("user_id", user_id).execute()
-        
-        # Decrement comments_count
-        supabase.rpc('decrement_comments_count', {'row_id': post_id}).execute()
         
         return {"status": "deleted", "post_id": post_id}
     except Exception as e:
