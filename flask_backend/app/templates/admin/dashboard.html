@@ -3,20 +3,27 @@
 {% block title %}Admin Dashboard | Herons' Hub{% endblock %}
 
 {% block admin_content %}
+{% set can_access_accounts = permissions.can_access_accounts if permissions is defined else true %}
+{% set can_access_content = permissions.can_access_content if permissions is defined else true %}
 <!-- Favorites Bar (Admin's selected shortcuts) -->
 <div class="fav-bar">
+    {% if can_access_accounts %}
     <div class="fav-item" onclick="window.location.href='{{ url_for('admin.manage_users') }}'">
         <div class="fav-icon bg-blue-50">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
         </div>
         <span class="fav-text">Manage Users</span>
     </div>
-    <div class="fav-item" onclick="document.querySelectorAll('.stat-card')[2].click()">
+    {% endif %}
+    {% if can_access_content %}
+    <div class="fav-item" onclick="window.location.href='{{ url_for('admin.content_management', category='All') }}'">
         <div class="fav-icon bg-rose-50 text-rose-500">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
         <span class="fav-text">Reports Queue</span>
     </div>
+    {% endif %}
+    {% if can_access_accounts %}
     <div class="fav-item" onclick="window.location.href='{{ url_for('admin.manage_disputes') }}'">
         <div class="fav-icon bg-emerald-50 text-emerald-500">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -26,12 +33,15 @@
         <span class="ml-auto bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ stats.disputes_count }}</span>
         {% endif %}
     </div>
+    {% endif %}
+    {% if can_access_content %}
     <div class="fav-item" onclick="window.location.href='{{ url_for('admin.manage_forbidden_words') }}'">
         <div class="fav-icon bg-amber-50 text-amber-500">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
         </div>
         <span class="fav-text">Profanity Filter</span>
     </div>
+    {% endif %}
 </div>
 
 <!-- Main Stats Grid -->

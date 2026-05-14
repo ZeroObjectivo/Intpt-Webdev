@@ -246,6 +246,9 @@
     {% block admin_styles %}{% endblock %}
 </head>
 <body>
+    {% set role_value = (user.role if user and user.role else '')|lower %}
+    {% set can_access_accounts = (permissions.can_access_accounts if permissions is defined else role_value in ['super_admin', 'superadmin', 'admin', 'account_manager']) %}
+    {% set can_access_content = (permissions.can_access_content if permissions is defined else role_value in ['super_admin', 'superadmin', 'admin', 'content_moderator']) %}
 
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -260,6 +263,7 @@
                 Home
             </a>
 
+            {% if can_access_accounts %}
             <div class="nav-group">
                 <div class="nav-item nav-dropdown-btn" onclick="toggleDropdown('moderation-drop')">
                     <div class="flex items-center gap-3">
@@ -271,11 +275,12 @@
                 <div id="moderation-drop" class="nav-dropdown-content">
                     <a href="{{ url_for('admin.manage_users') }}" class="dropdown-item">User Management</a>
                     <a href="{{ url_for('admin.manage_disputes') }}" class="dropdown-item">Verification Disputes</a>
-                    <a href="{{ url_for('admin.manage_forbidden_words') }}" class="dropdown-item">Profanity Filter</a>
                     <a href="#" class="dropdown-item">Reports Queue</a>
                 </div>
             </div>
+            {% endif %}
 
+            {% if can_access_content %}
             <div class="nav-group">
                 <div class="nav-item nav-dropdown-btn" onclick="toggleDropdown('content-drop')">
                     <div class="flex items-center gap-3">
@@ -288,8 +293,10 @@
                     <a href="{{ url_for('admin.content_management', category='All') }}" class="dropdown-item">All Posts</a>
                     <a href="{{ url_for('admin.content_management', category='General') }}" class="dropdown-item">General</a>
                     <a href="{{ url_for('admin.content_management', category='Buy & Sell') }}" class="dropdown-item">Buy & Sell</a>
+                    <a href="{{ url_for('admin.manage_forbidden_words') }}" class="dropdown-item">Profanity Filter</a>
                 </div>
             </div>
+            {% endif %}
 
             <a href="#" class="nav-item">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>

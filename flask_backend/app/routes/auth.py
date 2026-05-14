@@ -256,22 +256,31 @@ def set_session():
             "user_metadata": user.user_metadata
         }
 
+        admin_domain = os.getenv('ADMIN_DOMAIN', '').strip()
+        current_host = request.host.split(':')[0]
+
         # 2. Check if user exists in profiles table
         user_client = get_user_client()
         profile_check = user_client.table('profiles').select("id").eq("id", user.id).execute()
 
         # 3. REDIRECT: New user vs Existing user
         if not profile_check.data:
+            # Never onboard fresh users through the admin domain.
+            if admin_domain and current_host == admin_domain:
+                session.clear()
+                supabase.auth.sign_out()
+                return render_template('unauthorized.html',
+                                       email=email,
+                                       admin_restricted=True)
             return redirect(url_for('auth.onboarding'))
         
         # Fetch full profile to get role and other details
         profile_res = user_client.table('profiles').select("*").eq("id", user.id).single().execute()
 
-        # Admin domain gate: only admins can log in on dev.heronshub.social
-        admin_domain = os.getenv('ADMIN_DOMAIN', '').strip()
-        if admin_domain and request.host.split(':')[0] == admin_domain:
-            user_role = profile_res.data.get('role', '') if profile_res.data else ''
-            if user_role not in ('admin', 'super_admin', 'superadmin'):
+        # Admin domain gate: only admin-portal roles can log in on dev.heronshub.social
+        if admin_domain and current_host == admin_domain:
+            user_role = (profile_res.data.get('role', '') if profile_res.data else '').strip().lower()
+            if user_role not in ('admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'):
                 session.clear()
                 supabase.auth.sign_out()
                 return render_template('unauthorized.html',
@@ -284,7 +293,7 @@ def set_session():
             session['user'].update(profile_res.data)
 
         # On admin domain, go straight to admin dashboard
-        if admin_domain and request.host.split(':')[0] == admin_domain:
+        if admin_domain and current_host == admin_domain:
             return redirect(url_for('admin.dashboard'))
 
         return redirect(url_for('auth.post_login_transition'))
@@ -332,6 +341,21 @@ def complete_onboarding():
         
         # 2. Move from temp_user to full user session
         session['user'] = session.pop('temp_user')
+
+        admin_domain = os.getenv('ADMIN_DOMAIN', '').strip()
+        current_host = request.host.split(':')[0]
+        if admin_domain and current_host == admin_domain:
+            profile_res = user_client.table('profiles').select("role").eq("id", user['id']).single().execute()
+            role = (profile_res.data.get('role', '') if profile_res.data else '').strip().lower()
+            if role in ('admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'):
+                return redirect(url_for('admin.dashboard'))
+
+            session.clear()
+            supabase.auth.sign_out()
+            return render_template('unauthorized.html',
+                                   email=user['email'],
+                                   admin_restricted=True)
+
         return redirect(url_for('auth.post_login_transition'))
     except Exception as e:
         print(f"Onboarding completion error: {e}")

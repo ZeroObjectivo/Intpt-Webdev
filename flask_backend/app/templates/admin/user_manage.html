@@ -22,31 +22,37 @@
             
             <div class="flex flex-col items-center gap-3 mb-8">
                 <!-- Role Selection UI -->
+                {% set can_edit_roles = permissions.is_super_admin or permissions.is_admin %}
                 <div x-data="{ editing: false, selectedRole: '{{ target_user.role }}' }" 
                      @click.away="editing = false; selectedRole = '{{ target_user.role }}'"
                      class="w-full px-4">
                     
                     <!-- Display Mode -->
-                    <div x-show="!editing" @click="editing = true" 
+                    <div x-show="!editing" {% if can_edit_roles %}@click="editing = true"{% endif %}
                          class="group relative cursor-pointer bg-blue-50 hover:bg-blue-100 text-umak-blue px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2">
                         <span x-text="selectedRole.replace('_', ' ')">{{ target_user.role.replace('_', ' ') }}</span>
+                        {% if can_edit_roles %}
                         <svg class="w-2.5 h-2.5 opacity-50 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        {% endif %}
                     </div>
 
                     <!-- Edit Mode -->
+                    {% if can_edit_roles %}
                     <div x-show="editing" x-cloak class="bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-inner">
                         <form action="{{ url_for('admin.update_user_role', user_id=target_user.id) }}" method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="space-y-3">
                                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest text-left px-1">Select New Role</p>
                                 <div class="grid grid-cols-1 gap-1.5">
-                                    {% for role_val, role_label in [
+                                    {% set role_options = [
                                         ('student', 'Student'),
                                         ('content_moderator', 'Content Moderator'),
-                                        ('account_manager', 'Account Manager'),
-                                        ('admin', 'Admin'),
-                                        ('super_admin', 'Super Admin')
+                                        ('account_manager', 'Account Manager')
                                     ] %}
+                                    {% if permissions.is_super_admin %}
+                                        {% set role_options = role_options + [('admin', 'Admin'), ('super_admin', 'Super Admin')] %}
+                                    {% endif %}
+                                    {% for role_val, role_label in role_options %}
                                     <label class="flex items-center gap-3 p-2 rounded-xl hover:bg-white cursor-pointer transition-colors group">
                                         <input type="radio" name="role" value="{{ role_val }}" 
                                                x-model="selectedRole"
@@ -68,6 +74,11 @@
                             </div>
                         </form>
                     </div>
+                    {% else %}
+                    <p class="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Role updates are restricted for your access level.
+                    </p>
+                    {% endif %}
                 </div>
                 <span class="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest">{{ target_user.status or 'active' }}</span>
             </div>
