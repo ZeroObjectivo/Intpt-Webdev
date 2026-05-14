@@ -6,7 +6,7 @@ from services.supabase_client import init_supabase
 # Load environment variables
 load_dotenv()
 
-# Initialize Flask app — gunicorn imports this as `app:app`
+# Initialize Flask app — gunicorn imports this as `wsgi:app`
 app = create_app()
 
 # Simple route to check status
