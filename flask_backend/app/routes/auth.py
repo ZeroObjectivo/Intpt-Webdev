@@ -179,10 +179,10 @@ def set_session():
         # If exists, fetch full profile to get role and other details
         profile_res = user_client.table('profiles').select("*").eq("id", user.id).single().execute()
         
-        # If exists, finalize session and go to dashboard
+        # If exists, finalize session and go to post-login transition
         session['user'] = session.pop('temp_user')
         session['user'].update(profile_res.data) # Sync DB profile (including role) to session
-        return redirect(url_for('core.dashboard'))
+        return redirect(url_for('auth.post_login_transition'))
         
     except Exception as e:
         print(f"Session Error: {e}")
@@ -197,6 +197,12 @@ def onboarding():
     if 'temp_user' not in session:
         return redirect(url_for('core.login'))
     return render_template('onboarding.html', user=session['temp_user'])
+
+@auth.route('/auth/post-login')
+@login_required
+def post_login_transition():
+    """Short transition screen before entering the dashboard."""
+    return render_template('post_login_transition.html')
 
 @auth.route('/onboarding/complete', methods=['POST'])
 def complete_onboarding():
@@ -223,7 +229,7 @@ def complete_onboarding():
         
         # 2. Move from temp_user to full user session
         session['user'] = session.pop('temp_user')
-        return redirect(url_for('core.dashboard'))
+        return redirect(url_for('auth.post_login_transition'))
     except Exception as e:
         print(f"Onboarding completion error: {e}")
         return "Failed to complete onboarding", 500

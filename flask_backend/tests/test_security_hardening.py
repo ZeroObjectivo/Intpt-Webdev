@@ -80,6 +80,18 @@ class SecurityHardeningTest(unittest.TestCase):
         self.assertNotIn("document.getElementById('hash')", auth_routes)
         self.assertIn("window.location.replace", auth_routes)
 
+    def test_post_login_transition_flow_is_wired_with_800ms_ease_out(self):
+        auth_routes = read_text("app/routes/auth.py")
+        transition_template = read_text("app/templates/post_login_transition.html")
+
+        self.assertIn("@auth.route('/auth/post-login')", auth_routes)
+        self.assertIn("def post_login_transition()", auth_routes)
+        self.assertIn("url_for('auth.post_login_transition')", auth_routes)
+
+        self.assertIn("window.location.replace", transition_template)
+        self.assertIn("800ms ease-out", transition_template)
+        self.assertIn("animations/flow1.json", transition_template)
+
 
 if __name__ == "__main__":
     unittest.main()

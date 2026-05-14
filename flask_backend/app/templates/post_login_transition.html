@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading | Herons Hub</title>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 800ms ease-out;
+            font-family: 'Metropolis', 'Inter', system-ui, sans-serif;
+        }
+
+        body.exit {
+            opacity: 0;
+        }
+
+        #logoTransition {
+            width: min(400px, 72vw);
+            height: min(400px, 72vw);
+            max-width: 460px;
+            max-height: 460px;
+        }
+    </style>
+</head>
+<body>
+    <div id="logoTransition" aria-label="Loading animation"></div>
+
+    <script>
+        const DASHBOARD_URL = "{{ url_for('core.dashboard') }}";
+        const ANIMATION_PATH = "{{ url_for('static', filename='animations/flow1.json') }}";
+        let hasNavigated = false;
+
+        function goToDashboard() {
+            if (hasNavigated) return;
+            hasNavigated = true;
+            document.body.classList.add('exit');
+            setTimeout(() => window.location.replace(DASHBOARD_URL), 800);
+        }
+
+        window.addEventListener('load', () => {
+            if (window.lottie) {
+                const animation = window.lottie.loadAnimation({
+                    container: document.getElementById('logoTransition'),
+                    renderer: 'svg',
+                    loop: false,
+                    autoplay: true,
+                    path: ANIMATION_PATH
+                });
+
+                animation.addEventListener('complete', () => goToDashboard());
+                setTimeout(goToDashboard, 6000);
+            } else {
+                setTimeout(goToDashboard, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
