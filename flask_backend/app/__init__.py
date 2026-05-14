@@ -1,5 +1,5 @@
 from flask import Flask
-from datetime import datetime
+from datetime import datetime, timezone
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 
@@ -9,8 +9,11 @@ def create_app():
     # Trust proxy headers (DO App Platform runs behind a reverse proxy)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-    # Configuration
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-for-university-social-platform')
+    # Configuration — SECRET_KEY must be set via environment variable
+    secret_key = os.getenv('SECRET_KEY')
+    if not secret_key:
+        raise RuntimeError("SECRET_KEY environment variable is not set.")
+    app.config['SECRET_KEY'] = secret_key
 
     # Custom Jinja filters
     @app.template_filter('datetime_obj')
@@ -25,7 +28,7 @@ def create_app():
 
     @app.context_processor
     def inject_now():
-        return {'now': datetime.utcnow()}
+        return {'now': datetime.now(timezone.utc)}
 
     # Register Blueprints
     from .routes.core import core

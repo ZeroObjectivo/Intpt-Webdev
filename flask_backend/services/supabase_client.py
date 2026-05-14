@@ -30,13 +30,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def get_db():
     """
     Helper function to get a database session.
-    Ensures the session is closed after use.
+    Caller is responsible for closing the session.
     """
-    db = SessionLocal()
-    try:
-        return db
-    finally:
-        db.close()
+    return SessionLocal()
 
 def init_supabase():
     """

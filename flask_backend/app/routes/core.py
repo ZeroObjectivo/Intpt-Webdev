@@ -97,7 +97,7 @@ def dashboard():
                            active_category=category, 
                            trending=trending,
                            events=upcoming_events,
-                           now=datetime.datetime.utcnow())
+                           now=datetime.datetime.now(datetime.timezone.utc))
 
 @core.route('/profile/<target_user_id>')
 @login_required
@@ -115,7 +115,7 @@ def view_profile(target_user_id):
                                posts=posts, 
                                activity=activity,
                                is_own_profile=is_own_profile,
-                               now=datetime.datetime.utcnow())
+                               now=datetime.datetime.now(datetime.timezone.utc))
     except Exception as e:
         print(f"Error loading profile: {e}")
         flash("Profile not found.", "error")
@@ -217,14 +217,13 @@ def update_profile():
             "course": course,
             "level": level,
             "bio": bio,
-            "updated_at": "now()"
         }
         
         supabase.table('profiles').update(update_data).eq("id", user_id).execute()
         flash("Profile updated successfully!", "success")
         return redirect(url_for('core.profile_settings'))
     except Exception as e:
-        flash(f"Error updating profile: {str(e)}", "error")
+        flash("Error updating profile. Please try again.", "error")
         return redirect(url_for('core.profile_settings'))
 
 def load_dashboard_data(user_id, category=None):
@@ -346,7 +345,7 @@ def toggle_like(post_id):
             
     except Exception as e:
         print(f"Error toggling like: {e}")
-        return {"error": str(e)}, 500
+        return {"error": "Failed to toggle like."}, 500
 
 @core.route('/posts/<post_id>/comments', methods=['GET'])
 @login_required
@@ -360,7 +359,8 @@ def get_comments(post_id):
             .execute()
         return {"comments": comments_response.data}
     except Exception as e:
-        return {"error": str(e)}, 500
+        print(f"Error fetching comments: {e}")
+        return {"error": "Failed to load comments."}, 500
 
 @core.route('/posts/<post_id>/comments', methods=['POST'])
 @login_required
@@ -395,7 +395,7 @@ def add_comment(post_id):
         return {"comment": new_comment.data}
     except Exception as e:
         print(f"Error adding comment: {e}")
-        return {"error": str(e)}, 500
+        return {"error": "Failed to add comment."}, 500
 
 @core.route('/posts/<post_id>/update', methods=['POST'])
 @login_required
@@ -419,7 +419,6 @@ def update_post(post_id):
         update_data = {
             "content": content,
             "category": category,
-            "updated_at": "now()"
         }
         
         if price is not None: update_data["price"] = float(price) if price.strip() else None
@@ -438,7 +437,7 @@ def update_post(post_id):
         return redirect(url_for('core.dashboard'))
     except Exception as e:
         print(f"Error updating post: {e}")
-        flash(f"Error updating post: {str(e)}", "error")
+        flash("Error updating post. Please try again.", "error")
         return redirect(url_for('core.dashboard'))
 
 @core.route('/posts/<post_id>/delete', methods=['POST'])
@@ -459,7 +458,7 @@ def delete_post(post_id):
         return {"status": "deleted"}
     except Exception as e:
         print(f"Error deleting post: {e}")
-        return {"error": str(e)}, 500
+        return {"error": "Failed to delete post."}, 500
 
 @core.route('/comments/<comment_id>/update', methods=['POST'])
 @login_required
@@ -475,7 +474,6 @@ def update_comment(comment_id):
     try:
         result = supabase.table('comments').update({
             "content": content,
-            "updated_at": "now()"
         }).eq("id", comment_id).eq("user_id", user_id).execute()
         
         if not result.data:
@@ -484,7 +482,7 @@ def update_comment(comment_id):
         return {"comment": result.data[0]}
     except Exception as e:
         print(f"Error updating comment: {e}")
-        return {"error": str(e)}, 500
+        return {"error": "Failed to update comment."}, 500
 
 @core.route('/comments/<comment_id>/delete', methods=['POST'])
 @login_required
@@ -507,7 +505,7 @@ def delete_comment(comment_id):
         return {"status": "deleted", "post_id": post_id}
     except Exception as e:
         print(f"Error deleting comment: {e}")
-        return {"error": str(e)}, 500
+        return {"error": "Failed to delete comment."}, 500
 
 @core.route('/posts/create', methods=['POST'])
 @login_required
@@ -595,7 +593,7 @@ def create_post():
         flash("Post created successfully!", "success")
     except Exception as e:
         print(f"CRITICAL: Post insertion failed: {str(e)}")
-        flash(f"Something went wrong: {str(e)}", "error")
+        flash("Something went wrong. Please try again.", "error")
         
     return redirect(url_for('core.dashboard'))
 

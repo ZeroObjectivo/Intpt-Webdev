@@ -81,7 +81,8 @@ def login():
         # This will be the Google Auth URL
         return redirect(response.url)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"OAuth login error: {e}")
+        return jsonify({"error": "Login failed. Please try again."}), 500
 
 @auth.route('/auth/callback')
 def callback():
@@ -117,7 +118,7 @@ def callback():
                     document.getElementById('status').innerText = "Auth code found in query. Redirecting...";
                     window.location.href = "/auth/session" + search;
                 } else if (params.has('error')) {
-                    document.getElementById('status').innerHTML = "<b>OAuth Error:</b> " + params.get('error_description');
+                    document.getElementById('status').textContent = "OAuth Error: " + params.get('error_description');
                 } else {
                     document.getElementById('status').innerText = "No token or code found. Please check your Supabase redirect settings.";
                 }
@@ -206,7 +207,7 @@ def set_session():
         
     except Exception as e:
         print(f"Session Error: {e}")
-        return f"Authentication failed: {str(e)}", 500
+        return "Authentication failed. Please try again.", 500
 
 
 @auth.route('/onboarding')
@@ -239,7 +240,6 @@ def complete_onboarding():
             "email": user['email'],
             "full_name": user['user_metadata'].get('full_name'),
             "avatar_url": user['user_metadata'].get('avatar_url'),
-            "updated_at": "now()"
         }).execute()
         
         # 2. Move from temp_user to full user session

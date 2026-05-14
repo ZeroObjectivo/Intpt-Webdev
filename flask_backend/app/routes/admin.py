@@ -168,7 +168,7 @@ def update_user_role(user_id):
         
         flash(f"User role updated successfully to {new_role.replace('_', ' ').title()}.", "success")
     except Exception as e:
-        flash(f"Error updating user role: {str(e)}", "error")
+        flash("Error updating user role.", "error")
         
     return redirect(url_for('admin.user_management', user_id=user_id))
 
@@ -201,7 +201,7 @@ def flag_post(post_id):
         supabase.table('posts').update({"is_flagged": True}).eq("id", post_id).execute()
         return jsonify({"status": "success", "message": "Post flagged."})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "An error occurred."}), 500
 
 @admin.route('/admin/comments/<comment_id>/flag', methods=['POST'])
 @login_required
@@ -212,7 +212,7 @@ def flag_comment(comment_id):
         supabase.table('comments').update({"is_flagged": True}).eq("id", comment_id).execute()
         return jsonify({"status": "success", "message": "Comment flagged."})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "An error occurred."}), 500
 
 @admin.route('/admin/warn-user', methods=['POST'])
 @login_required
@@ -247,7 +247,7 @@ def warn_user():
 
         return jsonify({"status": "success", "message": "Warning sent successfully."})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "An error occurred."}), 500
 
 @admin.route('/admin/disputes')
 @login_required
@@ -280,7 +280,7 @@ def become_admin():
         flash("You are now a Super Admin!", "success")
         return redirect(url_for('admin.dashboard'))
     except Exception as e:
-        flash(f"Failed to become admin: {str(e)}", "error")
+        flash("Failed to become admin.", "error")
         return redirect(url_for('core.profile_settings'))
 
 @admin.route('/admin/forbidden-words')
@@ -305,7 +305,7 @@ def add_forbidden_word():
         supabase.table('forbidden_words').insert({"word": word}).execute()
         flash(f"Added '{word}' to forbidden words.", "success")
     except Exception as e:
-        flash(f"Error adding word: {str(e)}", "error")
+        flash("Error adding word.", "error")
     
     return redirect(url_for('admin.manage_forbidden_words'))
 
@@ -318,6 +318,6 @@ def delete_forbidden_word(word):
         supabase.table('forbidden_words').delete().eq('word', word).execute()
         flash(f"Removed '{word}' from forbidden words.", "success")
     except Exception as e:
-        flash(f"Error removing word: {str(e)}", "error")
+        flash("Error removing word.", "error")
     
     return redirect(url_for('admin.manage_forbidden_words'))
