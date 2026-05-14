@@ -265,11 +265,15 @@
                                     <span class="event-day">{{ event.day }}</span>
                                     <span class="event-month">{{ event.month }}</span>
                                 </div>
+                                <div class="event-divider" aria-hidden="true"></div>
                                 <div class="event-info">
                                     <h4 class="line-clamp-1" title="{{ event.event_title or event.content }}">{{ event.event_title or 'Untitled Event' }}</h4>
                                     <p>{{ event.time_display }}<br>{{ event.location or 'UMak Campus' }}</p>
                                 </div>
-                                <div class="event-status {% if event.status == 'Ongoing' %}status-ongoing{% else %}status-upcoming{% endif %}">{{ event.status }}</div>
+                                <div class="event-status-stack">
+                                    <span class="event-status-label">status</span>
+                                    <div class="event-status {% if event.status == 'Ongoing' %}status-ongoing{% else %}status-upcoming{% endif %}">{{ event.status }}</div>
+                                </div>
                             </div>
                             {% endfor %}
                         {% else %}

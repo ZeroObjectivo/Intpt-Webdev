@@ -321,9 +321,12 @@
 
 .sidebar-heading {
     margin: 0 0 1rem;
-    color: var(--hh-blue-900);
-    font-size: 1.125rem;
-    font-weight: 700;
+    color: rgba(15, 23, 42, 0.5);
+    font-family: 'Metropolis', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
 }
 
 .modal-heading {
@@ -381,14 +384,15 @@
 }
 
 .event-card {
-    display: grid;
-    grid-template-columns: 52px minmax(0, 1fr);
-    gap: 12px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
     padding: 12px;
-    background: #f8fafc;
-    border: 1px solid #edf1f5;
-    border-radius: var(--hh-radius);
+    background: #ffffff;
+    border: 0;
+    border-radius: 31.69px;
+    box-shadow: 0 5.07px 5.07px rgba(0, 0, 0, 0.25);
+    gap: 10px;
 }
 
 .event-date {
@@ -396,61 +400,95 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 52px;
-    border-right: 1px solid var(--hh-border);
-    padding-right: 10px;
+    width: 64px;
+    min-height: 64px;
+    padding: 6px 4px;
 }
 
 .event-day {
-    color: var(--hh-blue-900);
-    font-size: 1.35rem;
-    font-weight: 800;
+    color: #000000;
+    font-family: 'Marcellus SC', Georgia, serif;
+    font-size: 1.8rem;
+    font-weight: 400;
     line-height: 1;
 }
 
 .event-month {
-    color: var(--hh-blue-500);
-    font-size: 0.72rem;
-    font-weight: 800;
+    margin-top: 4px;
+    color: rgba(0, 0, 0, 0.7);
+    font-size: 1rem;
+    font-weight: 500;
     text-transform: uppercase;
 }
 
+.event-divider {
+    width: 1px;
+    height: 80px;
+    background: rgba(0, 0, 0, 0.6);
+    flex: 0 0 1px;
+}
+
 .event-info h4 {
-    margin: 0;
-    color: var(--hh-text-main);
-    font-size: 0.82rem;
-    font-weight: 800;
+    margin: 0 0 5px;
+    color: #000000;
+    font-size: 1.05rem;
+    font-weight: 500;
     line-height: 1.2;
     text-transform: uppercase;
     overflow-wrap: anywhere;
 }
 
 .event-info p {
-    margin: 4px 0 0;
-    color: var(--hh-text-muted);
-    font-size: 0.7rem;
+    margin: 0;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+    font-weight: 500;
     line-height: 1.35;
+    text-transform: uppercase;
+}
+
+.event-info {
+    flex: 1;
+    min-width: 0;
+    padding: 0 4px;
+}
+
+.event-status-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 84px;
+}
+
+.event-status-label {
+    color: rgba(0, 0, 0, 0.4);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    line-height: 1;
 }
 
 .event-status {
-    justify-self: start;
-    grid-column: 2;
-    padding: 4px 8px;
+    width: 78px;
+    padding: 5px 4px;
     border-radius: 9999px;
-    font-size: 0.62rem;
+    font-size: 0.72rem;
     font-weight: 900;
     text-transform: uppercase;
     white-space: nowrap;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .status-ongoing {
-    background: var(--hh-blue-900);
-    color: var(--hh-surface);
+    background: #0f172a;
+    color: #ffffff;
 }
 
 .status-upcoming {
-    background: var(--hh-silver-300);
-    color: var(--hh-blue-500);
+    background: #0f172a;
+    color: #ffffff;
 }
 
 .form-label {
@@ -631,6 +669,37 @@
     .empty-feed {
         padding: 18px 12px;
         font-size: 0.9rem;
+    }
+
+    .event-card {
+        border-radius: 22px;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .event-day {
+        font-size: 1.4rem;
+    }
+
+    .event-month {
+        font-size: 0.82rem;
+    }
+
+    .event-divider {
+        height: 64px;
+    }
+
+    .event-info h4 {
+        font-size: 0.86rem;
+    }
+
+    .event-info p {
+        font-size: 0.68rem;
+    }
+
+    .event-status {
+        width: 68px;
+        font-size: 0.64rem;
     }
 }
 
