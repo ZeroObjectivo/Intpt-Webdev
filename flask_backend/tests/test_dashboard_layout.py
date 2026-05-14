@@ -21,6 +21,7 @@ class DashboardLayoutTest(unittest.TestCase):
     def setUp(self):
         self.css = (PROJECT_ROOT / "app" / "static" / "css" / "dashboard.css").read_text()
         self.template = (PROJECT_ROOT / "app" / "templates" / "dashboard.html").read_text()
+        self.core_route = (PROJECT_ROOT / "app" / "routes" / "core.py").read_text()
 
     def test_dashboard_grid_uses_fluid_columns_instead_of_rigid_widths(self):
         container_rule = re.search(r"\.dashboard-container\s*\{(?P<body>.*?)\}", self.css, re.S)
@@ -140,6 +141,15 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn('class="grid grid-cols-1 sm:grid-cols-2 gap-3"', self.template)
         self.assertIn('id="businessProductName" name="product_name" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans', self.template)
         self.assertIn('id="hostingCollege" name="hosting_college" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans', self.template)
+
+    def test_heron_business_filter_uses_stored_category_value(self):
+        self.assertIn("url_for('core.dashboard', category='Heron Business')", self.template)
+        self.assertIn("active_category == 'Heron Business'", self.template)
+        self.assertIn('<option value="Heron Business">Heron Business</option>', self.template)
+        self.assertNotIn("url_for('core.dashboard', category='Buy & Sell')", self.template)
+        self.assertIn("HERON_BUSINESS_CATEGORIES = ['Heron Business', 'Buy & Sell']", self.core_route)
+        self.assertIn("category = normalize_dashboard_category(request.args.get('category'))", self.core_route)
+        self.assertIn("query = query.in_('category', HERON_BUSINESS_CATEGORIES)", self.core_route)
 
     def test_create_post_modal_has_image_upload_and_mock_submission_js(self):
         self.assertIn('id="globalImageUpload" name="image" accept="image/*" class="hidden"', self.template)
