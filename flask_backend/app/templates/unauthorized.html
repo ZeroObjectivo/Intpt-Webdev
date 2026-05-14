@@ -68,21 +68,6 @@
         </p>
     </footer>
 
-    <!-- Custom Script (Reusing login animation logic) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            gsap.set('.login-card', { opacity: 0, y: 40 });
-            gsap.set('.header-logo', { opacity: 0, x: -20 });
-            gsap.set('.footer-disclaimer', { opacity: 0 });
-            gsap.set('.bg-wrapper', { opacity: 0 });
-
-            const tl = gsap.timeline({ defaults: { ease: 'power4.out', duration: 1.5 } });
-
-            tl.to('.bg-wrapper', { opacity: 1, duration: 2.5 })
-              .to('.header-logo', { opacity: 1, x: 0, duration: 1.2 }, "-=1.8")
-              .to('.login-card', { opacity: 1, y: 0, duration: 1.6 }, "-=1.4")
-              .to('.footer-disclaimer', { opacity: 1, duration: 1.2 }, "-=1");
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
 </html>

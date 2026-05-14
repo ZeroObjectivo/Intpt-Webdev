@@ -5,52 +5,34 @@
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
-<style>
-    .drag-over {
-        border-color: #111942 !important;
-        transform: scale(1.05);
-        z-index: 30;
-    }
-    .dragging {
-        opacity: 0.4;
-        transform: scale(0.95);
-    }
-    .remove-btn {
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(4px);
-    }
-    .remove-btn:hover {
-        background: #ef4444;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="dashboard-page">
     <div class="dashboard-shell">
-        <div class="dashboard-container min-h-screen">
+        <div class="dashboard-container">
             <aside class="primary-sidebar" aria-label="Primary navigation">
                 <nav class="primary-nav">
-                    <a href="{{ url_for('core.dashboard') }}" class="primary-nav-link rounded-lg active" aria-current="page" data-nav-item>
+                    <a href="{{ url_for('core.dashboard') }}" class="primary-nav-link active" aria-current="page">
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1V10.5Z"></path>
                         </svg>
                         <span>Home Feed</span>
                     </a>
-                    <a href="#" class="primary-nav-link rounded-lg" data-nav-item>
+                    <a href="#" class="primary-nav-link">
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12l-1 12H7L6 8Z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 8a3 3 0 0 1 6 0"></path>
                         </svg>
                         <span>Marketplace</span>
                     </a>
-                    <a href="#" class="primary-nav-link rounded-lg" data-nav-item>
+                    <a href="#" class="primary-nav-link">
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"></path>
                         </svg>
                         <span>Events</span>
                     </a>
-                    <a href="#" class="primary-nav-link rounded-lg" data-nav-item>
+                    <a href="#" class="primary-nav-link">
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 17v-5"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8h.01"></path>
@@ -58,7 +40,7 @@
                         </svg>
                         <span>About</span>
                     </a>
-                    <a href="#" class="primary-nav-link rounded-lg" data-nav-item>
+                    <a href="#" class="primary-nav-link">
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6 1.8 1.8 0 0 0-.5 1.25V21a2 2 0 0 1-4 0v-.09A1.8 1.8 0 0 0 8 19.4a1.8 1.8 0 0 0-1.98.36l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.8 1.8 0 0 0 3.6 15a1.8 1.8 0 0 0-.6-1 1.8 1.8 0 0 0-1.25-.5H1.7a2 2 0 0 1 0-4h.09A1.8 1.8 0 0 0 3.6 8a1.8 1.8 0 0 0-.36-1.98l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.8 1.8 0 0 0 8 3.6a1.8 1.8 0 0 0 1-.6A1.8 1.8 0 0 0 9.5 1.75V1.7a2 2 0 0 1 4 0v.09A1.8 1.8 0 0 0 15 3.6a1.8 1.8 0 0 0 1.98-.36l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.8 1.8 0 0 0 19.4 8c.16.39.37.72.6 1 .35.31.79.5 1.25.5h.05a2 2 0 0 1 0 4h-.09A1.8 1.8 0 0 0 19.4 15Z"></path>
@@ -68,10 +50,10 @@
                 </nav>
             </aside>
 
-            <main class="feed-column">
+            <section class="feed-column">
                 <div class="share-box">
                     <div class="share-box-user">
-                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="user-avatar object-cover">
+                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="Your profile photo" class="user-avatar object-cover">
                         <span class="share-text capitalize">Hi {{ user.full_name.split(' ')[0] if user.full_name else 'Heron' }}, ready to share?</span>
                     </div>
                     <button class="btn-create-post flex items-center gap-2 font-normal" onclick="document.getElementById('createPostModal').classList.remove('hidden')">
@@ -82,134 +64,62 @@
                     </button>
                 </div>
 
-                <div class="category-pills" aria-label="Post categories" role="group">
-                    <a href="{{ url_for('core.dashboard') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if not active_category %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">All Post</a>
-                    <a href="{{ url_for('core.dashboard', category='General') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'General' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">General</a>
-                    <a href="{{ url_for('core.dashboard', category='Lost & Found') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Lost & Found' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Lost & Found</a>
-                    <a href="{{ url_for('core.dashboard', category='Buy & Sell') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Buy & Sell' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Heron Business</a>
-                    <a href="{{ url_for('core.dashboard', category='Question') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Question' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Question</a>
-                    <a href="{{ url_for('core.dashboard', category='Events') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Events' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Events</a>
+                <div class="category-pills" role="group" aria-label="Post categories">
+                    <button class="pill rounded-full px-3 py-1 bg-[#1F2764] text-[#FFFFFF] text-sm font-normal" type="button">All Post</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-normal" type="button">General</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#FFECA7] text-[#6E3E1E] text-sm font-normal" type="button">Lost & Found</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-normal" type="button">Heron Business</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#C5DDFF] text-[#1A3C8D] text-sm font-normal" type="button">Question</button>
+                    <button class="pill rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-normal" type="button">Events</button>
                 </div>
 
                 <div class="posts-list">
                     {% if posts %}
                         {% for post in posts %}
-                        <article class="post-card" data-post-id="{{ post.id }}">
+                        <article class="post-card">
                             {% set post_category = post.category or 'General' %}
-                            <div class="post-header flex justify-between items-start gap-4">
+                            <div class="post-header">
                                 <div class="flex items-start min-w-0">
-                                    <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
+                                    <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="{{ post.profiles.full_name }}'s avatar" class="post-user-avatar object-cover">
                                     <div class="post-user-info">
                                         <p class="post-author-name capitalize">{{ post.profiles.full_name | title }}</p>
-                                        <span class="post-meta">Posted {{ post.relative_created_at }}</span>
+                                        <span class="post-meta">Posted {{ post.created_at[:10] }}</span>
                                     </div>
                                 </div>
-                                <div class="flex flex-col items-end gap-2">
-                                    <div class="flex items-center gap-2">
-                                        {% if post_category == 'Lost & Found' %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Lost & Found</span>
-                                        {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Heron Business</span>
-                                        {% elif post_category == 'Question' %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Question</span>
-                                        {% elif post_category == 'Events' %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Events</span>
-                                        {% else %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">General</span>
-                                        {% endif %}
-
-                                        {% if post.user_id == user.id %}
-                                        <div class="relative">
-                                            <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                                            </button>
-                                            <div id="post-menu-{{ post.id }}" class="post-menu-dropdown absolute right-0 top-full mt-1 w-32 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 py-1 hidden z-20">
-                                                <button onclick="showEditForm('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">Edit Post</button>
-                                                <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors">Delete Post</button>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    {% if post.status %}
-                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {% if post.status in ['Lost', 'Sold'] %}bg-red-50 text-red-500{% else %}bg-green-50 text-green-500{% endif %}">
-                                        {{ post.status }}
-                                    </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="post-content" id="post-content-{{ post.id }}">
-                                {% if post.category in ['Buy & Sell', 'Heron Business', 'Lost & Found', 'Events'] %}
-                                <div class="flex flex-wrap gap-4 mb-4 text-xs font-bold">
-                                    {% if post.price %}
-                                    <div class="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-                                        <span>₱{{ "{:,.2f}".format(post.price) }}</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if post.location %}
-                                    <div class="flex items-center gap-1.5 text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                        <span>{{ post.location }}</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if post.event_date %}
-                                    <div class="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        <span>{{ post.event_date[:16].replace('T', ' ') }}</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
+                                {% if post_category == 'Lost & Found' %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#FFECA7] text-[#6E3E1E] text-xs font-normal">Lost & Found</span>
+                                {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#BFFFDE] text-[#145C50] text-xs font-normal">Heron Business</span>
+                                {% elif post_category == 'Question' %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#C5DDFF] text-[#1A3C8D] text-xs font-normal">Question</span>
+                                {% elif post_category == 'Events' %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#533074] text-[#EDF1FF] text-xs font-normal">Events</span>
+                                {% else %}
+                                    <span class="shrink-0 rounded-full px-2 py-0.5 bg-[#D9D9D9] text-[#475569] text-xs font-normal">General</span>
                                 {% endif %}
+                            </div>
+                            <div class="post-content">
                                 <p>{{ post.content }}</p>
-                                {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
-                                {% if post_images %}
-                                    <div class="fb-grid fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }} mt-4">
-                                        {% for url in post_images %}
-                                            {% if loop.index <= 5 %}
-                                                <div class="relative group overflow-hidden cursor-pointer w-full h-full" 
-                                                     onclick='{% if post.image_urls or post.image_url %}openImageModal({{ post|tojson|safe }}, {{ loop.index0 }}){% else %}openCommentModal({{ post|tojson|safe }}){% endif %}'>
-                                                    <img src="{{ url }}" alt="Post image" class="w-full h-full object-cover rounded-lg">
-                                                    {% if loop.index == 5 and post_images|length > 5 %}
-                                                        <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl rounded-lg">
-                                                            +{{ post_images|length - 5 }}
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
+                                {% if post.image_url %}
+                                    <img src="{{ post.image_url }}" class="post-image" alt="Post image">
                                 {% endif %}
                             </div>
-
-                            {% if post.user_id == user.id %}
-                            <div id="edit-form-{{ post.id }}" class="hidden mt-4">
-                                <form action="{{ url_for('core.update_post', post_id=post.id) }}" method="POST">
-                                    <textarea name="content" class="w-full p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all resize-none mb-3">{{ post.content }}</textarea>
-                                    <input type="hidden" name="category" value="{{ post.category }}">
-                                    <div class="flex justify-end gap-2">
-                                        <button type="button" onclick="hideEditForm('{{ post.id }}')" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-                                        <button type="submit" class="bg-umak-blue text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-umak-blue/20 hover:bg-blue-700 transition-all">Save Changes</button>
-                                    </div>
-                                </form>
-                            </div>
-                            {% endif %}
-
-                            <div class="post-actions border-t border-slate-50 mt-4 pt-2">
-                                <button class="action-item group like-btn {% if post.user_has_liked %}text-red-500{% else %}text-slate-400{% endif %} hover:text-red-500"
-                                        type="button" onclick="toggleLike('{{ post.id }}', this)">
-                                    <span class="flex items-center gap-1.5">
-                                        <svg aria-hidden="true" class="action-icon {% if post.user_has_liked %}fill-current{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"></path>
-                                        </svg>
-                                        <span class="likes-count">{{ post.likes_count }}</span>
-                                    </span>
-                                </button>
-                                <button class="action-item text-slate-400 hover:text-blue-500" type="button" onclick='openCommentModal({{ post|tojson|safe }})'>
+                            <div class="post-actions">
+                                <button class="action-item text-slate-500 hover:text-red-500" type="button" aria-label="Like post" onclick="toggleLike('{{ post.id }}', this)">
                                     <span class="flex items-center gap-1.5">
                                         <svg aria-hidden="true" class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 0 1-4.255-.949L3 20l1.395-3.72A7.58 7.58 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"></path>
                                         </svg>
-                                        <span class="comments-count">{{ post.comments_count }}</span>
+                                        <span>Like</span>
+                                        <span class="likes-count">{{ post.likes_count|default(0) }}</span>
                                     </span>
+                                </button>
+                                <button class="action-item text-slate-500" type="button" aria-label="Comment on post" onclick="openCommentModal({{ post | tojson }})">
+                                    <svg aria-hidden="true" class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 0 1-4.255-.949L3 20l1.395-3.72A7.58 7.58 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"></path>
+                                    </svg>
+                                    <span>Comment</span>
+                                    <span class="comments-count">{{ post.comments_count|default(0) }}</span>
                                 </button>
                             </div>
                         </article>
@@ -220,51 +130,75 @@
                         </div>
                     {% endif %}
                 </div>
-            </main>
+            </section>
 
-            <aside class="sidebar sticky top-20 h-full">
+            <aside class="sidebar">
                 <section class="sidebar-section">
                     <h2 class="sidebar-heading">Trending Now</h2>
                     <div class="trending-list">
-                        {% if trending %}
-                            {% for item in trending %}
-                            <div class="trending-item cursor-pointer" onclick='openCommentModal({{ item|tojson|safe }})'>
-                                <span class="trending-number">{{ loop.index }}</span>
-                                <div class="trending-details">
-                                    <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#C7CDE6] text-[#111942] text-[10px] font-black uppercase tracking-widest my-[5px]">
-                                        {{ item.category or 'General' }}
-                                    </span>
-                                    <h4 class="text-slate-800 font-bold text-sm line-clamp-2">{{ item.content }}</h4>
-                                    <span class="likes text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ item.likes_count or 0 }} Likes</span>
-                                </div>
+                        <div class="trending-item">
+                            <span class="trending-number">1</span>
+                            <div class="trending-details">
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#533074] text-[#EDF1FF] text-sm font-normal">Events</span>
+                                <h4>Lorem Ipsum Event</h4>
+                                <span class="likes">2.4k Likes</span>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-xs text-slate-400 font-bold p-4">No trending topics yet.</p>
-                        {% endif %}
+                        </div>
+                        <div class="trending-item">
+                            <span class="trending-number">2</span>
+                            <div class="trending-details">
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#BFFFDE] text-[#145C50] text-sm font-normal">Heron Business</span>
+                                <h4>Lorem Ipsum Event</h4>
+                                <span class="likes">2.4k Likes</span>
+                            </div>
+                        </div>
+                        <div class="trending-item">
+                            <span class="trending-number">3</span>
+                            <div class="trending-details">
+                                <span class="category-tag inline-flex rounded-full px-3 py-1 bg-[#D9D9D9] text-[#475569] text-sm font-normal">General</span>
+                                <h4>SHOUTOUT TO MY CLASSMATES</h4>
+                                <span class="likes">2.4k Likes</span>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <section class="sidebar-section">
                     <h2 class="sidebar-heading">Upcoming Events</h2>
                     <div class="event-list">
-                        {% if upcoming_events %}
-                            {% for event in upcoming_events %}
-                            <div class="event-card cursor-pointer" onclick='openCommentModal({{ event|tojson|safe }})'>
-                                <div class="event-date">
-                                    <span class="event-day">{{ event.day }}</span>
-                                    <span class="event-month">{{ event.month }}</span>
-                                </div>
-                                <div class="event-info">
-                                    <h4 class="line-clamp-1">{{ event.content }}</h4>
-                                    <p>{{ event.time_range }}<br>{{ event.location or 'UMak Campus' }}</p>
-                                </div>
-                                <div class="event-status status-{{ event.event_status }}">{{ event.event_status|capitalize }}</div>
+                        <div class="event-card">
+                            <div class="event-date">
+                                <span class="event-day">11</span>
+                                <span class="event-month">May</span>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-xs text-slate-400 font-bold p-4">No upcoming events.</p>
-                        {% endif %}
+                            <div class="event-info">
+                                <h4>Presentation</h4>
+                                <p>3:00 PM - 6:00 PM<br>HPSB</p>
+                            </div>
+                            <div class="event-status status-ongoing">Ongoing</div>
+                        </div>
+                        <div class="event-card">
+                            <div class="event-date">
+                                <span class="event-day">13</span>
+                                <span class="event-month">May</span>
+                            </div>
+                            <div class="event-info">
+                                <h4>Culminating Activity</h4>
+                                <p>6:00 AM - 9:00 AM<br>HPSB</p>
+                            </div>
+                            <div class="event-status status-upcoming">Upcoming</div>
+                        </div>
+                        <div class="event-card">
+                            <div class="event-date">
+                                <span class="event-day">15</span>
+                                <span class="event-month">May</span>
+                            </div>
+                            <div class="event-info">
+                                <h4>Physics</h4>
+                                <p>3:00 PM - 6:00 PM<br>HPSB</p>
+                            </div>
+                            <div class="event-status status-upcoming">Upcoming</div>
+                        </div>
                     </div>
                 </section>
             </aside>
@@ -272,366 +206,62 @@
     </div>
 </div>
 
-<div id="createPostModal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden backdrop-blur-[4px] transition-all duration-300">
-    <div class="bg-white rounded-[12px] w-full max-w-[500px] mx-4 shadow-[0_12px_28px_0_rgba(0,0,0,0.2),0_2px_4px_0_rgba(0,0,0,0.1)] animate-in fade-in zoom-in duration-200">
-        <!-- Header -->
-        <div class="relative flex items-center justify-center px-4 py-4 border-b border-slate-200">
-            <h2 class="text-[20px] font-bold text-slate-900 tracking-tight">Create post</h2>
-            <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="absolute right-4 top-1/2 -translate-y-1/2 bg-[#e4e6eb] hover:bg-[#d8dadf] text-[#606770] rounded-full p-2 transition-all duration-200 active:scale-95">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-
-        <form id="createPostForm" action="{{ url_for('core.create_post') }}" method="POST" enctype="multipart/form-data" class="flex flex-col">
-            <div class="px-4 py-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
-                <!-- User Identity Section -->
-                <div class="flex items-center gap-3 mb-5">
-                    <div class="relative">
-                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" class="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-sm">
-                        <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <span class="text-[15px] font-semibold text-slate-900 leading-none">{{ user.full_name }}</span>
-                        <div class="relative flex items-center gap-2">
-                            <span class="text-[12px] font-bold text-slate-500">Category:</span>
-                            <div class="relative flex items-center">
-                                <select id="createPostCategory" name="category" class="appearance-none bg-[#e4e6eb] hover:bg-[#d8dadf] text-[#4b4f56] text-[12px] font-bold px-2.5 py-1 pr-6 rounded-[6px] cursor-pointer transition-colors outline-none border-none">
-                                    <option value="General">General</option>
-                                    <option value="Lost & Found">Lost & Found</option>
-                                    <option value="Heron Business">Heron Business</option>
-                                    <option value="Question">Question</option>
-                                    <option value="Events">Events</option>
-                                </select>
-                                <svg class="w-2.5 h-2.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#606770]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dynamic Category Fields (Clean Styling) -->
-                <div class="mb-4 space-y-4">
-                    <div id="lostFoundFields" class="category-specific-fields hidden">
-                        <input type="hidden" name="status" value="Lost">
-                    </div>
-                    
-                    <div id="businessFields" class="category-specific-fields hidden space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
-                        <input id="businessProductName" name="product_name" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="What are you selling?">
-                        <div class="flex rounded-lg border border-slate-200 overflow-hidden focus-within:border-umak-blue/50 focus-within:ring-2 focus-within:ring-umak-blue/5 transition-all">
-                            <span class="bg-slate-100 px-4 flex items-center text-[12px] font-bold text-slate-500 border-r border-slate-200">PHP</span>
-                            <input id="businessPrice" name="price" type="number" step="0.01" class="flex-1 px-4 py-2.5 text-[14px] outline-none focus:bg-white" placeholder="Price">
-                        </div>
-                    </div>
-
-                    <div id="eventFields" class="category-specific-fields hidden space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
-                        <input id="eventTitle" name="event_title" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="Event Name">
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="relative">
-                                <span class="absolute left-3 top-0.5 text-[9px] font-bold text-slate-400 uppercase">Start Time</span>
-                                <input id="eventDateTime" name="event_date" type="datetime-local" class="w-full rounded-lg border border-slate-200 px-3 pb-1.5 pt-4 text-[13px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all">
-                            </div>
-                            <input id="eventPlace" name="location" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="Where is it?">
-                        </div>
-                        <select id="hostingCollege" name="hosting_college" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] text-slate-600 outline-none focus:border-umak-blue/50 focus:bg-white transition-all appearance-none bg-white">
-                            <option value="">Which college is hosting?</option>
-                            <option value="CLAS - College of Liberal Arts and Sciences">CLAS</option>
-                            <option value="CHK - College of Human Kinetics">CHK</option>
-                            <option value="CBFS - College of Business and Financial Sciences">CBFS</option>
-                            <option value="CCIS - College of Computing and Information Sciences">CCIS</option>
-                            <option value="CITE - College of Innovative Teacher Education">CITE</option>
-                            <option value="CITE-HSU - Higher School ng UMak">HSU</option>
-                            <option value="CGPP - College of Governance and Public Policy">CGPP</option>
-                            <option value="CCSE - College of Construction Sciences and Engineering">CCSE</option>
-                            <option value="CET - College of Engineering Technology">CET</option>
-                            <option value="CTHM - College of Tourism and Hospitality Management">CTHM</option>
-                            <option value="CCAPS - College of Continuing, Advanced and Professional Studies">CCAPS</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Text Content Area -->
-                <textarea id="createPostContent" name="content" rows="3" required class="w-full resize-none border-none p-0 text-[22px] font-normal text-slate-800 placeholder-slate-400 outline-none focus:ring-0 mb-4 transition-all duration-300" placeholder="What's on your mind, {{ user.full_name.split(' ')[0] }}?"></textarea>
-
-                <!-- Media Preview Area (Enhanced Grid) -->
-                <div id="globalImageFeedback" class="hidden border border-slate-200 rounded-xl p-2.5 mb-4 bg-slate-50/50">
-                    <div class="flex items-center justify-between px-2 mb-2.5">
-                        <span id="globalImageFilename" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Selected Images</span>
-                        <div class="flex items-center gap-3">
-                            <span id="imageLimitCounter" class="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">0/5</span>
-                            <div class="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-100 shadow-sm">
-                                <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <span class="text-[10px] text-slate-500 font-medium">Reorder</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="imagePreviewContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <!-- Thumbnails injected here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Footer Action Bar (Premium) -->
-            <div class="px-4 pb-4">
-                <div class="flex items-center justify-between border border-[#ced0d4] rounded-[8px] px-4 py-2 mb-4 shadow-sm hover:bg-slate-50 transition-colors group">
-                    <span class="text-[15px] font-semibold text-[#050505]">Add to your post</span>
-                    <div class="flex items-center gap-0.5">
-                        <input type="file" id="globalImageUpload" name="image" accept="image/*" multiple class="hidden">
-                        <button id="addImageTrigger" type="button" class="p-2 hover:bg-[#f2f2f2] rounded-full transition-all text-[#45bd62] active:scale-90" title="Photo/Video">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2zM5 19V5h14l.002 14H5z"></path><path d="m10 14-1-1-3 4h12l-5-7z"></path><circle cx="8.5" cy="8.5" r="1.5"></circle></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <button id="createPostSubmit" type="submit" disabled class="w-full py-2.5 rounded-[6px] text-[15px] font-bold bg-slate-200 text-slate-400 cursor-not-allowed transition-all duration-200 active:scale-[0.98]">
-                    Post
+<div id="createPostModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-[35px] w-full max-w-lg mx-6 my-8 px-8 py-7 shadow-xl">
+        <div class="flex flex-col gap-4">
+            <div class="flex justify-between items-start">
+                <h2 class="text-xl font-bold text-slate-900">New Post</h2>
+                <button onclick="document.getElementById('createPostModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700" aria-label="Close create post modal">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-        </form>
+            <form action="{{ url_for('core.create_post') }}" method="POST" class="flex flex-col gap-4">
+            <div>
+                <label for="createPostCategory" class="form-label text-slate-700">Category</label>
+                <select id="createPostCategory" name="category" class="w-full p-3 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all">
+                    <option value="General">General</option>
+                    <option value="Lost & Found">Lost & Found</option>
+                    <option value="Heron Business">Heron Business</option>
+                    <option value="Question">Question</option>
+                    <option value="Events">Events</option>
+                </select>
+            </div>
+            <div>
+                <label for="createPostContent" class="form-label text-slate-700">What's on your mind?</label>
+                <textarea id="createPostContent" name="content" rows="4" required class="w-full p-4 rounded-[16px] border border-gray-200 focus:ring-2 focus:ring-umak-blue focus:border-transparent outline-none transition-all resize-none" placeholder="Share something with the Herons..."></textarea>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('createPostModal').classList.add('hidden')" class="px-5 py-2 text-sm rounded-md border border-gray-200 font-semibold text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
+                <button id="createPostSubmit" type="submit" disabled class="px-5 py-2 text-sm rounded-md font-normal opacity-50 cursor-not-allowed bg-slate-300 text-slate-600 transition-all">Post</button>
+            </div>
+            </form>
+        </div>
     </div>
 </div>
-        </form>
-    </div>
-</div>
 
-{% include 'includes/modal.html' %}
+{% include "includes/modal.html" %}
+{% endblock %}
 
+{% block scripts %}
 <script>
-    // Global user data for interactions
-    window.currentUser = {
-        id: '{{ user.id }}',
-        full_name: '{{ user.full_name }}'
-    };
-
-    // Embed posts data for modal persistence on refresh
-    window.allPosts = {{ posts|tojson|safe }};
-</script>
-<script src="{{ url_for('static', filename='js/modal.js') }}"></script>
-
-<script>
-    // Post Action Helpers
-    function togglePostMenu(postId, event) {
-        if (event) event.stopPropagation();
-        const menu = document.getElementById(`post-menu-${postId}`);
-        const allMenus = document.querySelectorAll('.post-menu-dropdown');
-
-        // Close others
-        allMenus.forEach(m => {
-            if (m.id !== `post-menu-${postId}`) m.classList.add('hidden');
-        });
-
-        menu.classList.toggle('hidden');
-    }
-
-    // Global click listener to close menus
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.post-menu-dropdown')) {
-            document.querySelectorAll('.post-menu-dropdown').forEach(m => m.classList.add('hidden'));
-        }
-    });
-
-    function showEditForm(postId) {
-        document.getElementById(`post-content-${postId}`).classList.add('hidden');
-        document.getElementById(`edit-form-${postId}`).classList.remove('hidden');
-    }
-
-    function hideEditForm(postId) {
-        document.getElementById(`post-content-${postId}`).classList.remove('hidden');
-        document.getElementById(`edit-form-${postId}`).classList.add('hidden');
-    }
-
-    async function confirmDeletePost(postId) {
-        showConfirmModal(
-            'Delete Post?',
-            'Are you sure you want to delete this post? This action cannot be undone.',
-            async () => {
-                try {
-                    const response = await fetch(`/posts/${postId}/delete`, { method: 'POST' });
-                    const data = await response.json();
-                    if (data.status === 'deleted') {
-                        window.location.reload();
-                    } else {
-                        alert('Error: ' + (data.error || 'Failed to delete post'));
-                    }
-                } catch (error) {
-                    console.error('Error deleting post:', error);
-                    alert('An unexpected error occurred.');
-                }
-            }
-        );
-    }
-
     document.addEventListener('DOMContentLoaded', function() {
-        const modal = document.getElementById('createPostModal');
-        const form = document.getElementById('createPostForm');
         const contentInput = document.getElementById('createPostContent');
         const submitButton = document.getElementById('createPostSubmit');
-        const categorySelect = document.getElementById('createPostCategory');
-        const categoryFieldGroups = document.querySelectorAll('.category-specific-fields');
-        const categoryFieldMap = {
-            'Lost & Found': document.getElementById('lostFoundFields'),
-            'Heron Business': document.getElementById('businessFields'),
-            'Events': document.getElementById('eventFields')
-        };
-        const businessProductName = document.getElementById('businessProductName');
-        const businessPrice = document.getElementById('businessPrice');
-        const eventTitle = document.getElementById('eventTitle');
-        const eventDateTime = document.getElementById('eventDateTime');
-        const eventPlace = document.getElementById('eventPlace');
-        const hostingCollege = document.getElementById('hostingCollege');
-        const addImageTrigger = document.getElementById('addImageTrigger');
-        const globalImageUpload = document.getElementById('globalImageUpload');
-        const globalImageFeedback = document.getElementById('globalImageFeedback');
-        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
-        const globalImageFilename = document.getElementById('globalImageFilename');
 
-        if (!form || !contentInput || !submitButton || !categorySelect) {
+        if (!contentInput || !submitButton) {
             return;
         }
 
-        // --- Custom Image Management (Facebook style) ---
-        let selectedFiles = []; // Master list of File objects
+        const disabledClasses = ['opacity-50', 'cursor-not-allowed', 'bg-slate-300', 'text-slate-600'];
+        const activeClasses = ['bg-umak-blue', 'text-white', 'hover:bg-opacity-90', 'shadow-lg', 'shadow-blue-900/20'];
 
-        function updateImageInput() {
-            const dt = new DataTransfer();
-            selectedFiles.forEach(file => dt.items.add(file));
-            globalImageUpload.files = dt.files;
-            
-            const counter = document.getElementById('imageLimitCounter');
-            if (counter) {
-                counter.textContent = `${selectedFiles.length}/5`;
-                if (selectedFiles.length >= 5) {
-                    counter.classList.remove('bg-slate-100', 'text-slate-400');
-                    counter.classList.add('bg-red-50', 'text-red-500');
-                } else {
-                    counter.classList.add('bg-slate-100', 'text-slate-400');
-                    counter.classList.remove('bg-red-50', 'text-red-500');
-                }
-            }
+        function updateSubmitState() {
+            const hasContent = contentInput.value.trim().length > 0;
+            submitButton.disabled = !hasContent;
+            submitButton.classList.toggle('cursor-not-allowed', !hasContent);
+            submitButton.classList.toggle('opacity-50', !hasContent);
 
-            if (selectedFiles.length > 0) {
-                globalImageFeedback.classList.remove('hidden');
-                globalImageFilename.textContent = selectedFiles.length === 1 
-                    ? selectedFiles[0].name 
-                    : `${selectedFiles.length} images selected (drag to reorder)`;
-            } else {
-                globalImageFeedback.classList.add('hidden');
-            }
-            validateForm();
-        }
-
-        function renderPreviews() {
-            imagePreviewContainer.innerHTML = '';
-            
-            selectedFiles.forEach((file, index) => {
-                const card = document.createElement('div');
-                card.className = 'relative aspect-square bg-slate-100 rounded-xl overflow-hidden cursor-move border-2 border-transparent transition-all shadow-sm';
-                card.draggable = true;
-                card.dataset.index = index;
-
-                const img = document.createElement('img');
-                img.className = 'w-full h-full object-cover pointer-events-none';
-                img.src = URL.createObjectURL(file);
-                
-                const removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.className = 'remove-btn absolute top-1.5 right-1.5 text-white rounded-full w-6 h-6 flex items-center justify-center transition-all z-20 shadow-lg';
-                removeBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                
-                removeBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    selectedFiles.splice(index, 1);
-                    renderPreviews();
-                    updateImageInput();
-                };
-
-                // Drag and Drop Events
-                card.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('text/plain', index);
-                    card.classList.add('dragging');
-                });
-
-                card.addEventListener('dragend', () => {
-                    card.classList.remove('dragging');
-                });
-
-                card.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    card.classList.add('drag-over');
-                });
-
-                card.addEventListener('dragleave', () => {
-                    card.classList.remove('drag-over');
-                });
-
-                card.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    card.classList.remove('drag-over');
-                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                    const toIndex = parseInt(card.dataset.index);
-                    
-                    if (!isNaN(fromIndex) && fromIndex !== toIndex) {
-                        const movedItem = selectedFiles.splice(fromIndex, 1)[0];
-                        selectedFiles.splice(toIndex, 0, movedItem);
-                        renderPreviews();
-                        updateImageInput();
-                    }
-                });
-
-                card.appendChild(img);
-                card.appendChild(removeBtn);
-                imagePreviewContainer.appendChild(card);
-            });
-
-            // Add "Plus" button if < 5
-            if (selectedFiles.length > 0 && selectedFiles.length < 5) {
-                const addMore = document.createElement('div');
-                addMore.className = 'aspect-square border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center cursor-pointer hover:bg-slate-50 hover:border-umak-blue/30 transition-all text-slate-400 hover:text-umak-blue bg-white/50';
-                addMore.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>';
-                addMore.onclick = () => globalImageUpload.click();
-                imagePreviewContainer.appendChild(addMore);
-            }
-        }
-
-        addImageTrigger.onclick = () => globalImageUpload.click();
-
-        globalImageUpload.onchange = () => {
-            const newFiles = Array.from(globalImageUpload.files);
-            
-            newFiles.forEach(file => {
-                if (selectedFiles.length < 5) {
-                    // Prevent exact duplicates
-                    if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                        selectedFiles.push(file);
-                    }
-                }
-            });
-
-            if (selectedFiles.length >= 5 && newFiles.length > 0) {
-                if (selectedFiles.length === 5) alert('Maximum 5 images allowed.');
-            }
-
-            // Reset input so change fires even for same file
-            globalImageUpload.value = '';
-            
-            renderPreviews();
-            updateImageInput();
-        };
-
-        const disabledClasses = ['bg-slate-200', 'text-slate-400', 'cursor-not-allowed'];
-        const activeClasses = ['bg-[#111942]', 'text-white', 'hover:bg-opacity-90', 'shadow-lg', 'shadow-blue-900/20'];
-
-        function getFieldValue(field) {
-            return field ? field.value.trim() : '';
-        }
-
-        function getActiveCategory() {
-            return categorySelect.value;
-        }
-
-        function setSubmitButtonState(isValid) {
-            submitButton.disabled = !isValid;
-
-            if (isValid) {
+            if (hasContent) {
                 submitButton.classList.remove(...disabledClasses);
                 submitButton.classList.add(...activeClasses);
             } else {
@@ -640,53 +270,9 @@
             }
         }
 
-        function validateActiveCategory() {
-            const hasText = getFieldValue(contentInput).length > 0;
-            const hasImages = selectedFiles.length > 0;
-
-            if (!hasText && !hasImages) return false;
-
-            switch (getActiveCategory()) {
-                case 'Lost & Found': return true;
-                case 'Heron Business': return Boolean(getFieldValue(businessProductName) && getFieldValue(businessPrice));
-                case 'Events': return Boolean(getFieldValue(eventTitle) && getFieldValue(eventDateTime) && getFieldValue(eventPlace) && getFieldValue(hostingCollege));
-                default: return true;
-            }
-        }
-
-        function validateForm() {
-            setSubmitButtonState(validateActiveCategory());
-        }
-
-        function hideCategoryFields() {
-            categoryFieldGroups.forEach((group) => group.classList.add('hidden'));
-        }
-
-        function showActiveCategoryFields() {
-            hideCategoryFields();
-            const activeGroup = categoryFieldMap[categorySelect.value];
-            if (activeGroup) activeGroup.classList.remove('hidden');
-        }
-
-        function initCategoryToggle() {
-            categorySelect.addEventListener('change', () => {
-                showActiveCategoryFields();
-                validateForm();
-            });
-            showActiveCategoryFields();
-        }
-
-        function initFormValidation() {
-            const fieldsToValidate = [contentInput, categorySelect, businessProductName, businessPrice, eventTitle, eventDateTime, eventPlace, hostingCollege].filter(Boolean);
-            fieldsToValidate.forEach((field) => {
-                field.addEventListener('input', validateForm);
-                field.addEventListener('change', validateForm);
-            });
-            validateForm();
-        }
-
-        initCategoryToggle();
-        initFormValidation();
+        contentInput.addEventListener('input', updateSubmitState);
+        updateSubmitState();
     });
 </script>
+<script src="{{ url_for('static', filename='js/modal.js') }}"></script>
 {% endblock %}

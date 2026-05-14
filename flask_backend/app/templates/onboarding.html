@@ -4,14 +4,10 @@
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css') }}">
+<style>nav, footer { display: none !important; }</style>
 {% endblock %}
 
 {% block content %}
-<!-- Hide standard navbar/footer for onboarding -->
-<style>
-    nav, footer { display: none !important; }
-</style>
-
 <div class="relative min-h-screen bg-[#F8FAFC] overflow-hidden font-sans flex flex-col items-center justify-center p-4 py-12">
     
     <!-- Geometric Background Lines (Figma Reference) -->

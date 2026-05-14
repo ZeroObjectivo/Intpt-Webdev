@@ -35,7 +35,6 @@
     grid-template-columns: minmax(190px, 220px) minmax(0, 1fr) minmax(280px, 320px);
     align-items: start;
     gap: 24px;
-    min-height: calc(100vh - 56px);
     width: min(1440px, calc(100vw - 40px));
     margin: 0 auto;
 }
@@ -63,7 +62,7 @@
     gap: 12px;
     min-height: 44px;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--hh-radius);
     color: var(--hh-blue-500);
     font-size: 0.94rem;
     font-weight: 700;
@@ -79,6 +78,7 @@
 .primary-nav-link.active {
     background: var(--hh-blue-500);
     color: var(--hh-surface);
+    box-shadow: inset 4px 0 0 var(--hh-gold-500);
 }
 
 .primary-nav-link.active:hover {
@@ -176,22 +176,6 @@
     transform: translateY(-1px);
 }
 
-.category-pills .pill {
-    background-color: #C7CDE6;
-    color: #111942;
-}
-
-.category-pills .pill.active {
-    background-color: #111942 !important;
-    color: #C7CDE6 !important;
-}
-
-.category-tag,
-.post-category-tag {
-    background-color: #C7CDE6 !important;
-    color: #111942 !important;
-}
-
 .posts-list {
     display: flex;
     flex-direction: column;
@@ -219,6 +203,8 @@
 .post-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     margin-bottom: 12px;
 }
 
@@ -259,68 +245,13 @@
     line-height: 1.62;
 }
 
-/* Facebook-style Image Grid (Enhanced) */
-.fb-grid {
-    display: grid !important;
-    gap: 4px;
-    border-radius: 12px;
-    overflow: hidden;
+.post-image {
     width: 100%;
+    max-height: 420px;
     margin-top: 12px;
-    border: 1px solid rgba(0,0,0,0.05);
-}
-
-.fb-grid img {
-    width: 100%;
-    height: 100%;
+    border-radius: var(--hh-radius);
     object-fit: cover;
 }
-
-.fb-grid .group:hover img {
-    /* Zoom effect removed */
-}
-
-.fb-grid-1 { 
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    background-color: #f8fafc;
-    min-height: 200px;
-    max-height: 550px;
-    border: 1px solid rgba(0,0,0,0.03);
-}
-
-/* Ensure the inner wrapper also centers its content */
-.fb-grid-1 > div {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-}
-
-.fb-grid-1 img { 
-    width: auto !important;
-    height: auto !important;
-    max-width: 100%;
-    max-height: 550px;
-    object-fit: contain !important;
-    border-radius: 0; 
-}
-
-.fb-grid-2 { grid-template-columns: 1fr 1fr; aspect-ratio: 16/9; }
-.fb-grid-3 { grid-template-columns: 1.5fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 16/10; }
-.fb-grid-3 > *:first-child { grid-row: span 2; }
-
-.fb-grid-4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 2fr 1fr; aspect-ratio: 1; }
-.fb-grid-4 > *:first-child { grid-column: span 3; }
-
-.fb-grid-5 { grid-template-columns: repeat(6, 1fr); grid-template-rows: 1.2fr 1fr; aspect-ratio: 1; }
-.fb-grid-5 > *:nth-child(1) { grid-column: span 3; }
-.fb-grid-5 > *:nth-child(2) { grid-column: span 3; }
-.fb-grid-5 > *:nth-child(3) { grid-column: span 2; }
-.fb-grid-5 > *:nth-child(4) { grid-column: span 2; }
-.fb-grid-5 > *:nth-child(5) { grid-column: span 2; }
 
 .post-actions {
     display: flex;
@@ -362,15 +293,10 @@
 }
 
 .sidebar {
-    position: sticky;
-    top: 112px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     min-width: 0;
-    align-self: start;
-    max-height: calc(100vh - 112px);
-    overflow-y: auto;
 }
 
 .sidebar-section {
@@ -384,9 +310,6 @@
 .sidebar-heading,
 .modal-heading {
     font-family: 'Marcellus SC', Georgia, serif;
-    color: var(--hh-blue-500);
-    font-weight: 400;
-    letter-spacing: 0;
 }
 
 .sidebar-heading {
@@ -398,7 +321,10 @@
 
 .modal-heading {
     margin: 0;
+    color: var(--hh-blue-500);
     font-size: 1.35rem;
+    font-weight: 400;
+    letter-spacing: 0;
 }
 
 .trending-list,
@@ -528,36 +454,30 @@
     font-weight: 700;
 }
 
-.global-image-feedback {
-    position: absolute;
-    right: 12px;
-    bottom: 10px;
-    left: 44px;
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 8px;
-    color: var(--hh-text-muted);
-    font-size: 0.75rem;
-    font-weight: 700;
-    pointer-events: none;
+.badge-general {
+    background: #D9D9D9;
+    color: #475569;
 }
 
-.global-image-feedback.hidden {
-    display: none;
+.badge-lost-found {
+    background: #FFECA7;
+    color: #6E3E1E;
 }
 
-.global-image-preview {
-    width: 24px;
-    height: 24px;
-    flex: 0 0 auto;
-    border: 1px solid var(--hh-border);
-    border-radius: 6px;
-    object-fit: cover;
+.badge-buy-sell,
+.badge-heron-business {
+    background: #BFFFDE;
+    color: #145C50;
 }
 
-.global-image-preview.hidden {
-    display: none;
+.badge-question {
+    background: #C5DDFF;
+    color: #1A3C8D;
+}
+
+.badge-events {
+    background: #533074;
+    color: #EDF1FF;
 }
 
 @media (max-width: 1320px) {

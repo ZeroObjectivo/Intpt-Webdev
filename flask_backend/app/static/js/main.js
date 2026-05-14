@@ -1,2 +1,2 @@
-// Main JavaScript for University Social Platform
-console.log('UniSocial script loaded.');
+// Main JavaScript for Herons' Hub
+console.log("Herons' Hub loaded.");

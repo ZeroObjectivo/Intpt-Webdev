@@ -1,3 +1,11 @@
+/* Inherit from dashboard.css when co-loaded, otherwise use defaults */
+:root {
+    --hh-blue-500: #28336b;
+    --hh-blue-900: #01061c;
+    --hh-text-main: #1a1d20;
+    --hh-text-muted: #6c757d;
+}
+
 /* Facebook Theater Style Modal */
 .image-modal {
     display: none;

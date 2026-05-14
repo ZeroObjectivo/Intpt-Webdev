@@ -2,6 +2,66 @@
 
 {% block title %}Herons' Hub - University of Makati{% endblock %}
 
+{% block styles %}
+<style>
+    .branding-overlay {
+        position: absolute;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        padding: 0 1.5rem;
+        display: flex;
+        justify-content: center;
+        pointer-events: auto;
+        z-index: 20;
+    }
+
+    .branding-content {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .branding-logo {
+        width: 85%;
+        max-width: 700px;
+        height: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));
+    }
+
+    .animate-fade-up {
+        animation: fade-up 1s ease-out 0.5s both;
+    }
+
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (min-width: 768px) {
+        .branding-logo {
+            width: 65%;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .branding-logo {
+            width: 55%;
+        }
+    }
+
+    @keyframes zoom-in {
+        from { opacity: 0; transform: scale(0.97); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    .animate-zoom-in {
+        animation: zoom-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Full-Page Background Container -->
 <div class="fixed inset-0 w-screen h-screen overflow-hidden -z-10 bg-umak-blue">
@@ -33,69 +93,4 @@
     </div>
 </div>
 
-<style>
-    /* Precision Centering for Logo */
-    .branding-overlay {
-        position: absolute;
-        top: 45%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        padding: 0 1.5rem;
-        display: flex;
-        justify-content: center;
-        pointer-events: auto; /* Changed to allow clicking buttons */
-        z-index: 20;
-    }
-
-    .branding-content {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-    }
-
-    .branding-logo {
-        width: 85%;
-        max-width: 700px;
-        height: auto;
-        object-fit: contain;
-        filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));
-    }
-    
-    .animate-fade-up {
-        animation: fade-up 1s ease-out 0.5s both;
-    }
-
-    @keyframes fade-up {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (min-width: 768px) {
-        .branding-logo {
-            width: 65%;
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .branding-logo {
-            width: 55%;
-        }
-    }
-
-    @keyframes zoom-in {
-        from { opacity: 0; transform: scale(0.97); }
-        to { opacity: 1; transform: scale(1); }
-    }
-    .animate-zoom-in {
-        animation: zoom-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    
-    /* Global Lock for landing page */
-    html, body {
-        height: 100%;
-        overflow: hidden;
-    }
-
-</style>
 {% endblock %}

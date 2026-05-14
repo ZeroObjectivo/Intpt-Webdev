@@ -29,7 +29,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             <div class="modal-post-header">
-                <img id="modalUserAvatar" src="" alt="">
+                <img id="modalUserAvatar" src="" alt="Post author avatar">
                 <div>
                     <h4 id="modalUserName"></h4>
                     <span id="modalPostTime"></span>
@@ -64,10 +64,10 @@
 
             <div class="modal-comment-input border-t border-slate-50 p-4">
                 <form id="modalCommentForm" onsubmit="submitComment(event)" class="flex gap-3">
-                    <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="w-8 h-8 rounded-full">
+                    <img src="{{ user.avatar_url if user is defined and user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="Your avatar" class="w-8 h-8 rounded-full">
                     <div class="flex-1 relative">
-                        <textarea id="commentTextarea" rows="1" class="w-full bg-slate-50 rounded-xl px-4 py-2 text-xs font-medium border-none focus:ring-2 focus:ring-umak-blue/20 outline-none resize-none" placeholder="Write a comment..."></textarea>
-                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-umak-blue hover:text-umak-blue-dark transition-colors">
+                        <textarea id="commentTextarea" rows="1" class="w-full bg-slate-50 rounded-xl px-4 py-2 text-xs font-medium border-none focus:ring-2 focus:ring-blue-500/20 outline-none resize-none" placeholder="Write a comment..."></textarea>
+                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-umak-blue hover:text-blue-900 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
                         </button>
                     </div>

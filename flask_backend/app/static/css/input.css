@@ -31,7 +31,7 @@
 
     body {
         @apply bg-slate-50 text-slate-900;
-        font-family: 'Metropolis', 'Inter', sans-serif;
+        font-family: 'Metropolis', 'Inter', system-ui, sans-serif;
     }
 
     h1,
@@ -47,21 +47,3 @@
     }
 }
 
-@layer components {
-    /* Reusable utility classes */
-    .btn {
-        @apply px-6 py-3 rounded-2xl transition-all font-bold uppercase text-xs tracking-widest active:scale-[0.98];
-    }
-    
-    .btn-primary {
-        @apply bg-umak-blue text-white hover:shadow-lg hover:shadow-blue-900/20;
-    }
-    
-    .btn-outline {
-        @apply border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700;
-    }
-    
-    .card-glass {
-        @apply bg-white/80 backdrop-blur-md border border-white shadow-strong;
-    }
-}
