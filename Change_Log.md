@@ -45,7 +45,10 @@ This document summarizes the recent major updates, bug fixes, and feature implem
     - Updated Supabase RLS policies in `20260513000400_post_enhancements.sql` and `20260513000600_admin_features.sql` to include `superadmin` in the authorized roles list.
 - **Dynamic Sidebar Features:** Fully implemented the "Trending Now" and "Upcoming Events" sidebar sections.
     - **Trending Now:** Now dynamically fetches the top 3 posts by like count. Clicking a trending topic opens the interactive comment modal for that specific post.
-    - **Upcoming Events:** Now dynamically fetches the next 3 scheduled events. Implemented server-side parsing for date components (day, month) and automatic status determination (Ongoing vs. Upcoming).
+    - **Upcoming Events:** Now dynamically fetches the next 3 scheduled events. 
+        - Implemented server-side parsing for date components (day, month) and automatic status determination (Ongoing vs. Upcoming).
+        - Added `event_title` support to ensure specific event names are displayed as the primary header.
+        - Ensured consistent **Asia/Manila** timezone alignment for both creation and display, fixing the previous time-mismatch issue.
 - **Admin User Management NameError:** Resolved a `NameError: name 'request' is not defined` that occurred when searching for users in the admin dashboard by adding the missing `request` import from Flask in `admin.py`.
 - **Interaction Counts & Spam Protection:** Fixed several issues related to post likes and comments.
     - **Spam Prevention:** Updated `toggle_like` route with a check-then-act pattern to prevent double-counting or rapid spamming from inflating like counts.
@@ -183,4 +186,4 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **UI Alignment:** Fixed the alignment of post image grids and badges in the dashboard.
 
 ---
-**Technical Note:** New migration files have been added to the `supabase/migrations/` directory, including `20260514000000_admin_role_management_policies.sql` for RLS security. Ensure they are applied to the Supabase instance to enable the new database fields, reporting table, and RPC functions.
+**Technical Note:** New migration files have been added to the `supabase/migrations/` directory, including `20260514000000_admin_role_management_policies.sql` for RLS security and `20260514000400_add_event_title.sql` for data persistence. Ensure they are applied to the Supabase instance to enable the new database fields, reporting table, and RPC functions.
