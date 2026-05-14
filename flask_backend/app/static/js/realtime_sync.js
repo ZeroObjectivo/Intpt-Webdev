@@ -83,9 +83,16 @@
 
             const likesLabel = item.querySelector('.likes');
             if (likesLabel) {
-                likesLabel.textContent = `${row.likes_count || 0} Likes`;
+                likesLabel.textContent = formatTrendingLikes(row.likes_count || 0);
             }
         });
+    }
+
+    function formatTrendingLikes(value) {
+        const n = Number(value || 0);
+        if (n >= 1000000) return `${(n / 1000000).toFixed(1).replace(/\\.0$/, '')}m likes`;
+        if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\\.0$/, '')}k likes`;
+        return `${n} likes`;
     }
 
     function syncNotifications(notificationsPayload) {
