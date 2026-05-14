@@ -1,4 +1,11 @@
 // Image Modal Logic (Facebook Theater Style)
+
+// CSRF token helper — reads from meta tag set in base.html
+function getCSRFToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
+
 let currentPost = null;
 let currentIdx = 0;
 let isDragging = false;
@@ -407,7 +414,7 @@ async function saveEditComment(commentId) {
     try {
         const response = await fetch(`/comments/${commentId}/update`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
             body: JSON.stringify({ content })
         });
         const data = await response.json();
@@ -426,7 +433,7 @@ async function deleteComment(commentId) {
         'Are you sure you want to delete this comment?',
         async () => {
             try {
-                const response = await fetch(`/comments/${commentId}/delete`, { method: 'POST' });
+                const response = await fetch(`/comments/${commentId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
                 const data = await response.json();
                 if (data.status === 'deleted') {
                     document.getElementById(`comment-${commentId}`).remove();
@@ -495,7 +502,7 @@ async function submitComment(event) {
     try {
         const response = await fetch(`/posts/${currentPost.id}/comments`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
             body: JSON.stringify(body)
         });
         
@@ -602,7 +609,7 @@ async function toggleLike(postId, btn) {
     }
     
     try {
-        const response = await fetch(`/posts/${postId}/like`, { method: 'POST' });
+        const response = await fetch(`/posts/${postId}/like`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
         const data = await response.json();
         
         // Update currentPost state if in modal

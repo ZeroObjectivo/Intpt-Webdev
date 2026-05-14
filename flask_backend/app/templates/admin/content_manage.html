@@ -253,7 +253,7 @@
         try {
             const res = await fetch('/admin/warn-user', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
                 body: JSON.stringify({ user_id: userId, post_id: postId, reason, message })
             });
             const data = await res.json();
@@ -275,7 +275,7 @@
                 'Are you sure you want to PERMANENTLY remove this post? This action cannot be undone.',
                 async () => {
                     try {
-                        const res = await fetch(`/posts/${postId}/delete`, { method: 'POST' });
+                        const res = await fetch(`/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
                         const data = await res.json();
                         if (data.status === 'deleted') {
                             location.reload();
@@ -288,13 +288,13 @@
                 }
             );
         } else if (confirm('Remove this post?')) {
-            fetch(`/posts/${postId}/delete`, { method: 'POST' }).then(() => location.reload());
+            fetch(`/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } }).then(() => location.reload());
         }
     }
 
     async function flagPost(postId) {
         try {
-            const res = await fetch(`/admin/posts/${postId}/flag`, { method: 'POST' });
+            const res = await fetch(`/admin/posts/${postId}/flag`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
             const data = await res.json();
             if (data.status === 'success') showToast('Post flagged', 'success');
         } catch (e) { showToast('Action failed', 'error'); }
@@ -302,7 +302,7 @@
 
     async function flagComment(commentId) {
         try {
-            const res = await fetch(`/admin/comments/${commentId}/flag`, { method: 'POST' });
+            const res = await fetch(`/admin/comments/${commentId}/flag`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
             const data = await res.json();
             if (data.status === 'success') showToast('Comment flagged', 'success');
         } catch (e) { showToast('Action failed', 'error'); }

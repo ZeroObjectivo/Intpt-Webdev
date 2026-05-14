@@ -188,6 +188,7 @@
                             {% if post.user_id == user.id %}
                             <div id="edit-form-{{ post.id }}" class="hidden mt-4">
                                 <form action="{{ url_for('core.update_post', post_id=post.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <textarea name="content" class="w-full p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all resize-none mb-3">{{ post.content }}</textarea>
                                     <input type="hidden" name="category" value="{{ post.category }}">
                                     <div class="flex justify-end gap-2">
@@ -290,6 +291,7 @@
         </div>
 
         <form id="createPostForm" action="{{ url_for('core.create_post') }}" method="POST" enctype="multipart/form-data" class="flex flex-col">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="px-4 py-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
                 <!-- User Identity Section -->
                 <div class="flex items-center gap-3 mb-5">
@@ -462,7 +464,7 @@
             'Are you sure you want to delete this post? This action cannot be undone.',
             async () => {
                 try {
-                    const response = await fetch(`/posts/${postId}/delete`, { method: 'POST' });
+                    const response = await fetch(`/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
                     const data = await response.json();
                     if (data.status === 'deleted') {
                         window.location.reload();

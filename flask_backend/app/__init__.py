@@ -1,7 +1,10 @@
 from flask import Flask
+from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, timezone
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os
+
+csrf = CSRFProtect()
 
 def create_app():
     app = Flask(__name__)
@@ -14,6 +17,9 @@ def create_app():
     if not secret_key:
         raise RuntimeError("SECRET_KEY environment variable is not set.")
     app.config['SECRET_KEY'] = secret_key
+
+    # CSRF protection for all POST forms
+    csrf.init_app(app)
 
     # Custom Jinja filters
     @app.template_filter('datetime_obj')

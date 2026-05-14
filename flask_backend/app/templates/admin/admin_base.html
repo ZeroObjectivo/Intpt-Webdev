@@ -13,6 +13,7 @@
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
@@ -362,6 +363,11 @@
     {% endwith %}
 
     <script>
+        function getCSRFToken() {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? meta.getAttribute('content') : '';
+        }
+
         function toggleDropdown(id) {
             const dropdown = document.getElementById(id);
             const btn = dropdown.previousElementSibling;

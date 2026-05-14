@@ -1,5 +1,5 @@
 from flask import Blueprint, request, redirect, session, url_for, jsonify, render_template
-from services.supabase_client import supabase, engine
+from services.supabase_client import supabase, engine, get_user_client
 from sqlalchemy import text
 from functools import wraps
 from postgrest.exceptions import APIError
@@ -20,22 +20,6 @@ def login_required(f):
 def is_jwt_expired_error(error):
     return isinstance(error, APIError) and getattr(error, "code", None) == "PGRST303"
 
-def apply_supabase_auth_token():
-    access_token = session.get('access_token')
-    if not access_token:
-        return False
-
-    # Set for database operations
-    supabase.postgrest.auth(access_token)
-    
-    # Set for storage operations
-    if hasattr(supabase, 'storage'):
-        # In storage3, headers are in _client.headers
-        if hasattr(supabase.storage, '_client') and hasattr(supabase.storage._client, 'headers'):
-            supabase.storage._client.headers.update({"Authorization": f"Bearer {access_token}"})
-    
-    return True
-
 def refresh_supabase_auth():
     refresh_token = session.get('refresh_token')
     if not refresh_token:
@@ -52,7 +36,6 @@ def refresh_supabase_auth():
 
         session['access_token'] = access_token
         session['refresh_token'] = new_refresh_token
-        supabase.postgrest.auth(access_token)
         return True
     except Exception as e:
         print(f"Supabase session refresh error: {e}")
@@ -181,9 +164,6 @@ def set_session():
             supabase.auth.sign_out()
             return render_template('unauthorized.html', email=email)
 
-        # 2. Check if user exists in profiles table
-        profile_check = supabase.table('profiles').select("id").eq("id", user.id).execute()
-        
         # Store tokens and basic user data in session
         session['access_token'] = access_token
         session['refresh_token'] = refresh_token
@@ -193,12 +173,16 @@ def set_session():
             "user_metadata": user.user_metadata
         }
 
+        # 2. Check if user exists in profiles table
+        user_client = get_user_client(access_token)
+        profile_check = user_client.table('profiles').select("id").eq("id", user.id).execute()
+
         # 3. REDIRECT: New user vs Existing user
         if not profile_check.data:
             return redirect(url_for('auth.onboarding'))
         
         # If exists, fetch full profile to get role and other details
-        profile_res = supabase.table('profiles').select("*").eq("id", user.id).single().execute()
+        profile_res = user_client.table('profiles').select("*").eq("id", user.id).single().execute()
         
         # If exists, finalize session and go to dashboard
         session['user'] = session.pop('temp_user')
@@ -232,10 +216,10 @@ def complete_onboarding():
     
     # 1. Create the profile in Supabase (using user's token to satisfy RLS)
     try:
-        # Set the JWT for this specific request
-        supabase.postgrest.auth(access_token)
-        
-        supabase.table('profiles').upsert({
+        # Use per-request client with user's token
+        user_client = get_user_client(access_token)
+
+        user_client.table('profiles').upsert({
             "id": str(user['id']),
             "email": user['email'],
             "full_name": user['user_metadata'].get('full_name'),

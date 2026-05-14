@@ -195,6 +195,7 @@
                 </label>
 
                 <form action="{{ url_for('auth.complete_onboarding') }}" method="POST" class="w-full flex justify-center">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" id="continue-btn" disabled class="w-64 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black text-lg cursor-not-allowed transition-all">
                         Continue
                     </button>

@@ -1,8 +1,7 @@
 import os
 from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify, request
-from app.routes.auth import login_required, apply_supabase_auth_token
-from services.supabase_client import supabase, supabase_service
-from supabase import create_client, Client
+from app.routes.auth import login_required
+from services.supabase_client import supabase, supabase_service, get_user_client
 from functools import wraps
 import datetime
 
@@ -27,7 +26,7 @@ def admin_required(f):
         
         # Check database for latest role to avoid stale session issues
         try:
-            profile_res = supabase.table('profiles').select("role").eq("id", user.get('id')).single().execute()
+            profile_res = get_user_client().table('profiles').select("role").eq("id", user.get('id')).single().execute()
             current_role = profile_res.data.get('role') if profile_res.data else user.get('role')
             
             # Update session role if it changed
@@ -49,7 +48,7 @@ def admin_required(f):
 @login_required
 @admin_required
 def dashboard():
-    apply_supabase_auth_token()
+    client = get_user_client()
     
     stats = {
         "total_users": 0,
@@ -65,12 +64,12 @@ def dashboard():
     
     try:
         # Fetch all profiles
-        users_res = supabase.table('profiles').select("*").execute()
+        users_res = client.table('profiles').select("*").execute()
         stats["total_users"] = len(users_res.data)
         stats["user_list"] = users_res.data
         
         # Fetch all posts for category counts
-        posts_res = supabase.table('posts').select("id, category").execute()
+        posts_res = client.table('posts').select("id, category").execute()
         stats["total_posts"] = len(posts_res.data)
         
         cat_counts = {}
@@ -80,20 +79,20 @@ def dashboard():
         stats["posts_by_category"] = [{"category": k, "count": v} for k, v in cat_counts.items()]
 
         # Fetch reports
-        reports_res = supabase.table('reports').select("*, posts(content), profiles!reports_reporter_id_fkey(full_name)").order("created_at", desc=True).execute()
+        reports_res = client.table('reports').select("*, posts(content), profiles!reports_reporter_id_fkey(full_name)").order("created_at", desc=True).execute()
         stats["reported_posts"] = len(reports_res.data)
         stats["reports_list"] = reports_res.data
         
         # Banned accounts
-        banned_res = supabase.table('profiles').select("id").eq("status", "banned").execute()
+        banned_res = client.table('profiles').select("id").eq("status", "banned").execute()
         stats["banned_accounts"] = len(banned_res.data)
 
         # Recent Activities (Admin Logs)
-        logs_res = supabase.table('admin_logs').select("*, profiles!admin_logs_admin_id_fkey(full_name)").order("created_at", desc=True).limit(5).execute()
+        logs_res = client.table('admin_logs').select("*, profiles!admin_logs_admin_id_fkey(full_name)").order("created_at", desc=True).limit(5).execute()
         stats["recent_activities"] = logs_res.data
 
         # Verification Disputes Count
-        disputes_res = supabase.table('verification_disputes').select("id", count="exact").eq("status", "pending").execute()
+        disputes_res = client.table('verification_disputes').select("id", count="exact").eq("status", "pending").execute()
         stats["disputes_count"] = disputes_res.count if hasattr(disputes_res, 'count') else len(disputes_res.data)
             
     except Exception as e:
@@ -105,9 +104,9 @@ def dashboard():
 @login_required
 @admin_required
 def manage_users():
-    apply_supabase_auth_token()
+    client = get_user_client()
     search = request.args.get('search', '')
-    query = supabase.table('profiles').select("*")
+    query = client.table('profiles').select("*")
     if search:
         query = query.ilike('full_name', f'%{search}%')
     res = query.order('full_name').execute()
@@ -117,10 +116,10 @@ def manage_users():
 @login_required
 @admin_required
 def user_management(user_id):
-    apply_supabase_auth_token()
-    profile_res = supabase.table('profiles').select("*").eq("id", user_id).single().execute()
-    posts_res = supabase.table('posts').select("*").eq("user_id", user_id).execute()
-    warnings_res = supabase.table('warnings').select("*").eq("user_id", user_id).execute()
+    client = get_user_client()
+    profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
+    posts_res = client.table('posts').select("*").eq("user_id", user_id).execute()
+    warnings_res = client.table('warnings').select("*").eq("user_id", user_id).execute()
     return render_template('admin/user_manage.html', 
                            target_user=profile_res.data, 
                            posts=posts_res.data, 
@@ -131,7 +130,7 @@ def user_management(user_id):
 @login_required
 @admin_required
 def update_user_role(user_id):
-    apply_supabase_auth_token()
+    client = get_user_client()
     new_role = request.form.get('role')
     
     valid_roles = ['student', 'content_moderator', 'account_manager', 'admin', 'super_admin']
@@ -176,8 +175,8 @@ def update_user_role(user_id):
 @login_required
 @admin_required
 def content_management(category):
-    apply_supabase_auth_token()
-    query = supabase.table('posts').select("*, profiles(full_name, avatar_url)")
+    client = get_user_client()
+    query = client.table('posts').select("*, profiles(full_name, avatar_url)")
     if category != 'All':
         query = query.eq('category', category)
     res = query.order('created_at', desc=True).execute()
@@ -187,8 +186,8 @@ def content_management(category):
 @login_required
 @admin_required
 def get_post_likers(post_id):
-    apply_supabase_auth_token()
-    res = supabase.table('likes').select("profiles(id, full_name, avatar_url)").eq('post_id', post_id).execute()
+    client = get_user_client()
+    res = client.table('likes').select("profiles(id, full_name, avatar_url)").eq('post_id', post_id).execute()
     likers = [item['profiles'] for item in res.data if item.get('profiles')]
     return jsonify({"likers": likers})
 
@@ -196,9 +195,9 @@ def get_post_likers(post_id):
 @login_required
 @admin_required
 def flag_post(post_id):
-    apply_supabase_auth_token()
+    client = get_user_client()
     try:
-        supabase.table('posts').update({"is_flagged": True}).eq("id", post_id).execute()
+        client.table('posts').update({"is_flagged": True}).eq("id", post_id).execute()
         return jsonify({"status": "success", "message": "Post flagged."})
     except Exception as e:
         return jsonify({"status": "error", "message": "An error occurred."}), 500
@@ -207,9 +206,9 @@ def flag_post(post_id):
 @login_required
 @admin_required
 def flag_comment(comment_id):
-    apply_supabase_auth_token()
+    client = get_user_client()
     try:
-        supabase.table('comments').update({"is_flagged": True}).eq("id", comment_id).execute()
+        client.table('comments').update({"is_flagged": True}).eq("id", comment_id).execute()
         return jsonify({"status": "success", "message": "Comment flagged."})
     except Exception as e:
         return jsonify({"status": "error", "message": "An error occurred."}), 500
@@ -218,7 +217,7 @@ def flag_comment(comment_id):
 @login_required
 @admin_required
 def warn_user():
-    apply_supabase_auth_token()
+    client = get_user_client()
     data = request.json
     user_id = data.get('user_id')
     post_id = data.get('post_id')
@@ -230,7 +229,7 @@ def warn_user():
 
     try:
         # 1. Insert into warnings table
-        supabase.table('warnings').insert({
+        client.table('warnings').insert({
             "user_id": user_id,
             "admin_id": session['user']['id'],
             "reason": reason,
@@ -238,7 +237,7 @@ def warn_user():
         }).execute()
 
         # 2. Insert into notifications table
-        supabase.table('notifications').insert({
+        client.table('notifications').insert({
             "user_id": user_id,
             "title": "Community Warning",
             "message": message,
@@ -253,8 +252,8 @@ def warn_user():
 @login_required
 @admin_required
 def manage_disputes():
-    apply_supabase_auth_token()
-    res = supabase.table('verification_disputes').select("*").order('created_at', desc=True).execute()
+    client = get_user_client()
+    res = client.table('verification_disputes').select("*").order('created_at', desc=True).execute()
     return render_template('admin/disputes.html', disputes=res.data, user=session.get('user'))
 
 @admin.route('/admin/become-admin', methods=['POST'])
@@ -262,14 +261,14 @@ def manage_disputes():
 def become_admin():
     """Temporary route for testing to promote current user to super_admin."""
     user_id = session['user']['id']
-    apply_supabase_auth_token()
+    client = get_user_client()
     
     try:
         # 1. Update in database
-        supabase.table('profiles').update({"role": "super_admin"}).eq("id", user_id).execute()
+        client.table('profiles').update({"role": "super_admin"}).eq("id", user_id).execute()
         
         # 2. Re-fetch profile to ensure session is perfectly synced
-        profile_res = supabase.table('profiles').select("*").eq("id", user_id).single().execute()
+        profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
         profile = profile_res.data
         
         # 3. Update the full user object in session
@@ -287,22 +286,22 @@ def become_admin():
 @login_required
 @admin_required
 def manage_forbidden_words():
-    apply_supabase_auth_token()
-    res = supabase.table('forbidden_words').select("*").order('word').execute()
+    client = get_user_client()
+    res = client.table('forbidden_words').select("*").order('word').execute()
     return render_template('admin/forbidden_words.html', words=res.data, user=session.get('user'))
 
 @admin.route('/admin/forbidden-words/add', methods=['POST'])
 @login_required
 @admin_required
 def add_forbidden_word():
-    apply_supabase_auth_token()
+    client = get_user_client()
     word = request.form.get('word', '').strip().lower()
     if not word:
         flash("Word cannot be empty.", "error")
         return redirect(url_for('admin.manage_forbidden_words'))
     
     try:
-        supabase.table('forbidden_words').insert({"word": word}).execute()
+        client.table('forbidden_words').insert({"word": word}).execute()
         flash(f"Added '{word}' to forbidden words.", "success")
     except Exception as e:
         flash("Error adding word.", "error")
@@ -313,9 +312,9 @@ def add_forbidden_word():
 @login_required
 @admin_required
 def delete_forbidden_word(word):
-    apply_supabase_auth_token()
+    client = get_user_client()
     try:
-        supabase.table('forbidden_words').delete().eq('word', word).execute()
+        client.table('forbidden_words').delete().eq('word', word).execute()
         flash(f"Removed '{word}' from forbidden words.", "success")
     except Exception as e:
         flash("Error removing word.", "error")
