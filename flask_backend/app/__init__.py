@@ -52,13 +52,6 @@ def create_app():
     def inject_now():
         return {'now': datetime.utcnow()}
 
-    @app.context_processor
-    def inject_supabase_keys():
-        return {
-            'SUPABASE_URL': os.getenv('SUPABASE_URL'),
-            'SUPABASE_ANON_KEY': os.getenv('SUPABASE_KEY')
-        }
-
     # Register Blueprints
     from .routes.core import core
     from .routes.auth import auth
