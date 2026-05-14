@@ -131,6 +131,10 @@
         const response = await fetch(url, {
             headers: { 'Accept': 'application/json' }
         });
+        if (response.status === 401) {
+            window.location.href = '/login';
+            return null;
+        }
         if (!response.ok) {
             throw new Error(`Sync request failed (${response.status})`);
         }
@@ -154,6 +158,7 @@
 
         try {
             const data = await fetchJson(buildSyncUrl('/sync/realtime', true));
+            if (!data) return;
             syncNotifications(data.notifications);
             syncPostCards(data.interactions ? data.interactions.posts : []);
             syncTrendingLikes(data.interactions ? data.interactions.posts : []);
