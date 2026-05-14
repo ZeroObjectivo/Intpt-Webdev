@@ -487,6 +487,129 @@
     }
 }
 
+@media (max-width: 1024px) {
+    .dashboard-shell {
+        padding: 18px 12px 36px;
+    }
+
+    .dashboard-container {
+        display: block;
+        width: min(100%, 860px);
+        margin: 0 auto;
+    }
+
+    .primary-sidebar {
+        position: static;
+        top: auto;
+        margin-bottom: 12px;
+    }
+
+    .primary-nav {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .primary-nav-link {
+        min-height: 38px;
+        padding: 8px 10px;
+        font-size: 0.82rem;
+        gap: 8px;
+        flex: 0 0 auto;
+    }
+
+    .primary-nav-icon {
+        width: 18px;
+        height: 18px;
+        flex-basis: 18px;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .share-box {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .btn-create-post {
+        width: 100%;
+        justify-content: center;
+        min-height: 38px;
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-shell {
+        padding: 14px 8px 24px;
+    }
+
+    .dashboard-container {
+        width: 100%;
+    }
+
+    .share-box .user-avatar {
+        width: 38px;
+        height: 38px;
+        flex-basis: 38px;
+        margin-right: 10px;
+    }
+
+    .category-pills {
+        gap: 6px;
+        margin-bottom: 12px;
+        padding-bottom: 2px;
+    }
+
+    .post-card {
+        padding: 14px 12px 10px;
+    }
+
+    .post-header {
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .post-user-avatar {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+        margin-right: 10px;
+    }
+
+    .post-author-name {
+        font-size: 0.88rem;
+    }
+
+    .post-content p {
+        font-size: 0.88rem;
+        line-height: 1.56;
+    }
+
+    .post-actions {
+        gap: 6px;
+    }
+
+    .action-item {
+        flex: 1 1 0;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 6px;
+        font-size: 0.72rem;
+    }
+
+    .empty-feed {
+        padding: 18px 12px;
+        font-size: 0.9rem;
+    }
+}
+
 /* Animations */
 @keyframes modalUp {
     from { opacity: 0; transform: translateY(20px); }
