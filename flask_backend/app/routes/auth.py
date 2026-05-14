@@ -79,22 +79,88 @@ def callback():
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Signing In...</title>
+            <script defer src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+            <style>
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: #ffffff;
+                    overflow: hidden;
+                }
+
+                body {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: 'Metropolis', 'Inter', system-ui, sans-serif;
+                }
+
+                .loader-wrap {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 12px;
+                    opacity: 1;
+                    transition: opacity 800ms ease-out;
+                }
+
+                .loader-wrap.exit {
+                    opacity: 0;
+                }
+
+                #logoTransition {
+                    width: min(360px, 72vw);
+                    height: min(360px, 72vw);
+                    max-width: 420px;
+                    max-height: 420px;
+                }
+
+                #status {
+                    margin: 0;
+                    color: #64748b;
+                    font-size: 14px;
+                    font-weight: 600;
+                    letter-spacing: 0.02em;
+                }
+            </style>
         </head>
-        <body style="font-family: sans-serif; padding: 24px;">
-            <h3 style="margin: 0 0 8px 0;">Signing you in...</h3>
-            <p id="status" style="margin: 0; color: #4a5568;">Please wait while we complete authentication.</p>
+        <body>
+            <div class="loader-wrap" id="loaderWrap">
+                <div id="logoTransition" aria-label="Loading animation"></div>
+                <p id="status">Finalizing login...</p>
+            </div>
+
             <script>
                 const hash = window.location.hash;
                 const search = window.location.search;
                 const params = new URLSearchParams(search);
                 const status = document.getElementById('status');
+                const loaderWrap = document.getElementById('loaderWrap');
+                let hasRedirected = false;
+
+                if (window.lottie) {
+                    window.lottie.loadAnimation({
+                        container: document.getElementById('logoTransition'),
+                        renderer: 'svg',
+                        loop: true,
+                        autoplay: true,
+                        path: '/static/animations/flow1.json'
+                    });
+                }
+
+                function proceed(url) {
+                    if (hasRedirected) return;
+                    hasRedirected = true;
+                    loaderWrap.classList.add('exit');
+                    setTimeout(() => window.location.replace(url), 800);
+                }
 
                 if (hash) {
-                    status.textContent = "Finalizing login...";
-                    window.location.replace("/auth/session?" + hash.substring(1));
+                    proceed("/auth/session?" + hash.substring(1));
                 } else if (params.has('code')) {
-                    status.textContent = "Finalizing login...";
-                    window.location.replace("/auth/session" + search);
+                    proceed("/auth/session" + search);
                 } else if (params.has('error')) {
                     status.textContent = "Authentication failed. Please try signing in again.";
                 } else {
