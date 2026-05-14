@@ -9,17 +9,30 @@ auth = Blueprint('auth', __name__)
 def login_required(f):
     """
     Decorator to protect routes from unauthorized access.
-    Token-based auth is handled by get_user_client() per request.
+    Proactively refreshes expired tokens before the route runs.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user' not in session or 'access_token' not in session:
             return redirect(url_for('core.login'))
+
+        # Proactively refresh if we know the token has expired
+        expires_at = session.get('expires_at')
+        if expires_at and expires_at < __import__('time').time():
+            if not refresh_supabase_auth():
+                session.clear()
+                return redirect(url_for('core.login', error="session_expired"))
+
         return f(*args, **kwargs)
     return decorated_function
 
-def is_jwt_expired_error(error):
-    return isinstance(error, APIError) and getattr(error, "code", None) == "PGRST303"
+def is_jwt_error(error):
+    """Detect any JWT-related Supabase error (expired, malformed, invalid)."""
+    if not isinstance(error, APIError):
+        return False
+    code = getattr(error, "code", None)
+    # PGRST301 = malformed JWT, PGRST302 = no anonymous role, PGRST303 = expired JWT
+    return code in ("PGRST301", "PGRST302", "PGRST303")
 
 def refresh_supabase_auth():
     refresh_token = session.get('refresh_token')
@@ -231,6 +244,11 @@ def set_session():
         # Store tokens and basic user data in session
         session['access_token'] = access_token
         session['refresh_token'] = refresh_token
+        # Store expiry so login_required can proactively refresh
+        if 'session_data' in locals() and session_data:
+            expires_at = getattr(session_data, 'expires_at', None)
+            if expires_at:
+                session['expires_at'] = expires_at
         session['temp_user'] = {
             "id": user.id,
             "email": user.email,

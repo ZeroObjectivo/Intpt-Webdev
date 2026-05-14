@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, session, request, redirect, url_for, flash, jsonify, make_response
 from .auth import (
-    is_jwt_expired_error,
+    is_jwt_error,
     login_required,
     refresh_supabase_auth,
 )
@@ -86,9 +86,9 @@ def dashboard():
     try:
         profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category)
     except Exception as e:
-        if is_jwt_expired_error(e) and refresh_supabase_auth():
+        if is_jwt_error(e) and refresh_supabase_auth():
             profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category)
-        elif is_jwt_expired_error(e):
+        elif is_jwt_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
             return redirect(url_for('core.login'))
@@ -124,6 +124,17 @@ def view_profile(target_user_id):
                                is_own_profile=is_own_profile,
                                now=datetime.datetime.now(datetime.timezone.utc))
     except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            profile, posts, activity = load_profile_data(target_user_id, viewer_id=current_user_id)
+            is_own_profile = (current_user_id == target_user_id)
+            return render_template('profile_settings.html',
+                                   user=profile, posts=posts, activity=activity,
+                                   is_own_profile=is_own_profile,
+                                   now=datetime.datetime.now(datetime.timezone.utc))
+        elif is_jwt_error(e):
+            session.clear()
+            flash("Your session expired. Please sign in again.", "error")
+            return redirect(url_for('core.login'))
         print(f"Error loading profile: {e}")
         flash("Profile not found.", "error")
         return redirect(url_for('core.dashboard'))
