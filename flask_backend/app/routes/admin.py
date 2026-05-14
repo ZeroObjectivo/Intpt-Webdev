@@ -22,11 +22,14 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         user = session.get('user')
         if not user:
+            if request.is_json:
+                return jsonify({"status": "error", "message": "Session expired"}), 401
             return redirect(url_for('core.login'))
         
-        # Check database for latest role to avoid stale session issues
+        # Check database for latest role using service client (bypasses RLS)
         try:
-            profile_res = get_user_client().table('profiles').select("role").eq("id", user.get('id')).single().execute()
+            admin_client = get_service_client()
+            profile_res = admin_client.table('profiles').select("role").eq("id", user.get('id')).single().execute()
             current_role = profile_res.data.get('role') if profile_res.data else user.get('role')
             
             # Update session role if it changed
@@ -39,6 +42,8 @@ def admin_required(f):
             current_role = user.get('role')
 
         if current_role not in ['admin', 'super_admin', 'superadmin']:
+            if request.is_json:
+                return jsonify({"status": "error", "message": "Admin privileges required"}), 403
             flash("Unauthorized access. Admin privileges required.", "error")
             return redirect(url_for('core.dashboard'))
         return f(*args, **kwargs)
@@ -217,7 +222,6 @@ def flag_comment(comment_id):
 @login_required
 @admin_required
 def warn_user():
-    client = get_user_client()
     data = request.json
     user_id = data.get('user_id')
     post_id = data.get('post_id')
@@ -228,8 +232,10 @@ def warn_user():
         return jsonify({"status": "error", "message": "Missing required fields."}), 400
 
     try:
+        admin_client = get_service_client()
+        
         # 1. Insert into warnings table
-        client.table('warnings').insert({
+        admin_client.table('warnings').insert({
             "user_id": user_id,
             "admin_id": session['user']['id'],
             "reason": reason,
@@ -237,9 +243,9 @@ def warn_user():
         }).execute()
 
         # 2. Insert into notifications table
-        client.table('notifications').insert({
+        admin_client.table('notifications').insert({
             "user_id": user_id,
-            "title": "Community Warning",
+            "title": f"Community Warning: {reason}",
             "message": message,
             "type": "warning"
         }).execute()

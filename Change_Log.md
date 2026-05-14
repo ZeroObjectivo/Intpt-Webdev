@@ -185,5 +185,26 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Dashboard Backend:** Updated `load_dashboard_data` to fetch trending posts and user profiles in a single pass.
 - **UI Alignment:** Fixed the alignment of post image grids and badges in the dashboard.
 
+### 5. Notifications & Warning System Polish
+#### Added
+- **Integrated Notification Center:** Added a real-time notification dropdown to both the main navbar and the Admin Hub sidebar.
+- **Mark as Read:** Implemented functionality to mark notifications as read, updating the UI and database state immediately.
+- **Global Notification Context:** Added a backend context processor to automatically inject unread notification counts and recent alerts into all templates.
+- **Admin Warning UI:** Integrated the "Warn Author" modal directly into the Content Moderation post view, allowing admins to issue warnings while reviewing content.
+- **Enhanced Warning Logic:** Updated the warning system to use a dedicated service client, ensuring admins can issue warnings and create notifications regardless of user RLS policies.
+
+#### Fixed
+- **Admin Role Verification:** Refactored the `admin_required` decorator to use a service client for role verification, fixing potential "Unauthorized" issues caused by RLS restrictions on the `profiles` table.
+- **Modal Label Formatting:** Cleaned up modal metadata labels (Location, Date) by removing redundant emojis for a cleaner, more professional look.
+- **Flash Message System:** Enhanced the global toast system to support dynamic JavaScript-triggered messages (`createToast`), ensuring consistent feedback for async actions like issuing warnings or marking notifications as read.
+
+#### Fixed
+- **Notification UI Readability & Spacing:** Significantly improved the notification dropdown visibility and breathing room.
+    - Increased dropdown width from `w-80` to `w-96`.
+    - Upscaled font sizes for titles (`text-[15px]`), messages (`text-[13px]`), and dates.
+    - Added generous horizontal padding (**`px-8`**) across all sections to ensure text has ample breathing room from the edges.
+    - Enhanced vertical spacing and internal padding for a more open, modern feel.
+    - Increased the max-height of the scrollable area to `32rem` to show more alerts at once.
+
 ---
-**Technical Note:** New migration files have been added to the `supabase/migrations/` directory, including `20260514000000_admin_role_management_policies.sql` for RLS security and `20260514000400_add_event_title.sql` for data persistence. Ensure they are applied to the Supabase instance to enable the new database fields, reporting table, and RPC functions.
+**Technical Note:** New migration files have been added to the `supabase/migrations/` directory, including `20260514000500_fix_warnings_policies.sql` for RLS security and `20260514000600_sync_notifications_schema.sql` for schema alignment. Ensure they are applied to the Supabase instance to enable the new database fields, reporting table, and RPC functions.

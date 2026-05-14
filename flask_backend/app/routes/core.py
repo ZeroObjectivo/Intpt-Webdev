@@ -580,6 +580,16 @@ def upload_single_image(client, file, user_id):
     )
     return client.storage.from_(bucket_name).get_public_url(filename)
 
+@core.route('/notifications/<notification_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    apply_supabase_auth_token()
+    try:
+        supabase.table('notifications').update({"is_read": True}).eq("id", notification_id).execute()
+        return {"status": "success"}
+    except Exception as e:
+        return {"error": str(e)}, 500
+
 @core.route('/login')
 def login():
     return render_template('login.html')
