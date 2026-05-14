@@ -87,14 +87,14 @@
 
                         <!-- Notification Dropdown -->
                         <div id="notification-menu" class="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden hidden z-[60] border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
-                            <div class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                            <div id="notification-header" class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
                                 <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
-                                <span id="notification-unread-count" class="px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">
+                                <span id="notification-unread-count" class="notification-count-badge px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">
                                     {{ unread_notifications_count }} New
                                 </span>
                             </div>
-                            
-                            <div class="max-h-[32rem] overflow-y-auto custom-scrollbar" id="notification-items-root">
+
+                            <div id="notification-list-container" class="max-h-[32rem] overflow-y-auto custom-scrollbar">
                                 <div id="notification-items-container">
                                 {% if notifications %}
                                     {% for n in notifications %}
@@ -331,3 +331,95 @@
         {% endif %}
     </div>
 </nav>
+
+{% if session.get('user') %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const supabaseUrl = '{{ SUPABASE_URL }}';
+    const supabaseAnonKey = '{{ SUPABASE_ANON_KEY }}';
+    const userId = '{{ session['user']['id'] }}';
+
+    if (!supabaseUrl || !supabaseAnonKey || !window.supabase) {
+        console.error('Supabase credentials or client not found.');
+        return;
+    }
+
+    const { createClient } = window.supabase;
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+    function handleNewNotification(notif) {
+        // 1. Update main icon badge
+        let iconBadge = document.querySelector('#notification-dropdown-trigger .notification-icon-badge');
+        if (!iconBadge) {
+            iconBadge = document.createElement('span');
+            iconBadge.className = 'notification-icon-badge absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-[#001035] rounded-full';
+            document.getElementById('notification-dropdown-trigger').appendChild(iconBadge);
+        }
+
+        // 2. Update dropdown header count
+        const header = document.getElementById('notification-header');
+        let countBadge = header.querySelector('.notification-count-badge');
+        if (!countBadge) {
+            countBadge = document.createElement('span');
+            countBadge.className = 'notification-count-badge px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black';
+            header.appendChild(countBadge);
+            countBadge.textContent = '1 New';
+        } else {
+            const currentCount = parseInt(countBadge.textContent) || 0;
+            countBadge.textContent = `${currentCount + 1} New`;
+        }
+        
+        // 3. Remove "No notifications" message if it exists
+        const listContainer = document.getElementById('notification-list-container');
+        const emptyState = listContainer.querySelector('.notification-empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        // 4. Prepend the new notification
+        const newNotifEl = document.createElement('div');
+        newNotifEl.className = "px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group";
+        newNotifEl.setAttribute('onclick', `markAsRead('${notif.id}', this)`);
+
+        const createdDate = new Date(notif.created_at).toISOString().split('T')[0];
+        newNotifEl.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+                <h4 class="text-[15px] font-black text-umak-blue">${notif.title}</h4>
+                <span class="text-[11px] font-bold text-slate-300 uppercase">${createdDate}</span>
+            </div>
+            <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">${notif.message}</p>
+        `;
+        listContainer.prepend(newNotifEl);
+
+        // 5. Show a toast message
+        if (window.createToast) {
+            window.createToast(`<strong>${notif.title}</strong>`, 'info');
+        }
+    }
+
+    const channel = supabaseClient
+        .channel('realtime-notifications')
+        .on('postgres_changes', 
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'notifications',
+                filter: `user_id=eq.${userId}`
+            }, 
+            (payload) => {
+                console.log('New notification received:', payload.new);
+                handleNewNotification(payload.new);
+            }
+        )
+        .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('Successfully subscribed to real-time notifications!');
+            }
+            if (status === 'CHANNEL_ERROR') {
+                console.error('Failed to subscribe to notifications:', err);
+            }
+        });
+});
+</script>
+{% endif %}
+

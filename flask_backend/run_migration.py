@@ -3,7 +3,7 @@ from sqlalchemy import text
 import os
 
 with engine.connect() as conn:
-    migration_path = os.path.join('..', 'supabase', 'migrations', '20260513000600_admin_features.sql')
+    migration_path = os.path.join('..', 'supabase', 'migrations', '20260514000700_fix_notifications_policy.sql')
     with open(migration_path, 'r') as f:
         sql = f.read()
         # Split by semicolon but handle potential issues with triggers/functions if they were there
