@@ -75,8 +75,6 @@
                         </div>
                     </button>
                     
-                    </div>
-                    
                     <!-- 3. Notification Icon with Dropdown -->
                     <div class="relative" id="notification-dropdown-container">
                         <button class="p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors relative" 
@@ -168,7 +166,7 @@
                             if (menu) menu.classList.add('hidden');
                         });
                         document.addEventListener('click', function(e) {
-                            if (!notifTrigger.contains(e.target)) {
+                            if (!notifTrigger.contains(e.target) && !notifMenu.contains(e.target)) {
                                 notifMenu.classList.add('hidden');
                             }
                         });

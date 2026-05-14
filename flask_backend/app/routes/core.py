@@ -583,9 +583,14 @@ def upload_single_image(client, file, user_id):
 @core.route('/notifications/<notification_id>/read', methods=['POST'])
 @login_required
 def mark_notification_read(notification_id):
-    apply_supabase_auth_token()
     try:
-        supabase.table('notifications').update({"is_read": True}).eq("id", notification_id).execute()
+        user_id = session.get('user', {}).get('id')
+        client = get_user_client()
+        client.table('notifications')\
+            .update({"is_read": True})\
+            .eq("id", notification_id)\
+            .eq("user_id", user_id)\
+            .execute()
         return {"status": "success"}
     except Exception as e:
         return {"error": str(e)}, 500

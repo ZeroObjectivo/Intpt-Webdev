@@ -35,15 +35,15 @@ def create_app():
     @app.context_processor
     def inject_notifications():
         from flask import session
-        from services.supabase_client import supabase, supabase_service
+        from services.supabase_client import get_user_client
         
         user = session.get('user')
         if not user:
             return {'notifications': [], 'unread_notifications_count': 0}
             
         try:
-            # Use service client to bypass RLS for fetching notifications in context processor
-            client = supabase_service if supabase_service else supabase
+            # Use the current user's token-backed client so this works even without service key.
+            client = get_user_client()
             res = client.table('notifications')\
                 .select("*")\
                 .eq('user_id', user['id'])\
