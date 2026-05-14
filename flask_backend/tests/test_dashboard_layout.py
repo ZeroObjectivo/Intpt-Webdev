@@ -110,7 +110,7 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn('id="lostFoundFields" class="category-specific-fields hidden"', self.template)
         self.assertIn('id="businessFields" class="category-specific-fields hidden', self.template)
         self.assertIn('id="eventFields" class="category-specific-fields hidden', self.template)
-        self.assertIn('<input type="hidden" name="status" value="Lost">', self.template)
+        self.assertIn('<input type="hidden" name="status" value="Lost" disabled>', self.template)
         self.assertNotIn('value="Found"', self.template)
         self.assertNotIn('role="radiogroup"', self.template)
         self.assertIn('name="product_name"', self.template)
@@ -125,6 +125,12 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn("function showActiveCategoryFields()", self.template)
         self.assertNotIn("function setLostFoundStatus(activeOption)", self.template)
         self.assertNotIn(".lost-found-status-option", self.css)
+
+    def test_inactive_category_fields_do_not_leak_status_values(self):
+        self.assertIn('<input type="hidden" name="status" value="Lost" disabled>', self.template)
+        self.assertIn("group.querySelectorAll('input, select, textarea').forEach((field) => {", self.template)
+        self.assertIn("field.disabled = true;", self.template)
+        self.assertIn("field.disabled = false;", self.template)
 
     def test_create_post_modal_has_image_upload_and_mock_submission_js(self):
         self.assertIn('id="globalImageUpload" name="image" accept="image/*" class="hidden"', self.template)
