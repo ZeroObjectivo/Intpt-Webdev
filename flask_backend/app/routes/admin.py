@@ -222,7 +222,7 @@ def flag_comment(comment_id):
 @login_required
 @admin_required
 def warn_user():
-    data = request.json
+    data = request.get_json(silent=True) or {}
     user_id = data.get('user_id')
     post_id = data.get('post_id')
     reason = data.get('reason')

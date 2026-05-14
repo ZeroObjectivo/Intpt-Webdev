@@ -82,7 +82,6 @@ def dashboard():
     user_session = session.get('user')
     user_id = user_session.get('id')
     category = normalize_dashboard_category(request.args.get('category'))
-    apply_supabase_auth_token()
 
     try:
         profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category)
@@ -536,8 +535,9 @@ def get_comments(post_id):
 def add_comment(post_id):
     user_session = session.get('user')
     user_id = user_session.get('id')
-    content = request.json.get('content')
-    parent_id = request.json.get('parent_id')
+    data = request.get_json(silent=True) or {}
+    content = data.get('content')
+    parent_id = data.get('parent_id')
 
     if not content:
         return {"error": "Comment cannot be empty"}, 400
@@ -630,7 +630,8 @@ def delete_post(post_id):
 def update_comment(comment_id):
     user_session = session.get('user')
     user_id = user_session.get('id')
-    content = request.json.get('content')
+    data = request.get_json(silent=True) or {}
+    content = data.get('content')
 
     if not content:
         return {"error": "Comment cannot be empty"}, 400

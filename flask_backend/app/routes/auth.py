@@ -3,34 +3,18 @@ from services.supabase_client import supabase, engine, get_user_client
 from sqlalchemy import text
 from functools import wraps
 from postgrest.exceptions import APIError
-import time
 
 auth = Blueprint('auth', __name__)
 
 def login_required(f):
     """
-    Decorator to protect routes that require a logged-in user.
-    Handles session validation and token refreshing.
+    Decorator to protect routes from unauthorized access.
+    Token-based auth is handled by get_user_client() per request.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user' not in session or 'access_token' not in session:
             return redirect(url_for('core.login'))
-
-        # Check if the token is expired
-        expires_at = session.get('expires_at')
-        if expires_at and expires_at < time.time():
-            print("JWT token has expired. Attempting to refresh...")
-            if not refresh_supabase_auth():
-                # If refresh fails, clear session and force re-login
-                session.clear()
-                return redirect(url_for('core.login', error="session_expired"))
-
-        # Apply the (potentially refreshed) token to the Supabase client for this request
-        if not apply_supabase_auth_token():
-            session.clear()
-            return redirect(url_for('core.login', error="invalid_session"))
-
         return f(*args, **kwargs)
     return decorated_function
 
@@ -214,16 +198,8 @@ def set_session():
         else:
             return "No valid session data found", 400
 
-        # Extract data if it exists
-        if 'session_data' in locals() and session_data:
-            access_token = session_data.access_token
-            refresh_token = session_data.refresh_token
-            expires_at = session_data.expires_at
-        else:
-            expires_at = None # Cannot determine expiry
-
         email = user.email
-        
+
         # 1. VALIDATION: Check for @umak.edu.ph
         if not email.endswith('@umak.edu.ph'):
             # Automatically record as a verification dispute for admin review
@@ -252,15 +228,9 @@ def set_session():
             supabase.auth.sign_out()
             return render_template('unauthorized.html', email=email)
 
-        # 2. Check if user exists in profiles table
-        supabase.postgrest.auth(access_token)
-        profile_check = supabase.table('profiles').select("id").eq("id", user.id).execute()
-
         # Store tokens and basic user data in session
         session['access_token'] = access_token
         session['refresh_token'] = refresh_token
-        if expires_at:
-            session['expires_at'] = expires_at
         session['temp_user'] = {
             "id": user.id,
             "email": user.email,
@@ -268,19 +238,20 @@ def set_session():
         }
 
         # 2. Check if user exists in profiles table
-        user_client = get_user_client(access_token)
+        user_client = get_user_client()
         profile_check = user_client.table('profiles').select("id").eq("id", user.id).execute()
 
         # 3. REDIRECT: New user vs Existing user
         if not profile_check.data:
             return redirect(url_for('auth.onboarding'))
         
-        # If exists, fetch full profile to get role and other details
+        # Fetch full profile to get role and other details
         profile_res = user_client.table('profiles').select("*").eq("id", user.id).single().execute()
-        
-        # If exists, finalize session and go to post-login transition
+
+        # Finalize session and go to post-login transition
         session['user'] = session.pop('temp_user')
-        session['user'].update(profile_res.data) # Sync DB profile (including role) to session
+        if profile_res.data:
+            session['user'].update(profile_res.data)
         return redirect(url_for('auth.post_login_transition'))
         
     except Exception as e:
@@ -312,12 +283,10 @@ def complete_onboarding():
         return redirect(url_for('core.login'))
     
     user = session['temp_user']
-    access_token = session['access_token']
-    
+
     # 1. Create the profile in Supabase (using user's token to satisfy RLS)
     try:
-        # Use per-request client with user's token
-        user_client = get_user_client(access_token)
+        user_client = get_user_client()
 
         user_client.table('profiles').upsert({
             "id": str(user['id']),

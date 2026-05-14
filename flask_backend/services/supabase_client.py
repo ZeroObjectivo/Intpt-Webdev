@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from flask import has_request_context, session as flask_session
+from flask import session as flask_session
 
 # Load environment variables from .env
 load_dotenv()
@@ -24,30 +24,26 @@ if service_key:
     supabase_service = create_client(url, service_key)
 
 
-def get_user_client(access_token: str | None = None) -> Client:
+def get_user_client() -> Client:
     """
     Create a fresh Supabase client authenticated with the current user's
     access token. This avoids the global client's token being shared
     across concurrent requests.
 
     Use this for all DB/storage operations that depend on the user's identity.
-    Falls back to the shared anon client if no access_token in session.
+    Falls back to an anonymous client if no access_token in session.
     """
+    access_token = flask_session.get('access_token')
+    if not access_token:
+        return create_client(url, key)
+
     client = create_client(url, key)
-
-    token = access_token
-    if token is None and has_request_context():
-        token = flask_session.get('access_token')
-
-    if not token:
-        return client
-
-    client.postgrest.auth(token)
+    client.postgrest.auth(access_token)
 
     # Set storage auth header
     if hasattr(client, 'storage'):
         if hasattr(client.storage, '_client') and hasattr(client.storage._client, 'headers'):
-            client.storage._client.headers.update({"Authorization": f"Bearer {token}"})
+            client.storage._client.headers.update({"Authorization": f"Bearer {access_token}"})
 
     return client
 
