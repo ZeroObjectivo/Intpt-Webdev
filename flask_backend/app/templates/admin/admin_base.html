@@ -13,7 +13,8 @@
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap" rel="stylesheet">
-    <link href="https://fonts.cdnfonts.com/css/metropolis" rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <style>
         :root {
@@ -285,7 +286,7 @@
                 <div id="content-drop" class="nav-dropdown-content">
                     <a href="{{ url_for('admin.content_management', category='All') }}" class="dropdown-item">All Posts</a>
                     <a href="{{ url_for('admin.content_management', category='General') }}" class="dropdown-item">General</a>
-                    <a href="{{ url_for('admin.content_management', category='Marketplace') }}" class="dropdown-item">Marketplace</a>
+                    <a href="{{ url_for('admin.content_management', category='Buy & Sell') }}" class="dropdown-item">Buy & Sell</a>
                 </div>
             </div>
 
@@ -330,6 +331,35 @@
 
         {% block admin_content %}{% endblock %}
     </main>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flash-container" class="fixed top-8 right-8 z-[100] space-y-3">
+          {% for category, message in messages %}
+            <div class="flash-message p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-500 animate-slide-in 
+              {% if category == 'success' %} bg-emerald-500 text-white {% elif category == 'error' %} bg-rose-500 text-white {% else %} bg-sky-500 text-white {% endif %}">
+              <div class="flex-1 font-bold text-sm tracking-tight">{{ message }}</div>
+              <button onclick="this.parentElement.remove()" class="p-1 hover:bg-white/20 rounded-lg transition-colors">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+          {% endfor %}
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const messages = document.querySelectorAll('.flash-message');
+                messages.forEach(msg => {
+                    setTimeout(() => {
+                        msg.style.opacity = '0';
+                        msg.style.transform = 'translateX(20px)';
+                        setTimeout(() => msg.remove(), 500);
+                    }, 4000);
+                });
+            });
+        </script>
+      {% endif %}
+    {% endwith %}
 
     <script>
         function toggleDropdown(id) {

@@ -577,29 +577,38 @@
     }
 }
 
-@media (max-width: 767px) {
-    .dashboard-shell {
-        padding: 18px 14px 40px;
-    }
+/* Animations */
+@keyframes modalUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-    .dashboard-container {
-        grid-template-columns: 1fr;
-    }
+.animate-modal-up {
+    animation: modalUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 
-    .primary-sidebar {
-        display: none;
-    }
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
 
-    .share-box {
-        align-items: stretch;
-        flex-direction: column;
-    }
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
 
-    .share-text {
-        white-space: normal;
-    }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
 
-    .btn-create-post {
-        width: 100%;
-    }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
