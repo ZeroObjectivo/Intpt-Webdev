@@ -237,6 +237,10 @@ function updateModalContent() {
     const dynamic = document.getElementById('modalDynamicDetails');
     dynamic.innerHTML = '';
     
+    if (currentPost.event_title) {
+        document.getElementById('modalPostText').innerHTML = `<strong class="block text-slate-900 mb-1">${currentPost.event_title}</strong>` + currentPost.content;
+    }
+
     if (currentPost.price) {
         dynamic.innerHTML += `<div class="flex items-center gap-2 text-xs font-bold text-emerald-600">
             <span class="bg-emerald-50 px-2 py-1 rounded">₱${parseFloat(currentPost.price).toLocaleString()}</span>
@@ -245,6 +249,14 @@ function updateModalContent() {
     if (currentPost.location) {
         dynamic.innerHTML += `<div class="flex items-center gap-2 text-xs font-bold text-slate-500">
             <span class="bg-slate-100 px-2 py-1 rounded">📍 ${currentPost.location}</span>
+        </div>`;
+    }
+    if (currentPost.event_date) {
+        const eventDt = new Date(currentPost.event_date);
+        const dateStr = eventDt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = eventDt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        dynamic.innerHTML += `<div class="flex items-center gap-2 text-xs font-bold text-purple-600">
+            <span class="bg-purple-50 px-2 py-1 rounded">📅 ${dateStr} at ${timeStr}</span>
         </div>`;
     }
 }

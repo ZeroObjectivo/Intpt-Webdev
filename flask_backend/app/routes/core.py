@@ -276,32 +276,41 @@ def load_dashboard_data(user_id, category=None):
         t_post['comments_count'] = t_post.get('comments_count') or 0
         t_post['relative_created_at'] = format_relative_time(t_post.get('created_at'))
     
-    # 5. Fetch Upcoming Events (Top 3 by event_date, future only)
+    # 5. Fetch Upcoming & Ongoing Events (Top 3 that haven't ended yet)
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    # Fetch events where (event_date >= now) OR (event_end_date >= now)
     events_response = supabase.table('posts')\
         .select("*, profiles(full_name, avatar_url)")\
         .eq("category", "Events")\
-        .gte("event_date", now_iso)\
+        .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")\
         .order("event_date", desc=False)\
         .limit(3).execute()
     upcoming_events = []
     
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+
     for event in events_response.data:
         try:
-            # Parse and convert to Manila time for display
-            dt = parse_post_datetime(event['event_date']).astimezone(DISPLAY_TIMEZONE)
-            event['day'] = dt.strftime('%d')
-            event['month'] = dt.strftime('%b')
-            event['time_display'] = dt.strftime('%I:%M %p').lstrip('0')
+            # Parse times
+            start_dt = parse_post_datetime(event['event_date'])
+            end_dt = parse_post_datetime(event.get('event_end_date'))
             
-            if event.get('event_end_date'):
-                edt = parse_post_datetime(event['event_end_date']).astimezone(DISPLAY_TIMEZONE)
-                event['time_display'] += f" - {edt.strftime('%I:%M %p').lstrip('0')}"
+            # Format display
+            display_dt = start_dt.astimezone(DISPLAY_TIMEZONE)
+            event['day'] = display_dt.strftime('%d')
+            event['month'] = display_dt.strftime('%b')
+            event['time_display'] = display_dt.strftime('%I:%M %p').lstrip('0')
             
-            # Simple status logic
-            now_local = datetime.datetime.now(DISPLAY_TIMEZONE)
-            if dt.date() == now_local.date():
-                event['status'] = 'Ongoing'
+            if end_dt:
+                display_edt = end_dt.astimezone(DISPLAY_TIMEZONE)
+                event['time_display'] += f" - {display_edt.strftime('%I:%M %p').lstrip('0')}"
+            
+            # Determine status
+            if start_dt <= now_utc:
+                if not end_dt or end_dt >= now_utc:
+                    event['status'] = 'Ongoing'
+                else:
+                    continue # Already ended, skip (redundant check due to query but safe)
             else:
                 event['status'] = 'Upcoming'
                 
@@ -309,7 +318,7 @@ def load_dashboard_data(user_id, category=None):
         except Exception as e:
             print(f"Error formatting event: {e}")
 
-    return profile, posts, trending, upcoming_events
+    return profile, posts, trending, upcoming_events[:3]
 
 @core.route('/posts/<post_id>/like', methods=['POST'])
 @login_required

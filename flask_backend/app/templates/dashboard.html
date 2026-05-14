@@ -336,8 +336,12 @@
                                 <span class="absolute left-3 top-0.5 text-[9px] font-bold text-slate-400 uppercase">Start Time</span>
                                 <input id="eventDateTime" name="event_date" type="datetime-local" class="w-full rounded-lg border border-slate-200 px-3 pb-1.5 pt-4 text-[13px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all">
                             </div>
-                            <input id="eventPlace" name="location" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="Where is it?">
+                            <div class="relative">
+                                <span class="absolute left-3 top-0.5 text-[9px] font-bold text-slate-400 uppercase">End Time</span>
+                                <input id="eventEndDateTime" name="event_end_date" type="datetime-local" class="w-full rounded-lg border border-slate-200 px-3 pb-1.5 pt-4 text-[13px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all">
+                            </div>
                         </div>
+                        <input id="eventPlace" name="location" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="Where is it?">
                         <select id="hostingCollege" name="hosting_college" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] text-slate-600 outline-none focus:border-umak-blue/50 focus:bg-white transition-all appearance-none bg-white">
                             <option value="">Which college is hosting?</option>
                             <option value="CLAS - College of Liberal Arts and Sciences">CLAS</option>
