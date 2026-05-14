@@ -96,7 +96,7 @@ def dashboard():
                            posts=posts, 
                            active_category=category, 
                            trending=trending,
-                           upcoming_events=upcoming_events,
+                           events=upcoming_events,
                            now=datetime.datetime.utcnow())
 
 @core.route('/profile/<target_user_id>')
@@ -152,9 +152,6 @@ def load_profile_data(user_id, viewer_id=None):
         post['likes_count'] = post.get('likes_count') or 0
         post['comments_count'] = post.get('comments_count') or 0
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
-
-    # 3. Fetch Activity Log
-    # ... rest of the function ...
 
     # 3. Fetch Activity Log (Recent Likes and Comments by the user)
     # Get recent likes on other people's posts
@@ -259,10 +256,12 @@ def load_dashboard_data(user_id, category=None):
         post['comments_count'] = post.get('comments_count') or 0
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
 
-    # 4. Fetch Trending Posts (Top 3 by likes_count)
+    # 4. Fetch Trending Posts (Top 3 by likes_count, must have at least 1 like)
     trending_response = supabase.table('posts')\
         .select("*, profiles(full_name, avatar_url)")\
-        .order("likes_count", desc=True).limit(3).execute()
+        .gt("likes_count", 0)\
+        .order("likes_count", desc=True)\
+        .limit(3).execute()
     trending = trending_response.data
 
     trending_ids = [p['id'] for p in trending]
@@ -277,35 +276,49 @@ def load_dashboard_data(user_id, category=None):
         t_post['comments_count'] = t_post.get('comments_count') or 0
         t_post['relative_created_at'] = format_relative_time(t_post.get('created_at'))
     
-    # 5. Fetch Upcoming Events (Next 3 by event_date)
-    # Using a simple filter for future events
+    # 5. Fetch Upcoming & Ongoing Events (Top 3 that haven't ended yet)
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    # Fetch events where (event_date >= now) OR (event_end_date >= now)
     events_response = supabase.table('posts')\
         .select("*, profiles(full_name, avatar_url)")\
-        .eq('category', 'Events')\
-        .order("event_date", desc=False).limit(3).execute()
-    upcoming_events = events_response.data
+        .eq("category", "Events")\
+        .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")\
+        .order("event_date", desc=False)\
+        .limit(3).execute()
+    upcoming_events = []
+    
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
 
-    # Add helper for status and date components
-    now_local = datetime.datetime.now(DISPLAY_TIMEZONE)
-    for event in upcoming_events:
-        if event.get('event_date'):
-            try:
-                e_date = parse_post_datetime(event['event_date']).astimezone(DISPLAY_TIMEZONE)
-                event['day'] = e_date.strftime('%d')
-                event['month'] = e_date.strftime('%b')
-                event['time_range'] = e_date.strftime('%I:%M %p')
-                
-                # Simple status logic
-                if e_date.date() == now_local.date():
-                    event['event_status'] = 'ongoing'
+    for event in events_response.data:
+        try:
+            # Parse times
+            start_dt = parse_post_datetime(event['event_date'])
+            end_dt = parse_post_datetime(event.get('event_end_date'))
+            
+            # Format display
+            display_dt = start_dt.astimezone(DISPLAY_TIMEZONE)
+            event['day'] = display_dt.strftime('%d')
+            event['month'] = display_dt.strftime('%b')
+            event['time_display'] = display_dt.strftime('%I:%M %p').lstrip('0')
+            
+            if end_dt:
+                display_edt = end_dt.astimezone(DISPLAY_TIMEZONE)
+                event['time_display'] += f" - {display_edt.strftime('%I:%M %p').lstrip('0')}"
+            
+            # Determine status
+            if start_dt <= now_utc:
+                if not end_dt or end_dt >= now_utc:
+                    event['status'] = 'Ongoing'
                 else:
-                    event['event_status'] = 'upcoming'
-            except:
-                event['day'] = '??'
-                event['month'] = '??'
-                event['event_status'] = 'upcoming'
+                    continue # Already ended, skip (redundant check due to query but safe)
+            else:
+                event['status'] = 'Upcoming'
+                
+            upcoming_events.append(event)
+        except Exception as e:
+            print(f"Error formatting event: {e}")
 
-    return profile, posts, trending, upcoming_events
+    return profile, posts, trending, upcoming_events[:3]
 
 @core.route('/posts/<post_id>/like', methods=['POST'])
 @login_required
@@ -392,6 +405,7 @@ def update_post(post_id):
     
     content = request.form.get('content')
     category = request.form.get('category')
+    event_title = request.form.get('event_title')
     price = request.form.get('price')
     location = request.form.get('location')
     status = request.form.get('status')
@@ -409,6 +423,7 @@ def update_post(post_id):
         }
         
         if price is not None: update_data["price"] = float(price) if price.strip() else None
+        if event_title is not None: update_data["event_title"] = event_title.strip()
         if location is not None: update_data["location"] = location.strip()
         if status is not None: update_data["status"] = status.strip()
         if event_date is not None: update_data["event_date"] = event_date if event_date.strip() else None
@@ -514,6 +529,7 @@ def create_post():
     image_files = request.files.getlist('image')
     
     # Extra fields
+    event_title = request.form.get('event_title')
     price = request.form.get('price')
     location = request.form.get('location')
     status = request.form.get('status')
@@ -524,6 +540,13 @@ def create_post():
     price = float(price) if price and price.strip() else None
     location = location.strip() if location and location.strip() else None
     status = status.strip() if status and status.strip() else None
+    
+    # Handle timezone for event dates (assume Manila time from browser)
+    if event_date and 'T' in event_date and '+' not in event_date and 'Z' not in event_date:
+        event_date = f"{event_date}:00+08:00"
+    if event_end_date and 'T' in event_end_date and '+' not in event_end_date and 'Z' not in event_end_date:
+        event_end_date = f"{event_end_date}:00+08:00"
+
     event_date = event_date if event_date and event_date.strip() else None
     event_end_date = event_end_date if event_end_date and event_end_date.strip() else None
     
@@ -555,6 +578,7 @@ def create_post():
             "user_id": user_id,
             "content": content,
             "category": category,
+            "event_title": event_title,
             "price": price,
             "location": location,
             "status": status,

@@ -237,6 +237,10 @@ function updateModalContent() {
     const dynamic = document.getElementById('modalDynamicDetails');
     dynamic.innerHTML = '';
     
+    if (currentPost.event_title) {
+        document.getElementById('modalPostText').innerHTML = `<strong class="block text-slate-900 mb-1">${currentPost.event_title}</strong>` + currentPost.content;
+    }
+
     if (currentPost.price) {
         dynamic.innerHTML += `<div class="flex items-center gap-2 text-xs font-bold text-emerald-600">
             <span class="bg-emerald-50 px-2 py-1 rounded">₱${parseFloat(currentPost.price).toLocaleString()}</span>
@@ -245,6 +249,14 @@ function updateModalContent() {
     if (currentPost.location) {
         dynamic.innerHTML += `<div class="flex items-center gap-2 text-xs font-bold text-slate-500">
             <span class="bg-slate-100 px-2 py-1 rounded">📍 ${currentPost.location}</span>
+        </div>`;
+    }
+    if (currentPost.event_date) {
+        const eventDt = new Date(currentPost.event_date);
+        const dateStr = eventDt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = eventDt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        dynamic.innerHTML += `<div class="flex items-center gap-2 text-xs font-bold text-purple-600">
+            <span class="bg-purple-50 px-2 py-1 rounded">📅 ${dateStr} at ${timeStr}</span>
         </div>`;
     }
 }
@@ -326,6 +338,7 @@ function toggleReplies(commentId, btn) {
 function renderComment(comment, isReply = false) {
     const avatar = comment.profiles.avatar_url || "/static/images/Logo.png";
     const isOwner = window.currentUser && window.currentUser.id === comment.user_id;
+    const isAdmin = window.currentUser && (window.currentUser.role === 'admin' || window.currentUser.role === 'super_admin');
     
     const div = document.createElement('div');
     div.className = 'flex flex-col gap-2 group';
@@ -339,16 +352,21 @@ function renderComment(comment, isReply = false) {
                     <h5>${comment.profiles.full_name}</h5>
                     <p id="comment-text-${comment.id}">${comment.content}</p>
                     
-                    ${isOwner ? `
-                        <div class="absolute right-2 top-2 hidden group-hover/comment:flex items-center gap-1">
+                    <div class="absolute right-2 top-2 hidden group-hover/comment:flex items-center gap-1">
+                        ${isOwner ? `
                             <button onclick="startEditComment('${comment.id}')" class="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 transition-all">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
                             <button onclick="deleteComment('${comment.id}')" class="p-1 hover:bg-red-100 rounded text-slate-400 hover:text-red-500 transition-all">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
-                        </div>
-                    ` : ''}
+                        ` : ''}
+                        ${isAdmin ? `
+                            <button onclick="if(window.flagComment) flagComment('${comment.id}')" class="flag-btn p-1 hover:bg-orange-100 rounded text-slate-400 hover:text-orange-500 transition-all" title="Flag Comment">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
                 <div id="comment-edit-area-${comment.id}" class="hidden mt-2">
                     <textarea id="comment-edit-input-${comment.id}" class="w-full p-2 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-umak-blue/30">${comment.content}</textarea>
@@ -553,8 +571,12 @@ function cancelReply() {
     }
 }
 
+// Global state to prevent spam clicking
+let isLiking = false;
+
 async function toggleLike(postId, btn) {
-    if (btn.disabled) return; // Prevent spamming
+    if (isLiking || btn.disabled) return;
+    isLiking = true;
     
     const icon = btn.querySelector('svg');
     const countSpan = btn.querySelector('.likes-count');
@@ -583,6 +605,13 @@ async function toggleLike(postId, btn) {
         const response = await fetch(`/posts/${postId}/like`, { method: 'POST' });
         const data = await response.json();
         
+        // Update currentPost state if in modal
+        if (currentPost && currentPost.id === postId) {
+            currentPost.user_has_liked = (data.status === 'liked');
+            currentPost.likes_count = (data.status === 'liked') ? count + 1 : Math.max(0, count - 1);
+        }
+
+        // Final sync based on server response
         if (data.status === 'liked') {
             btn.classList.add('text-red-500');
             btn.classList.remove('text-slate-400');
@@ -606,6 +635,7 @@ async function toggleLike(postId, btn) {
             icon.classList.remove('fill-current');
         }
     } finally {
+        isLiking = false;
         btn.disabled = false;
         btn.style.opacity = '';
     }
@@ -669,9 +699,11 @@ function updateDashboardCount(postId, type, delta, excludeElement = null) {
 }
 
 function updateModalActions(post) {
-    const likeBtn = document.querySelector('.modal-side-panel .modal-action-btn:first-child');
-    const commentBtn = document.querySelector('.modal-side-panel .modal-action-btn:last-child');
+    const sidePanel = document.querySelector('.modal-side-panel');
+    const likeBtn = sidePanel.querySelector('.modal-action-btn:first-child');
+    const commentBtn = sidePanel.querySelector('.modal-action-btn:last-child');
 
+    // Set initial state
     if (post.user_has_liked) {
         likeBtn.classList.add('text-red-500');
         likeBtn.querySelector('svg').classList.add('fill-current');
@@ -680,28 +712,16 @@ function updateModalActions(post) {
         likeBtn.querySelector('svg').classList.remove('fill-current');
     }
 
-    likeBtn.onclick = () => {
+    likeBtn.onclick = async () => {
+        if (isLiking || likeBtn.disabled) return;
+        
         const isCurrentlyLiked = likeBtn.classList.contains('text-red-500');
-        toggleLike(post.id, likeBtn);
         
         // Sync with dashboard
         updateDashboardCount(post.id, 'likes', isCurrentlyLiked ? -1 : 1);
-        
-        const dashCards = document.querySelectorAll(`.post-card[data-post-id="${post.id}"]`);
-        dashCards.forEach(dashCard => {
-            const dashLikeBtn = dashCard.querySelector('.like-btn');
-            const icon = dashLikeBtn.querySelector('svg');
-            
-            if (!isCurrentlyLiked) { // was not liked, now liked
-                dashLikeBtn.classList.add('text-red-500');
-                dashLikeBtn.classList.remove('text-slate-400');
-                icon.classList.add('fill-current');
-            } else { // was liked, now unliked
-                dashLikeBtn.classList.remove('text-red-500');
-                dashLikeBtn.classList.add('text-slate-400');
-                icon.classList.remove('fill-current');
-            }
-        });
+
+        // Use the global toggleLike which handles the modal button's UI and API call
+        await toggleLike(post.id, likeBtn);
     };
 
     commentBtn.onclick = () => {

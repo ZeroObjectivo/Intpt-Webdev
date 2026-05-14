@@ -10,12 +10,19 @@ load_dotenv()
 # Supabase Credentials (strip whitespace/newlines from env vars)
 url: str = os.getenv("SUPABASE_URL", "").strip()
 key: str = os.getenv("SUPABASE_KEY", "").strip()
+service_key: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip() or None
 db_url: str = os.getenv("DATABASE_URL", "").strip()
 
 # 1. Supabase Client (For Auth, Storage, Edge Functions)
 supabase: Client = create_client(url, key)
 
-# 2. SQLAlchemy Engine (For direct PostgreSQL operations)
+# 2. Supabase Service Client (Bypasses RLS - Admin Use Only)
+# This client should NEVER be used for general user operations
+supabase_service: Client = None
+if service_key:
+    supabase_service = create_client(url, service_key)
+
+# 3. SQLAlchemy Engine (For direct PostgreSQL operations)
 # We use SQLAlchemy for robust database management
 engine = create_engine(db_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

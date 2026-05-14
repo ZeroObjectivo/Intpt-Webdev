@@ -154,6 +154,29 @@ def set_session():
         
         # 1. VALIDATION: Check for @umak.edu.ph
         if not email.endswith('@umak.edu.ph'):
+            # Automatically record as a verification dispute for admin review
+            # Use direct SQL engine to bypass RLS issues for this system-level log
+            try:
+                full_name = user.user_metadata.get('full_name', 'Unknown User')
+                with engine.connect() as conn:
+                    # Check if already exists to avoid duplicates
+                    check_stmt = text("SELECT id FROM public.verification_disputes WHERE email = :email")
+                    existing = conn.execute(check_stmt, {"email": email}).fetchone()
+                    
+                    if not existing:
+                        insert_stmt = text("""
+                            INSERT INTO public.verification_disputes (email, full_name, reason, status)
+                            VALUES (:email, :full_name, :reason, 'pending')
+                        """)
+                        conn.execute(insert_stmt, {
+                            "email": email,
+                            "full_name": full_name,
+                            "reason": f"Restricted Domain Attempt: {email}"
+                        })
+                        conn.commit()
+            except Exception as dispute_error:
+                print(f"Failed to record dispute via SQL: {dispute_error}")
+
             supabase.auth.sign_out()
             return render_template('unauthorized.html', email=email)
 

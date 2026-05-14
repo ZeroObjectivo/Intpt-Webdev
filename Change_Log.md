@@ -45,7 +45,10 @@ This document summarizes the recent major updates, bug fixes, and feature implem
     - Updated Supabase RLS policies in `20260513000400_post_enhancements.sql` and `20260513000600_admin_features.sql` to include `superadmin` in the authorized roles list.
 - **Dynamic Sidebar Features:** Fully implemented the "Trending Now" and "Upcoming Events" sidebar sections.
     - **Trending Now:** Now dynamically fetches the top 3 posts by like count. Clicking a trending topic opens the interactive comment modal for that specific post.
-    - **Upcoming Events:** Now dynamically fetches the next 3 scheduled events. Implemented server-side parsing for date components (day, month) and automatic status determination (Ongoing vs. Upcoming).
+    - **Upcoming Events:** Now dynamically fetches the next 3 scheduled events. 
+        - Implemented server-side parsing for date components (day, month) and automatic status determination (Ongoing vs. Upcoming).
+        - Added `event_title` support to ensure specific event names are displayed as the primary header.
+        - Ensured consistent **Asia/Manila** timezone alignment for both creation and display, fixing the previous time-mismatch issue.
 - **Admin User Management NameError:** Resolved a `NameError: name 'request' is not defined` that occurred when searching for users in the admin dashboard by adding the missing `request` import from Flask in `admin.py`.
 - **Interaction Counts & Spam Protection:** Fixed several issues related to post likes and comments.
     - **Spam Prevention:** Updated `toggle_like` route with a check-then-act pattern to prevent double-counting or rapid spamming from inflating like counts.
@@ -63,9 +66,45 @@ This document summarizes the recent major updates, bug fixes, and feature implem
     - Added `data-post-id` attributes to all post cards in `dashboard.html`.
     - Refactored `updateDashboardCount` in `modal.js` to use the new ID-based selectors, ensuring immediate and accurate UI updates across both the feed and the expanded view. (References: `dashboard.html`, `modal.js`)
 
-### Changed
-- **Facebook-Style Grid Refinements:** Enhanced the `fb-grid` CSS in `input.css` with smoother transitions, hover effects, and more robust grid templates for 1-5 images.
-- **Image Modal Integration:** Synchronized single-image clicks to open the appropriate modal context (comment modal vs. image gallery) based on the image source.
+### 2. User Role Management
+### Added
+- **Redesigned Role Selection:** Replaced the simple dropdown with a click-to-edit interface in the User Management Actions page.
+    - **UI/UX Improvements:** Added an "Edit" mode with radio buttons for better clarity.
+    - **Confirmation Workflow:** Introduced "Save" and "Cancel" buttons to prevent accidental role changes.
+    - **System Alignment:** Designed the interface to match the project's modern aesthetic using custom Tailwind classes and Alpine.js for state management.
+    - **Smart Behavior:** Implemented a "click-outside" listener to automatically close the role selection when clicking elsewhere on the page.
+- **Service Role Integration:** Implemented a `get_service_client` helper in the admin routes to bypass Supabase RLS policies for administrative actions.
+- **Enhanced Navigation:** Added uniform "Back" buttons to all internal Admin Hub pages (User Directory, User Management, Content Moderation, Disputes, Profanity Filter) for seamless navigation.
+- **Unified Notifications:** Integrated the modern floating flash message system into the Admin Hub for consistent feedback across the platform.
+
+### 3. Profanity Filter Management
+### Added
+- **Dynamic Word Management:** Enabled real-time syncing of the profanity filter with the `forbidden_words` database table.
+- **Add Word Functionality:** Implemented a new modal-based interface to add words to the global filter list.
+- **Delete Functionality:** Added the ability to remove words from the filter with immediate database synchronization.
+- **RLS Security Policies:** Created migration `20260514000100_setup_forbidden_words.sql` to ensure admins have proper SELECT/INSERT/DELETE permissions on the filter table.
+
+### 4. Content Moderation Enhancements
+### Added
+- **Vertical Post Layout:** Redesigned the Content Moderation page to display posts in a vertical, single-column feed for better readability.
+- **Enhanced Filtering:** Expanded the category filter to include 'Lost & Found', 'Buy & Sell', 'Question', and 'Events'.
+- **Admin Post Modal:** Integrated the dashboard's post modal into the moderation hub with admin-only features.
+    - **Likers List:** Admins can now see a list of users who liked a post.
+    - **Post & Comment Flagging:** Added the ability to flag inappropriate posts and comments for further review.
+- **Warning Workflow:** Implemented a new "Warn Author" system.
+    - **Reason Selection:** Modal for selecting specific violation reasons (Inappropriate Language, Harassment, Spam, etc.).
+    - **Auto-generated Messages:** Provides editable templates for warning notifications based on the selected reason.
+- **Notifications System:** Created a new `notifications` database table to track system alerts and user warnings.
+- **Status Tracking:** Added `is_flagged` status to both posts and comments for improved moderation tracking.
+
+### Fixed
+- **Profile Photo Visibility:** Resolved an issue where profile photos were not displaying correctly in the moderation feed.
+- **Multiple Image Support:** Fixed the moderation hub to properly display and allow expansion of all attached photos in a post.
+- **Content Moderation UI Fixes:**
+    - **Optimized Image Sizes:** Reduced image dimensions in the moderation list (`aspect-square md:aspect-video`) and limited single-image width to improve readability.
+    - **View Post Icon:** Fixed the "View Post" (eye icon) functionality by passing post IDs instead of full objects to prevent HTML attribute breakage.
+    - **Admin Overlay Layout:** Resolved "messed up" layout issues by including `modal.css` in the admin view and redesigning the injected moderation controls for better fit within the theater modal.
+    - **Redundancy Cleanup:** Removed unused and conflicting `adminModalOverlay` from the moderation page.
 
 ---
 
@@ -95,6 +134,8 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ### 2. Post Creation & Community Enhancements
 ### Added
+- **Automated Verification Disputes:** Implemented automatic recording of login attempts from non-UMak email addresses into the `verification_disputes` table. This ensures that administrators can review and manage restricted access cases directly from the Admin Hub.
+- **Improved Restriction Feedback:** Updated the `unauthorized.html` page to inform users that their attempt has been logged and will be reviewed by administrators.
 - **Admin Dashboard Features:**
     - Implemented a comprehensive Admin Dashboard with real-time statistics for users, posts, reports, and recent activities.
     - **User Management:** Created a full directory view with search and filtering capabilities. Added detailed user management pages to view profiles, activity history (posts), and sanctions (warnings).
@@ -126,6 +167,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Dynamic Trending Now:** The "Trending Now" sidebar is now dynamically populated based on the `likes_count` of posts, showing the top 3 most liked items across all categories.
 
 ### Fixed
+- **Admin Authorization Stale Session:** Fixed an issue where promoted users (e.g., `super_admin`) received "Unauthorized access" errors when accessing the Admin Hub. Updated the `admin_required` decorator to fetch the latest role from the database if the session role is outdated, ensuring seamless access after role updates.
 - **Naive vs Aware Datetime Error:** Resolved `TypeError: can't subtract offset-naive and offset-aware datetimes` on the dashboard by ensuring the `now` variable passed to the template is offset-naive (UTC), matching the output of the `datetime_obj` filter.
 - **Modal Image Visibility:** Updated modal logic to hide the main image view when opening a post that contains no images (text-only posts).
 - **Dashboard Data Loading:** Updated `load_dashboard_data` to properly fetch `likes_count`, `comments_count`, and the `user_has_liked` status for the current session.
@@ -144,4 +186,4 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **UI Alignment:** Fixed the alignment of post image grids and badges in the dashboard.
 
 ---
-**Technical Note:** New migration files have been added to the `supabase/migrations/` directory. Ensure they are applied to the Supabase instance to enable the new database fields, reporting table, and RPC functions.
+**Technical Note:** New migration files have been added to the `supabase/migrations/` directory, including `20260514000000_admin_role_management_policies.sql` for RLS security and `20260514000400_add_event_title.sql` for data persistence. Ensure they are applied to the Supabase instance to enable the new database fields, reporting table, and RPC functions.
