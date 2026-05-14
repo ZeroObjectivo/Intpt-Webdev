@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, redirect, session
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, timezone
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -80,5 +80,48 @@ def create_app():
     app.register_blueprint(core)
     app.register_blueprint(auth)
     app.register_blueprint(admin)
+
+    # Domain-based routing: separate admin (dev.) from public site
+    admin_domain = os.getenv('ADMIN_DOMAIN', '').strip()
+    main_domain = os.getenv('MAIN_DOMAIN', '').strip()
+
+    if admin_domain:
+        @app.before_request
+        def enforce_domain_separation():
+            host = request.host.split(':')[0]  # strip port for local dev
+            path = request.path
+
+            # Allow static files on any domain
+            if path.startswith('/static/'):
+                return None
+
+            # On the ADMIN domain (dev.heronshub.social)
+            if host == admin_domain:
+                # Allow: login page, auth routes (login flow + callback)
+                allowed_prefixes = ('/login', '/auth/', '/admin/')
+                if path == '/' or path.startswith(allowed_prefixes):
+                    return None
+
+                # Logged-in non-admin trying to reach other pages → reject
+                user = session.get('user')
+                if user and user.get('role') not in ('admin', 'super_admin', 'superadmin'):
+                    scheme = request.headers.get('X-Forwarded-Proto', 'https')
+                    return redirect(f"{scheme}://{main_domain}/dashboard")
+
+                # Any other path on dev domain → send to main domain
+                if main_domain and not path.startswith(allowed_prefixes):
+                    scheme = request.headers.get('X-Forwarded-Proto', 'https')
+                    return redirect(f"{scheme}://{main_domain}{path}")
+
+                return None
+
+            # On the MAIN domain (heronshub.social)
+            if host == main_domain or (main_domain and host == main_domain):
+                # Redirect /admin/* to the admin domain
+                if path.startswith('/admin/'):
+                    scheme = request.headers.get('X-Forwarded-Proto', 'https')
+                    return redirect(f"{scheme}://{admin_domain}{path}")
+
+            return None
 
     return app

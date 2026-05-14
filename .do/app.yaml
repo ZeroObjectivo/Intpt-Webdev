@@ -28,3 +28,9 @@ services:
       - key: FLASK_ENV
         scope: RUN_TIME
         value: production
+      - key: ADMIN_DOMAIN
+        scope: RUN_TIME
+        value: dev.heronshub.social
+      - key: MAIN_DOMAIN
+        scope: RUN_TIME
+        value: heronshub.social
