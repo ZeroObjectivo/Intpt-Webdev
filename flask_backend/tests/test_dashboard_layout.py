@@ -132,6 +132,15 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn("field.disabled = true;", self.template)
         self.assertIn("field.disabled = false;", self.template)
 
+    def test_create_post_category_sections_match_modal_surface_style(self):
+        shared_surface = "category-specific-fields hidden space-y-3 bg-white rounded-[12px] border border-slate-200 shadow-sm overflow-hidden p-3 animate-in fade-in zoom-in duration-200 font-sans"
+
+        self.assertIn(f'id="businessFields" class="{shared_surface}"', self.template)
+        self.assertIn(f'id="eventFields" class="{shared_surface}"', self.template)
+        self.assertIn('class="grid grid-cols-1 sm:grid-cols-2 gap-3"', self.template)
+        self.assertIn('id="businessProductName" name="product_name" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans', self.template)
+        self.assertIn('id="hostingCollege" name="hosting_college" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans', self.template)
+
     def test_create_post_modal_has_image_upload_and_mock_submission_js(self):
         self.assertIn('id="globalImageUpload" name="image" accept="image/*" class="hidden"', self.template)
         self.assertIn('id="addImageTrigger"', self.template)
