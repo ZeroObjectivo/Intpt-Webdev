@@ -540,6 +540,8 @@ def create_post():
     price = float(price) if price and price.strip() else None
     location = location.strip() if location and location.strip() else None
     status = status.strip() if status and status.strip() else None
+    if category != 'Lost & Found' and status == 'Lost':
+        status = None
     
     # Handle timezone for event dates (assume Manila time from browser)
     if event_date and 'T' in event_date and '+' not in event_date and 'Z' not in event_date:

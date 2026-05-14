@@ -135,7 +135,8 @@
                                         </div>
                                         {% endif %}
                                     </div>
-                                    {% if post.status %}
+                                    {% set show_status = post.status and (post_category == 'Lost & Found' or (post_category in ['Buy & Sell', 'Heron Business'] and post.status in ['Available', 'Sold'])) %}
+                                    {% if show_status %}
                                     <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {% if post.status in ['Lost', 'Sold'] %}bg-red-50 text-red-500{% else %}bg-green-50 text-green-500{% endif %}">
                                         {{ post.status }}
                                     </span>
@@ -318,7 +319,7 @@
                 <!-- Dynamic Category Fields (Clean Styling) -->
                 <div class="mb-4 space-y-4">
                     <div id="lostFoundFields" class="category-specific-fields hidden">
-                        <input type="hidden" name="status" value="Lost">
+                        <input type="hidden" name="status" value="Lost" disabled>
                     </div>
                     
                     <div id="businessFields" class="category-specific-fields hidden space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-100 animate-in slide-in-from-top-2 duration-300">
@@ -678,13 +679,23 @@
         }
 
         function hideCategoryFields() {
-            categoryFieldGroups.forEach((group) => group.classList.add('hidden'));
+            categoryFieldGroups.forEach((group) => {
+                group.classList.add('hidden');
+                group.querySelectorAll('input, select, textarea').forEach((field) => {
+                    field.disabled = true;
+                });
+            });
         }
 
         function showActiveCategoryFields() {
             hideCategoryFields();
             const activeGroup = categoryFieldMap[categorySelect.value];
-            if (activeGroup) activeGroup.classList.remove('hidden');
+            if (activeGroup) {
+                activeGroup.classList.remove('hidden');
+                activeGroup.querySelectorAll('input, select, textarea').forEach((field) => {
+                    field.disabled = false;
+                });
+            }
         }
 
         function initCategoryToggle() {

@@ -14,6 +14,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Stale Modal Data:** Fixed a bug where opening the comment modal would show outdated like/comment counts or statuses because it was using static data from the time of page render. The modal now synchronizes with the latest live dashboard state upon opening.
 - **Global Interaction Sync:** Enhanced `updateDashboardCount` and `toggleLike` in `modal.js` to ensure that likes and comment counts are synchronized across all instances of a post on the page (main feed, trending sidebar, and profile page).
 - **Profile Like Check:** Fixed a backend bug in `load_profile_data` where the `user_has_liked` check was incorrectly performed against the profile owner's ID instead of the current viewer's ID.
+- **Dashboard Tag/Status Labels:** Fixed a form-state leak where the hidden Lost & Found status input could submit `status=Lost` for non-Lost-and-Found posts, causing dashboard cards to appear mislabeled. Inactive category fields are now disabled, backend post creation ignores leaked Lost status outside the Lost & Found category, and dashboard cards only show status badges for categories that support them. (References: `flask_backend/app/templates/dashboard.html`, `flask_backend/app/routes/core.py`)
 
 #### Added
 - **Profile Interactions:** Added Like and Comment action buttons to the post cards on the User Profile page, allowing for direct interaction from the timeline.

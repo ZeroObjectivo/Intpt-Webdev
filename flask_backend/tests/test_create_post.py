@@ -176,6 +176,7 @@ class CreatePostTest(unittest.TestCase):
                 "user_id": "user-123",
                 "content": "Hello Herons",
                 "category": "General",
+                "event_title": None,
                 "price": None,
                 "location": None,
                 "status": None,
@@ -185,6 +186,29 @@ class CreatePostTest(unittest.TestCase):
                 "image_urls": [],
             },
         )
+
+    def test_create_post_ignores_lost_status_for_non_lost_categories(self):
+        fake_supabase = FakeSupabase()
+
+        with self.client.session_transaction() as session:
+            session["user"] = {"id": "user-123"}
+            session["access_token"] = "jwt-token"
+
+        with patch("app.routes.core.supabase", fake_supabase), patch(
+            "app.routes.auth.supabase", fake_supabase
+        ):
+            response = self.client.post(
+                "/posts/create",
+                data={
+                    "content": "General update",
+                    "category": "General",
+                    "status": "Lost",
+                },
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(fake_supabase.insert_payload["category"], "General")
+        self.assertIsNone(fake_supabase.insert_payload["status"])
 
     def test_dashboard_refreshes_expired_supabase_jwt_and_retries(self):
         fake_supabase = FakeSupabaseWithExpiredJwt()
