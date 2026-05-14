@@ -7,11 +7,11 @@
 }
 
 body.login-page {
-    background: var(--slate-50);
+    background: var(--slate-50, #F8FAFC);
     min-height: 100vh;
     width: 100vw;
     font-family: 'Metropolis', sans-serif;
-    color: var(--slate-900);
+    color: var(--slate-900, #0F172A);
     overflow: hidden;
     position: relative;
 }
@@ -92,7 +92,7 @@ body.login-page {
 }
 
 .btn-google {
-    background-color: var(--umak-blue-bright);
+    background-color: var(--umak-blue-bright, #316CFF);
     color: white;
     width: 100%;
     max-width: 340px;
@@ -113,7 +113,7 @@ body.login-page {
 .btn-google:hover {
     transform: translateY(-2px);
     box-shadow: 0 15px 30px rgba(49, 108, 255, 0.3);
-    background-color: var(--umak-blue);
+    background-color: var(--umak-blue, #001035);
 }
 
 .btn-google svg {

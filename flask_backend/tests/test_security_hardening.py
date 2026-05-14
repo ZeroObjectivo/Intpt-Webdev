@@ -69,6 +69,11 @@ class SecurityHardeningTest(unittest.TestCase):
         self.assertIn("get_user_client(", core_routes)
         self.assertIn("get_user_client(", admin_routes)
 
+    def test_login_google_button_has_color_fallbacks(self):
+        login_css = read_text("app/static/css/login.css")
+        self.assertIn("background-color: var(--umak-blue-bright, #316CFF);", login_css)
+        self.assertIn("background-color: var(--umak-blue, #001035);", login_css)
+
 
 if __name__ == "__main__":
     unittest.main()
