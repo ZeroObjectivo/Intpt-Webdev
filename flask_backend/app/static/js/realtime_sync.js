@@ -5,12 +5,19 @@
     }
 
     const syncConfig = window.dashboardSyncConfig || {};
+    const realtimeConfig = window.realtimeConfig || {};
     const activeCategory = syncConfig.activeCategory || '';
     const pollIntervalMs = 7000;
+    const notificationSyncIntervalMs = 15000;
     let baselineStateVersion = null;
     let latestAdminVersion = null;
     let pollInProgress = false;
     let reloadScheduled = false;
+    let lastNotificationSyncAt = 0;
+    let pendingInteractionPostIds = new Set();
+    let interactionFlushTimer = null;
+    let realtimeClient = null;
+    let interactionsChannel = null;
 
     function getVisiblePostIds() {
         return Array.from(document.querySelectorAll('.post-card[data-post-id]'))
@@ -59,6 +66,11 @@
                 post.user_has_liked = !!row.user_has_liked;
             });
         }
+
+        // Let modal/comment views react instantly to count/like changes.
+        window.dispatchEvent(new CustomEvent('dashboard-interactions-sync', {
+            detail: { posts: postRows || [] }
+        }));
     }
 
     function syncTrendingLikes(postRows) {
@@ -112,19 +124,45 @@
         }
     }
 
-    function buildSyncUrl(path, includePostIds) {
+    function buildSyncUrl(path, includePostIds, overridePostIds) {
         const params = new URLSearchParams();
         if (activeCategory) {
             params.set('category', activeCategory);
         }
         if (includePostIds) {
-            const postIds = getVisiblePostIds();
+            const postIds = Array.isArray(overridePostIds) && overridePostIds.length
+                ? overridePostIds
+                : getVisiblePostIds();
             if (postIds.length) {
                 params.set('post_ids', postIds.join(','));
             }
         }
         const qs = params.toString();
         return qs ? `${path}?${qs}` : path;
+    }
+
+    function queueInteractionRefresh(postId) {
+        if (!postId) return;
+        pendingInteractionPostIds.add(postId);
+        if (interactionFlushTimer) return;
+        interactionFlushTimer = window.setTimeout(flushInteractionRefresh, 240);
+    }
+
+    async function flushInteractionRefresh() {
+        interactionFlushTimer = null;
+        const postIds = Array.from(pendingInteractionPostIds);
+        pendingInteractionPostIds.clear();
+        if (!postIds.length) return;
+
+        try {
+            const data = await fetchJson(buildSyncUrl('/sync/realtime', true, postIds));
+            if (!data) return;
+            const rows = data.interactions ? data.interactions.posts : [];
+            syncPostCards(rows || []);
+            syncTrendingLikes(rows || []);
+        } catch (error) {
+            console.error('Realtime interaction refresh failed:', error);
+        }
     }
 
     async function fetchJson(url) {
@@ -159,7 +197,11 @@
         try {
             const data = await fetchJson(buildSyncUrl('/sync/realtime', true));
             if (!data) return;
-            syncNotifications(data.notifications);
+            const now = Date.now();
+            if (now - lastNotificationSyncAt >= notificationSyncIntervalMs) {
+                syncNotifications(data.notifications);
+                lastNotificationSyncAt = now;
+            }
             syncPostCards(data.interactions ? data.interactions.posts : []);
             syncTrendingLikes(data.interactions ? data.interactions.posts : []);
             maybeRefreshForNewContent(data.state);
@@ -177,6 +219,38 @@
         }
     }
 
+    function initRealtimeInteractionSync() {
+        if (!window.supabase || !window.supabase.createClient) return;
+        if (!realtimeConfig.supabaseUrl || !realtimeConfig.supabaseAnonKey) return;
+
+        try {
+            const { createClient } = window.supabase;
+            realtimeClient = createClient(realtimeConfig.supabaseUrl, realtimeConfig.supabaseAnonKey);
+
+            interactionsChannel = realtimeClient
+                .channel(`dashboard-interactions-${window.currentUser.id}`)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, (payload) => {
+                    const row = (payload && payload.new && payload.new.post_id) ? payload.new : (payload ? payload.old : null);
+                    if (row && row.post_id) queueInteractionRefresh(row.post_id);
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, (payload) => {
+                    const row = (payload && payload.new && payload.new.post_id) ? payload.new : (payload ? payload.old : null);
+                    if (row && row.post_id) queueInteractionRefresh(row.post_id);
+                })
+                .subscribe((status) => {
+                    if (status === 'CHANNEL_ERROR') {
+                        console.error('Realtime interactions channel failed.');
+                    }
+                });
+
+            window.requestInteractionSync = function (postId) {
+                queueInteractionRefresh(postId);
+            };
+        } catch (error) {
+            console.error('Failed to initialize realtime interaction sync:', error);
+        }
+    }
+
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) {
             runLiveSync();
@@ -189,8 +263,17 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         runLoadSync().finally(function () {
+            initRealtimeInteractionSync();
             runLiveSync();
             window.setInterval(runLiveSync, pollIntervalMs);
         });
+    });
+
+    window.addEventListener('beforeunload', function () {
+        try {
+            if (realtimeClient && interactionsChannel) {
+                realtimeClient.removeChannel(interactionsChannel);
+            }
+        } catch (_e) {}
     });
 })();

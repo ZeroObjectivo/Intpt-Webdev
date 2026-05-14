@@ -99,7 +99,11 @@
                 <div class="posts-list">
                     {% if posts %}
                         {% for post in posts %}
-                        <article class="post-card" data-post-id="{{ post.id }}">
+                        {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
+                        <div class="attachment-label {% if post_images %}with-attachment{% else %}no-attachment{% endif %}">
+                            {% if post_images %}With Attachment{% else %}No Attachment{% endif %}
+                        </div>
+                        <article class="post-card {% if post_images %}has-attachment{% else %}no-attachment{% endif %}" data-post-id="{{ post.id }}">
                             {% set post_category = post.category or 'General' %}
                             <div class="post-header flex justify-between items-start gap-4">
                                 <div class="flex items-start min-w-0">
@@ -166,7 +170,6 @@
                                 </div>
                                 {% endif %}
                                 <p>{{ post.content }}</p>
-                                {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
                                 {% if post_images %}
                                     <div class="fb-grid fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }} mt-4">
                                         {% for url in post_images %}
@@ -411,6 +414,10 @@
         id: '{{ user.id }}',
         full_name: '{{ user.full_name }}',
         role: '{{ user.role or "" }}'
+    };
+    window.realtimeConfig = {
+        supabaseUrl: '{{ SUPABASE_URL }}',
+        supabaseAnonKey: '{{ SUPABASE_ANON_KEY }}'
     };
     window.dashboardSyncConfig = {
         activeCategory: '{{ active_category or "" }}'

@@ -439,6 +439,7 @@ async function deleteComment(commentId) {
                     document.getElementById(`comment-${commentId}`).remove();
                     if (currentPost) {
                         updateDashboardCount(currentPost.id, 'comments', -1);
+                        if (window.requestInteractionSync) window.requestInteractionSync(currentPost.id);
                     }
                 }
             } catch (error) {
@@ -537,6 +538,7 @@ async function submitComment(event) {
             
             // Update comments count on dashboard
             updateDashboardCount(currentPost.id, 'comments', 1);
+            if (window.requestInteractionSync) window.requestInteractionSync(currentPost.id);
         }
     } catch (error) {
         console.error('Error submitting comment:', error);
@@ -628,6 +630,7 @@ async function toggleLike(postId, btn) {
             btn.classList.add('text-slate-400');
             icon.classList.remove('fill-current');
         }
+        if (window.requestInteractionSync) window.requestInteractionSync(postId);
     } catch (error) {
         console.error('Error toggling like:', error);
         // Revert on error
@@ -736,6 +739,24 @@ function updateModalActions(post) {
     };
 }
 
+function syncModalFromInteractionRows(rows) {
+    if (!currentPost || !Array.isArray(rows)) return;
+    const row = rows.find((item) => item.id === currentPost.id);
+    if (!row) return;
+
+    const previousCommentCount = Number(currentPost.comments_count || 0);
+    currentPost.likes_count = Number(row.likes_count || 0);
+    currentPost.comments_count = Number(row.comments_count || 0);
+    currentPost.user_has_liked = !!row.user_has_liked;
+
+    updateModalActions(currentPost);
+
+    // If other users added/removed comments while modal is open, refresh list.
+    if (currentPost.comments_count !== previousCommentCount) {
+        fetchComments(currentPost.id);
+    }
+}
+
 // Global Event Listeners
 document.addEventListener('keydown', (e) => {
     const modal = document.getElementById('imageModal');
@@ -821,3 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle browser back/forward and direct hash entry
 window.addEventListener('hashchange', checkHashAndOpenModal);
+window.addEventListener('dashboard-interactions-sync', (event) => {
+    const rows = event && event.detail ? event.detail.posts : [];
+    syncModalFromInteractionRows(rows);
+});

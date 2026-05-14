@@ -3,7 +3,10 @@
 .dashboard-page {
     position: relative;
     min-height: 100vh;
-    background: var(--hh-bg-main);
+    background:
+        radial-gradient(1200px 420px at 10% -20%, rgba(93, 109, 165, 0.35), transparent 55%),
+        radial-gradient(900px 380px at 90% 120%, rgba(83, 48, 116, 0.28), transparent 58%),
+        #101015;
     color: var(--hh-text-main);
     font-family: 'Metropolis', 'Inter', sans-serif;
 }
@@ -87,10 +90,10 @@
     gap: 16px;
     margin-bottom: 16px;
     padding: 14px;
-    background: var(--hh-surface);
-    border: 1px solid var(--hh-border);
-    border-radius: var(--hh-radius);
-    box-shadow: var(--hh-shadow-light);
+    background: rgba(248, 249, 251, 0.96);
+    border: 1px solid #d8d9de;
+    border-radius: 16px;
+    box-shadow: 0 8px 26px rgba(7, 10, 18, 0.24);
 }
 
 .share-box-user {
@@ -142,7 +145,7 @@
     display: flex;
     gap: 8px;
     margin-bottom: 16px;
-    padding: 4px 0;
+    padding: 6px 0 2px;
     overflow-x: auto;
 }
 
@@ -162,25 +165,42 @@
 .posts-list {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
 }
 
 .post-card,
 .empty-feed {
-    background: var(--hh-surface);
-    border: 1px solid var(--hh-border);
-    border-radius: var(--hh-radius);
-    box-shadow: var(--hh-shadow-light);
+    background: rgba(246, 247, 249, 0.98);
+    border: 1px solid #d6d8df;
+    border-radius: 16px;
+    box-shadow: 0 10px 26px rgba(7, 10, 18, 0.24);
 }
 
 .post-card {
-    padding: 16px 18px 12px;
-    transition: box-shadow 0.16s ease, border-color 0.16s ease;
+    padding: 14px 16px 12px;
+    transition: box-shadow 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
 .post-card:hover {
-    border-color: var(--hh-silver-300);
-    box-shadow: var(--hh-shadow-hover);
+    border-color: #e2e5ec;
+    box-shadow: 0 14px 32px rgba(5, 8, 15, 0.28);
+    transform: translateY(-1px);
+}
+
+.attachment-label {
+    margin: 0 2px 2px;
+    padding-left: 2px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+}
+
+.attachment-label.no-attachment {
+    color: #9f8ac0;
+}
+
+.attachment-label.with-attachment {
+    color: #8b63b8;
 }
 
 .post-header {
@@ -208,7 +228,7 @@
 .post-author-name {
     margin: 0;
     color: var(--hh-text-main);
-    font-size: 0.94rem;
+    font-size: 1.35rem;
     font-weight: 700;
     line-height: 1.2;
 }
@@ -217,15 +237,15 @@
     display: block;
     margin-top: 2px;
     color: var(--hh-text-muted);
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     font-weight: 500;
 }
 
 .post-content p {
-    margin: 0 0 12px;
+    margin: 6px 0 12px;
     color: var(--hh-text-main);
-    font-size: 0.94rem;
-    line-height: 1.62;
+    font-size: 1.06rem;
+    line-height: 1.34;
 }
 
 .post-image {
@@ -485,6 +505,13 @@
     .dashboard-container {
         grid-template-columns: minmax(170px, 190px) minmax(0, 1fr);
     }
+}
+
+.post-card.has-attachment .fb-grid {
+    background: #d3d3d6;
+    border: 1px solid #c4c6cc;
+    border-radius: 8px;
+    padding: 2px;
 }
 
 @media (max-width: 1024px) {
