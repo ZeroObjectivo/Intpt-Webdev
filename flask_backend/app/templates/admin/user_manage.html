@@ -22,7 +22,8 @@
             
             <div class="flex flex-col items-center gap-3 mb-8">
                 <!-- Role Selection UI -->
-                {% set can_edit_roles = permissions.is_super_admin or permissions.is_admin %}
+                {% set target_role = (target_user.role if target_user and target_user.role else '')|lower %}
+                {% set can_edit_roles = permissions.is_super_admin or (permissions.is_admin and target_role not in ['admin', 'super_admin', 'superadmin']) %}
                 <div x-data="{ editing: false, selectedRole: '{{ target_user.role }}' }" 
                      @click.away="editing = false; selectedRole = '{{ target_user.role }}'"
                      class="w-full px-4">

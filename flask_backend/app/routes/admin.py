@@ -96,6 +96,11 @@ content_access_required = role_required(
     "Only content moderators or higher can access content tools.",
 )
 
+warning_access_required = role_required(
+    ADMIN_PORTAL_ROLES,
+    "Only authorized moderators can issue warnings.",
+)
+
 def build_admin_permissions(role):
     current = normalize_role(role)
     is_super_admin = current in SUPER_ADMIN_ROLES
@@ -326,7 +331,7 @@ def flag_comment(comment_id):
 
 @admin.route('/admin/warn-user', methods=['POST'])
 @login_required
-@content_access_required
+@warning_access_required
 def warn_user():
     data = request.get_json(silent=True) or {}
     user_id = data.get('user_id')
