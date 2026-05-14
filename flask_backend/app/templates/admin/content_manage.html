@@ -3,6 +3,10 @@
 {% block title %}Manage {{ category }} Posts | Admin Hub{% endblock %}
 {% block header_title %}Content Moderation{% endblock %}
 
+{% block admin_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+{% endblock %}
+
 {% block admin_content %}
 <div class="mb-6 flex justify-between items-center">
     <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm">
@@ -21,42 +25,43 @@
     </div>
 </div>
 
-<div class="space-y-6 max-w-4xl mx-auto">
+<div class="space-y-6 max-w-3xl mx-auto">
     {% if posts %}
         {% for p in posts %}
-        <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:border-umak-blue/30 transition-all group">
-            <div class="flex justify-between items-start mb-6">
-                <div class="flex items-center gap-4">
+        <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 hover:border-umak-blue/30 transition-all group">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center gap-3">
                     <img src="{{ p.profiles.avatar_url if p.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" 
-                         class="w-12 h-12 rounded-2xl object-cover border-2 border-slate-50 shadow-sm">
+                         class="w-10 h-10 rounded-xl object-cover border-2 border-slate-50 shadow-sm">
                     <div>
-                        <h4 class="text-sm font-black text-slate-800">{{ p.profiles.full_name }}</h4>
+                        <h4 class="text-xs font-black text-slate-800">{{ p.profiles.full_name }}</h4>
                         <div class="flex items-center gap-2">
-                            <span class="px-2 py-0.5 bg-slate-100 text-slate-400 rounded-full text-[9px] font-black uppercase tracking-widest">#{{ p.category }}</span>
-                            <span class="text-[10px] font-bold text-slate-300 uppercase">{{ p.created_at[:16].replace('T', ' ') }}</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-400 rounded-full text-[8px] font-black uppercase tracking-widest">#{{ p.category }}</span>
+                            <span class="text-[9px] font-bold text-slate-300 uppercase">{{ p.created_at[:16].replace('T', ' ') }}</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="flex gap-2">
-                    <button onclick="openAdminPostModal({{ p|tojson|safe }})" 
-                            class="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-umak-blue hover:text-white transition-all shadow-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    <button onclick="openAdminPostView('{{ p.id }}')" 
+                            title="View Full Post"
+                            class="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-umak-blue hover:text-white transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                     </button>
                 </div>
             </div>
 
-            <p class="text-slate-600 text-sm font-medium leading-relaxed mb-6 px-2">{{ p.content }}</p>
+            <p class="text-slate-600 text-xs font-medium leading-relaxed mb-4 px-1">{{ p.content }}</p>
 
             {% if p.image_urls and p.image_urls|length > 0 %}
-            <div class="grid gap-2 mb-6 {% if p.image_urls|length == 1 %} grid-cols-1 {% elif p.image_urls|length == 2 %} grid-cols-2 {% else %} grid-cols-3 {% endif %}">
+            <div class="grid gap-2 mb-4 {% if p.image_urls|length == 1 %} max-w-sm {% elif p.image_urls|length == 2 %} grid-cols-2 {% else %} grid-cols-3 {% endif %}">
                 {% for url in p.image_urls[:3] %}
-                <div class="relative aspect-video rounded-[1.5rem] overflow-hidden bg-slate-100 cursor-pointer group/img" 
-                     onclick="openAdminPostModal({{ p|tojson|safe }}, {{ loop.index0 }})">
+                <div class="relative aspect-square md:aspect-video rounded-2xl overflow-hidden bg-slate-100 cursor-pointer group/img" 
+                     onclick="openAdminPostView('{{ p.id }}', {{ loop.index0 }})">
                     <img src="{{ url }}" class="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110">
                     {% if loop.index == 3 and p.image_urls|length > 3 %}
-                    <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-                        <span class="text-white font-black text-lg">+{{ p.image_urls|length - 2 }}</span>
+                    <div class="absolute inset-0 bg-black/40 backdrop-blur-[px] flex items-center justify-center">
+                        <span class="text-white font-black text-sm">+{{ p.image_urls|length - 2 }}</span>
                     </div>
                     {% endif %}
                 </div>
@@ -64,7 +69,7 @@
             </div>
             {% endif %}
 
-            <div class="flex justify-between items-center pt-6 border-t border-slate-50">
+            <div class="flex justify-between items-center pt-4 border-t border-slate-50">
                 <div class="flex gap-6">
                     <div class="flex items-center gap-2 text-slate-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
@@ -99,98 +104,6 @@
     {% endif %}
 </div>
 
-<!-- Admin Post Modal Extension -->
-<div id="adminModalOverlay" class="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl animate-modal-up">
-        <div class="p-8">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-black text-slate-800 uppercase tracking-tight">Post Moderation</h3>
-                <button onclick="closeAdminModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <div id="adminModalContent" class="space-y-6">
-                <!-- Post Details (Dynamic) -->
-                <div class="p-4 bg-slate-50 rounded-2xl">
-                    <p id="adminModalPostText" class="text-sm text-slate-600 font-medium"></p>
-                </div>
-
-                <!-- Likers Section (Admins Only) -->
-                <div>
-                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">People who liked this</h4>
-                    <div id="adminLikersList" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- Likers will be injected here -->
-                    </div>
-                </div>
-
-                <!-- Moderation Actions -->
-                <div class="pt-6 border-t border-slate-100 flex gap-3">
-                    <button id="flagPostBtn" class="flex-1 py-3 bg-orange-50 text-orange-600 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-orange-100 transition-all flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
-                        Flag Post
-                    </button>
-                    <button id="removePostBtn" class="flex-1 py-3 bg-rose-50 text-rose-600 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-rose-100 transition-all flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        Remove
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Warning Modal -->
-<div id="warningModal" class="fixed inset-0 z-[130] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-modal-up">
-        <form id="warningForm" onsubmit="sendWarning(event)" class="p-8">
-            <input type="hidden" id="warnUserId">
-            <input type="hidden" id="warnPostId">
-            
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-black text-slate-800 uppercase tracking-tight">Issue Warning</h3>
-                <button type="button" onclick="closeWarningModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-
-            <div class="space-y-6">
-                <div>
-                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest">Select Reason</label>
-                    <select id="warnReason" required class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-umak-blue/20 transition-all">
-                        <option value="">Choose a reason...</option>
-                        <option value="Inappropriate Language">Inappropriate Language</option>
-                        <option value="Harassment/Bullying">Harassment/Bullying</option>
-                        <option value="Spam Content">Spam Content</option>
-                        <option value="Misinformation">Misinformation</option>
-                        <option value="Violating Marketplace Rules">Violating Marketplace Rules</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest">Notification Message</label>
-                    <textarea id="warnMessage" required rows="4" 
-                              class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-medium text-slate-600 outline-none focus:ring-2 focus:ring-umak-blue/20 transition-all resize-none"
-                              placeholder="Describe the violation..."></textarea>
-                    <p class="text-[9px] text-slate-400 font-bold mt-2 italic">* This message will be sent to the user's notifications.</p>
-                </div>
-
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeWarningModal()" 
-                            class="flex-1 py-3 bg-white text-slate-400 text-xs font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all">
-                        Cancel
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 py-3 bg-umak-blue text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
-                        Send Warning
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
 {% include 'includes/modal.html' %}
 
 {% endblock %}
@@ -204,21 +117,22 @@
         role: '{{ user.role }}'
     };
 
-    function openAdminPostModal(post, imgIdx = 0) {
-        // Reuse the main dashboard modal for images/comments
+    function openAdminPostView(postId, imgIdx = 0) {
+        const post = window.allPosts.find(p => p.id === postId);
+        if (!post) return;
+
+        // Reuse the main theater modal
         if (typeof openImageModal === 'function') {
-            openImageModal(post, imgIdx);
+            if (post.image_urls && post.image_urls.length > 0) {
+                openImageModal(post, imgIdx);
+            } else {
+                openCommentModal(post);
+            }
             
-            // Add Admin-only Likers section if not already present in the modal
+            // Injects admin-specific features into the side panel
             setTimeout(() => {
                 injectAdminFeatures(post.id);
-            }, 100);
-        } else {
-            // Fallback to simpler admin modal if global modal isn't loaded
-            const modal = document.getElementById('adminModalOverlay');
-            document.getElementById('adminModalPostText').innerText = post.content;
-            modal.style.display = 'flex';
-            fetchLikers(post.id);
+            }, 300);
         }
     }
 
@@ -227,61 +141,65 @@
         if (!sidePanel) return;
 
         // Check if already injected
-        if (document.getElementById('adminLikersSection')) return;
+        if (document.getElementById('adminLikersSection')) {
+            document.getElementById('adminLikersSection').remove();
+        }
 
         const likersSection = document.createElement('div');
         likersSection.id = 'adminLikersSection';
-        likersSection.className = 'mt-6 pt-6 border-t border-slate-100';
+        likersSection.className = 'px-4 py-4 border-t border-slate-100 bg-slate-50/50';
         likersSection.innerHTML = `
-            <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Likers (Admin Only)</h4>
-            <div id="adminLikersList" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
-                <p class="text-[10px] text-slate-400 italic">Loading likers...</p>
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Moderation Controls</h4>
+                <span class="text-[9px] font-bold text-slate-300 uppercase">Admin Only</span>
             </div>
-            <div class="mt-4 flex gap-2">
-                <button onclick="flagPost('${postId}')" class="flex-1 py-2 bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-orange-100 transition-all">Flag Post</button>
-                <button onclick="confirmRemovePost('${postId}')" class="flex-1 py-2 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-rose-100 transition-all">Remove</button>
+            
+            <div id="adminLikersList" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto mb-4 custom-scrollbar">
+                <p class="text-[9px] text-slate-400 italic px-1">Loading likers...</p>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="flagPost('${postId}')" class="flex-1 py-2.5 bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-orange-100 transition-all flex items-center justify-center gap-2 border border-orange-100/50">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
+                    Flag
+                </button>
+                <button onclick="confirmRemovePost('${postId}')" class="flex-1 py-2.5 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-100 transition-all flex items-center justify-center gap-2 border border-rose-100/50">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Remove
+                </button>
             </div>
         `;
 
         // Insert before comment input
         const commentInput = sidePanel.querySelector('.modal-comment-input');
-        sidePanel.insertBefore(likersSection, commentInput);
-
-        // Also add flag buttons to comments
-        const comments = document.querySelectorAll('#modalCommentsList [id^="comment-"]');
-        comments.forEach(c => {
-            const id = c.id.replace('comment-', '');
-            const actions = c.querySelector('.group\\/comment');
-            if (actions && !actions.querySelector('.flag-btn')) {
-                const flagBtn = document.createElement('button');
-                flagBtn.className = 'flag-btn p-1 hover:bg-orange-100 rounded text-slate-400 hover:text-orange-500 transition-all';
-                flagBtn.onclick = () => flagComment(id);
-                flagBtn.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>`;
-                actions.querySelector('div').appendChild(flagBtn);
-            }
-        });
+        if (commentInput) {
+            sidePanel.insertBefore(likersSection, commentInput);
+        } else {
+            sidePanel.appendChild(likersSection);
+        }
 
         fetchLikers(postId);
     }
 
     async function fetchLikers(postId) {
         const list = document.getElementById('adminLikersList');
+        if (!list) return;
         try {
             const res = await fetch(`/admin/posts/${postId}/likers`);
             const data = await res.json();
             
             if (data.likers && data.likers.length > 0) {
                 list.innerHTML = data.likers.map(l => `
-                    <div class="flex items-center gap-2 p-1 bg-slate-50 rounded-lg border border-slate-100">
-                        <img src="${l.avatar_url || '/static/images/Logo.png'}" class="w-5 h-5 rounded-md object-cover">
-                        <span class="text-[9px] font-bold text-slate-600">${l.full_name}</span>
+                    <div class="flex items-center gap-1.5 p-1 bg-slate-50 rounded-lg border border-slate-100">
+                        <img src="${l.avatar_url || '/static/images/Logo.png'}" class="w-4 h-4 rounded object-cover">
+                        <span class="text-[8px] font-bold text-slate-600">${l.full_name}</span>
                     </div>
                 `).join('');
             } else {
-                list.innerHTML = '<p class="text-[10px] text-slate-300 italic">No likes yet.</p>';
+                list.innerHTML = '<p class="text-[9px] text-slate-300 italic px-1">No likes yet.</p>';
             }
         } catch (e) {
-            list.innerHTML = '<p class="text-[10px] text-red-400">Error loading likers.</p>';
+            list.innerHTML = '<p class="text-[9px] text-red-400">Error.</p>';
         }
     }
 
@@ -289,9 +207,11 @@
         document.getElementById('warnUserId').value = userId;
         document.getElementById('warnPostId').value = postId;
         
-        // Auto-generate message based on reason selection
+        // Reset and setup reason selection
         const reasonSelect = document.getElementById('warnReason');
         const messageArea = document.getElementById('warnMessage');
+        reasonSelect.value = '';
+        messageArea.value = '';
         
         reasonSelect.onchange = () => {
             const reason = reasonSelect.value;
@@ -338,44 +258,64 @@
             });
             const data = await res.json();
             if (data.status === 'success') {
-                alert('Warning sent successfully.');
+                showToast('Warning sent successfully', 'success');
                 closeWarningModal();
             } else {
-                alert('Error: ' + data.message);
+                showToast(data.message, 'error');
             }
         } catch (e) {
-            alert('Failed to send warning.');
+            showToast('Failed to send warning', 'error');
+        }
+    }
+
+    function confirmRemovePost(postId) {
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal(
+                'Remove Post?',
+                'Are you sure you want to PERMANENTLY remove this post? This action cannot be undone.',
+                async () => {
+                    try {
+                        const res = await fetch(`/posts/${postId}/delete`, { method: 'POST' });
+                        const data = await res.json();
+                        if (data.status === 'deleted') {
+                            location.reload();
+                        } else {
+                            showToast(data.message || 'Error removing post', 'error');
+                        }
+                    } catch (e) {
+                        showToast('Failed to remove post', 'error');
+                    }
+                }
+            );
+        } else if (confirm('Remove this post?')) {
+            fetch(`/posts/${postId}/delete`, { method: 'POST' }).then(() => location.reload());
         }
     }
 
     async function flagPost(postId) {
-        if (!confirm('Flag this post for review?')) return;
         try {
             const res = await fetch(`/admin/posts/${postId}/flag`, { method: 'POST' });
             const data = await res.json();
-            if (data.status === 'success') alert('Post flagged.');
-        } catch (e) { alert('Action failed.'); }
+            if (data.status === 'success') showToast('Post flagged', 'success');
+        } catch (e) { showToast('Action failed', 'error'); }
     }
 
     async function flagComment(commentId) {
-        if (!confirm('Flag this comment?')) return;
         try {
             const res = await fetch(`/admin/comments/${commentId}/flag`, { method: 'POST' });
             const data = await res.json();
-            if (data.status === 'success') alert('Comment flagged.');
-        } catch (e) { alert('Action failed.'); }
+            if (data.status === 'success') showToast('Comment flagged', 'success');
+        } catch (e) { showToast('Action failed', 'error'); }
     }
 
-    function confirmRemovePost(postId) {
-        if (confirm('Are you absolutely sure you want to PERMANENTLY remove this post? This cannot be undone.')) {
-            // Reusing existing dashboard delete logic if available, or fetch
-            fetch(`/posts/${postId}/delete`, { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'deleted') {
-                        location.reload();
-                    }
-                });
+    function showToast(message, type = 'success') {
+        // Fallback to alert if global toast not available
+        if (window.Alpine) {
+            window.dispatchEvent(new CustomEvent('flash-message', {
+                detail: { message, type }
+            }));
+        } else {
+            alert(message);
         }
     }
 </script>

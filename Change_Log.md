@@ -41,6 +41,11 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 ### Fixed
 - **Profile Photo Visibility:** Resolved an issue where profile photos were not displaying correctly in the moderation feed.
 - **Multiple Image Support:** Fixed the moderation hub to properly display and allow expansion of all attached photos in a post.
+- **Content Moderation UI Fixes:**
+    - **Optimized Image Sizes:** Reduced image dimensions in the moderation list (`aspect-square md:aspect-video`) and limited single-image width to improve readability.
+    - **View Post Icon:** Fixed the "View Post" (eye icon) functionality by passing post IDs instead of full objects to prevent HTML attribute breakage.
+    - **Admin Overlay Layout:** Resolved "messed up" layout issues by including `modal.css` in the admin view and redesigning the injected moderation controls for better fit within the theater modal.
+    - **Redundancy Cleanup:** Removed unused and conflicting `adminModalOverlay` from the moderation page.
 
 ---
 
