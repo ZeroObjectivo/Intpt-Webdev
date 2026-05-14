@@ -87,10 +87,10 @@
     gap: 16px;
     margin-bottom: 16px;
     padding: 14px;
-    background: rgba(248, 249, 251, 0.96);
+    background: rgba(248, 249, 251, 0.86);
     border: 1px solid #d8d9de;
     border-radius: 16px;
-    box-shadow: 0 8px 26px rgba(7, 10, 18, 0.24);
+    box-shadow: 0 2px 8px rgba(7, 10, 18, 0.08);
 }
 
 .share-box-user {
@@ -167,10 +167,10 @@
 
 .post-card,
 .empty-feed {
-    background: rgba(246, 247, 249, 0.98);
+    background: rgba(246, 247, 249, 0.88);
     border: 1px solid #d6d8df;
     border-radius: 16px;
-    box-shadow: 0 10px 26px rgba(7, 10, 18, 0.24);
+    box-shadow: 0 3px 8px rgba(7, 10, 18, 0.08);
 }
 
 .post-card {
@@ -180,7 +180,7 @@
 
 .post-card:hover {
     border-color: #e2e5ec;
-    box-shadow: 0 14px 32px rgba(5, 8, 15, 0.28);
+    box-shadow: 0 4px 10px rgba(5, 8, 15, 0.1);
     transform: translateY(-1px);
 }
 
@@ -409,7 +409,7 @@
     background: #ffffff;
     border: 0;
     border-radius: 31.69px;
-    box-shadow: 0 5.07px 5.07px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 1.52px 1.52px rgba(0, 0, 0, 0.08);
     gap: 10px;
 }
 
