@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Finalizing Login...</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f7fafc; color: #4a5568; }
+        .container { text-align: center; }
+        h1 { font-size: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Finalizing login, please wait...</h1>
+    </div>
+
+    <script>
+        const supabaseUrl = '{{ supabase_url }}';
+        const supabaseAnonKey = '{{ supabase_anon_key }}';
+        const sessionData = JSON.parse('{{ session_data | tojson | safe }}');
+        const redirectTo = '{{ redirect_to }}';
+
+        if (!supabaseUrl || !supabaseAnonKey || !sessionData || !redirectTo) {
+            document.body.innerHTML = '<h1>Authentication Error: Missing critical data.</h1>';
+        } else {
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+            supabase.auth.setSession(sessionData)
+                .then(({ data, error }) => {
+                    if (error) {
+                        console.error('Failed to set Supabase session:', error);
+                        document.body.innerHTML = `<h1>Error: ${error.message}</h1>`;
+                    } else {
+                        // The session is now set in localStorage, and the client is authenticated.
+                        // We can now safely redirect.
+                        window.location.href = redirectTo;
+                    }
+                })
+                .catch(err => {
+                    console.error('An unexpected error occurred:', err);
+                    document.body.innerHTML = '<h1>An unexpected error occurred during login.</h1>';
+                });
+        }
+    </script>
+</body>
+</html>
