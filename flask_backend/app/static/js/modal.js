@@ -248,7 +248,7 @@ function updateModalContent() {
     }
     if (currentPost.location) {
         dynamic.innerHTML += `<div class="flex items-center gap-2 text-xs font-bold text-slate-500">
-            <span class="bg-slate-100 px-2 py-1 rounded">📍 ${currentPost.location}</span>
+            <span class="bg-slate-100 px-2 py-1 rounded">${currentPost.location}</span>
         </div>`;
     }
     if (currentPost.event_date) {
@@ -256,7 +256,7 @@ function updateModalContent() {
         const dateStr = eventDt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
         const timeStr = eventDt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
         dynamic.innerHTML += `<div class="flex items-center gap-2 text-xs font-bold text-purple-600">
-            <span class="bg-purple-50 px-2 py-1 rounded">📅 ${dateStr} at ${timeStr}</span>
+            <span class="bg-purple-50 px-2 py-1 rounded">${dateStr} at ${timeStr}</span>
         </div>`;
     }
 }
