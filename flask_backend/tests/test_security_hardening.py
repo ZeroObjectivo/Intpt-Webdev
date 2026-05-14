@@ -74,6 +74,12 @@ class SecurityHardeningTest(unittest.TestCase):
         self.assertIn("background-color: var(--umak-blue-bright, #316CFF);", login_css)
         self.assertIn("background-color: var(--umak-blue, #001035);", login_css)
 
+    def test_auth_callback_page_does_not_render_token_debug_dump(self):
+        auth_routes = read_text("app/routes/auth.py")
+        self.assertNotIn("Debug Info", auth_routes)
+        self.assertNotIn("document.getElementById('hash')", auth_routes)
+        self.assertIn("window.location.replace", auth_routes)
+
 
 if __name__ == "__main__":
     unittest.main()

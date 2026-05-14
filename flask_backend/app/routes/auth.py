@@ -75,35 +75,30 @@ def callback():
     """
     return """
     <html>
-        <body style="font-family: sans-serif; padding: 20px;">
-            <h3>Processing login...</h3>
-            <p id="status">Checking for tokens...</p>
-            <div id="debug" style="background: #f4f4f4; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; margin-top: 20px;">
-                <strong>Debug Info:</strong><br>
-                URL: <span id="url"></span><br>
-                Hash: <span id="hash"></span><br>
-                Search: <span id="search"></span>
-            </div>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Signing In...</title>
+        </head>
+        <body style="font-family: sans-serif; padding: 24px;">
+            <h3 style="margin: 0 0 8px 0;">Signing you in...</h3>
+            <p id="status" style="margin: 0; color: #4a5568;">Please wait while we complete authentication.</p>
             <script>
-                const url = window.location.href;
                 const hash = window.location.hash;
                 const search = window.location.search;
                 const params = new URLSearchParams(search);
-
-                document.getElementById('url').innerText = url;
-                document.getElementById('hash').innerText = hash || "(none)";
-                document.getElementById('search').innerText = search || "(none)";
+                const status = document.getElementById('status');
 
                 if (hash) {
-                    document.getElementById('status').innerText = "Token found in fragment. Redirecting...";
-                    window.location.href = "/auth/session?" + hash.substring(1);
+                    status.textContent = "Finalizing login...";
+                    window.location.replace("/auth/session?" + hash.substring(1));
                 } else if (params.has('code')) {
-                    document.getElementById('status').innerText = "Auth code found in query. Redirecting...";
-                    window.location.href = "/auth/session" + search;
+                    status.textContent = "Finalizing login...";
+                    window.location.replace("/auth/session" + search);
                 } else if (params.has('error')) {
-                    document.getElementById('status').textContent = "OAuth Error: " + params.get('error_description');
+                    status.textContent = "Authentication failed. Please try signing in again.";
                 } else {
-                    document.getElementById('status').innerText = "No token or code found. Please check your Supabase redirect settings.";
+                    status.textContent = "Missing authentication response. Please try signing in again.";
                 }
             </script>
         </body>
