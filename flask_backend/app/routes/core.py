@@ -13,6 +13,12 @@ from zoneinfo import ZoneInfo
 core = Blueprint('core', __name__)
 
 DISPLAY_TIMEZONE = ZoneInfo("Asia/Manila")
+HERON_BUSINESS_CATEGORIES = ['Heron Business', 'Buy & Sell']
+
+def normalize_dashboard_category(category):
+    if category == 'Buy & Sell':
+        return 'Heron Business'
+    return category
 
 def parse_post_datetime(value):
     if not value:
@@ -76,7 +82,7 @@ def home():
 def dashboard():
     user_session = session.get('user')
     user_id = user_session.get('id')
-    category = request.args.get('category')
+    category = normalize_dashboard_category(request.args.get('category'))
     apply_supabase_auth_token()
 
     try:
@@ -237,7 +243,10 @@ def load_dashboard_data(user_id, category=None):
     query = supabase.table('posts').select("*, profiles(full_name, avatar_url)")
     
     if category:
-        query = query.eq('category', category)
+        if category == 'Heron Business':
+            query = query.in_('category', HERON_BUSINESS_CATEGORIES)
+        else:
+            query = query.eq('category', category)
         
     posts_response = query.order("created_at", desc=True).limit(20).execute()
     posts = posts_response.data
