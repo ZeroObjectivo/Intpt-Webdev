@@ -87,35 +87,35 @@
                         </button>
 
                         <!-- Notification Dropdown -->
-                        <div id="notification-menu" class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl overflow-hidden hidden z-[60] border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
-                            <div class="px-4 py-3 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                                <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
+                        <div id="notification-menu" class="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden hidden z-[60] border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                                <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
                                 {% if unread_notifications_count > 0 %}
-                                    <span class="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-[9px] font-black">{{ unread_notifications_count }} New</span>
+                                    <span class="px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black">{{ unread_notifications_count }} New</span>
                                 {% endif %}
                             </div>
                             
-                            <div class="max-h-96 overflow-y-auto custom-scrollbar">
+                            <div class="max-h-[32rem] overflow-y-auto custom-scrollbar">
                                 {% if notifications %}
                                     {% for n in notifications %}
-                                        <div class="px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                        <div class="px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
                                              onclick="markAsRead('{{ n.id }}', this)">
-                                            <div class="flex justify-between items-start mb-1">
-                                                <h4 class="text-[11px] font-black {% if not n.is_read %}text-umak-blue{% else %}text-slate-600{% endif %}">{{ n.title }}</h4>
-                                                <span class="text-[8px] font-bold text-slate-300 uppercase">{{ n.created_at[:10] }}</span>
+                                            <div class="flex justify-between items-start mb-2">
+                                                <h4 class="text-[15px] font-black {% if not n.is_read %}text-umak-blue{% else %}text-slate-600{% endif %}">{{ n.title }}</h4>
+                                                <span class="text-[11px] font-bold text-slate-300 uppercase">{{ n.created_at[:10] }}</span>
                                             </div>
-                                            <p class="text-[10px] text-slate-500 leading-relaxed line-clamp-2">{{ n.message }}</p>
+                                            <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">{{ n.message }}</p>
                                         </div>
                                     {% endfor %}
-                                    <div class="p-2 bg-slate-50/30">
-                                        <button class="w-full py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-umak-blue transition-colors">View All Notifications</button>
+                                    <div class="p-4 bg-slate-50/30">
+                                        <button class="w-full py-3 text-[12px] font-black text-slate-400 uppercase tracking-widest hover:text-umak-blue transition-colors">View All Notifications</button>
                                     </div>
                                 {% else %}
-                                    <div class="px-4 py-8 text-center">
-                                        <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <svg class="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                    <div class="px-8 py-12 text-center">
+                                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg class="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                                         </div>
-                                        <p class="text-[11px] text-slate-400 font-bold italic">No notifications yet.</p>
+                                        <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
                                     </div>
                                 {% endif %}
                             </div>
