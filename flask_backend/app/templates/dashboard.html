@@ -87,7 +87,18 @@
                     </button>
                 </div>
 
-                <div class="category-pills" aria-label="Post categories" role="group">
+                <div class="category-filter-mobile">
+                    <label for="mobileCategoryFilter" class="hidden">Filter posts by category</label>
+                    <select id="mobileCategoryFilter" class="category-filter-select" onchange="if (this.value) { window.location.href = this.value; }">
+                        <option value="{{ url_for('core.dashboard') }}" {% if not active_category %}selected{% endif %}>All Post</option>
+                        <option value="{{ url_for('core.dashboard', category='General') }}" {% if active_category == 'General' %}selected{% endif %}>General</option>
+                        <option value="{{ url_for('core.dashboard', category='Lost & Found') }}" {% if active_category == 'Lost & Found' %}selected{% endif %}>Lost & Found</option>
+                        <option value="{{ url_for('core.dashboard', category='Heron Business') }}" {% if active_category == 'Heron Business' %}selected{% endif %}>Heron Business</option>
+                        <option value="{{ url_for('core.dashboard', category='Question') }}" {% if active_category == 'Question' %}selected{% endif %}>Question</option>
+                        <option value="{{ url_for('core.dashboard', category='Events') }}" {% if active_category == 'Events' %}selected{% endif %}>Events</option>
+                    </select>
+                </div>
+                <div class="category-pills category-pills-desktop" aria-label="Post categories" role="group">
                     <a href="{{ url_for('core.dashboard') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if not active_category %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">All Post</a>
                     <a href="{{ url_for('core.dashboard', category='General') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'General' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">General</a>
                     <a href="{{ url_for('core.dashboard', category='Lost & Found') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Lost & Found' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Lost & Found</a>

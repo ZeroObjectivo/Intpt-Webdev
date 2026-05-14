@@ -61,7 +61,7 @@
 .primary-nav-link.active {
     background: var(--hh-blue-500);
     color: var(--hh-surface);
-    box-shadow: inset 4px 0 0 var(--hh-gold-500);
+    box-shadow: inset 4px 0 0 var(--hh-blue-500);
 }
 
 .primary-nav-link.active:hover {
@@ -144,6 +144,29 @@
     margin-bottom: 16px;
     padding: 6px 0 2px;
     overflow-x: auto;
+}
+
+.category-filter-mobile {
+    display: none;
+    margin-bottom: 12px;
+}
+
+.category-filter-select {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1px solid #cfd4de;
+    border-radius: 9999px;
+    background: #f4f6fa;
+    color: #111942;
+    font-size: 0.88rem;
+    font-weight: 700;
+    outline: none;
+}
+
+.category-filter-select:focus {
+    border-color: #111942;
+    background: #ffffff;
 }
 
 .pill {
@@ -626,6 +649,10 @@
 }
 
 @media (max-width: 768px) {
+    .primary-sidebar {
+        display: none;
+    }
+
     .dashboard-shell {
         padding: 14px 8px 24px;
     }
@@ -645,6 +672,14 @@
         gap: 6px;
         margin-bottom: 12px;
         padding-bottom: 2px;
+    }
+
+    .category-pills-desktop {
+        display: none;
+    }
+
+    .category-filter-mobile {
+        display: block;
     }
 
     .post-card {
