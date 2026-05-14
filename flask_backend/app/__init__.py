@@ -104,8 +104,8 @@ def create_app():
                 if path == '/':
                     return redirect('/login')
 
-                # Allow: login page, auth routes (login flow + callback)
-                allowed_prefixes = ('/login', '/auth/', '/admin/')
+                # Allow: login/auth/admin pages and notification sync APIs used by admin navbar
+                allowed_prefixes = ('/login', '/auth/', '/admin/', '/sync/', '/notifications/')
                 if path.startswith(allowed_prefixes):
                     return None
 

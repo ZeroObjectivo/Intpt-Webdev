@@ -738,7 +738,15 @@ def build_notification_payload(client, user_id):
         .limit(5).execute()
 
     items = notifications_res.data or []
-    unread_count = len([n for n in items if not n.get('is_read')])
+    try:
+        unread_res = client.table('notifications')\
+            .select("id", count='exact', head=True)\
+            .eq('user_id', user_id)\
+            .eq('is_read', False)\
+            .execute()
+        unread_count = int(unread_res.count or 0)
+    except Exception:
+        unread_count = len([n for n in items if not n.get('is_read')])
 
     return {
         "items": items,
@@ -1212,7 +1220,7 @@ def upload_single_image(client, file, user_id):
 @core.route('/notifications/<notification_id>/read', methods=['POST'])
 @login_required
 def mark_notification_read(notification_id):
-    try:
+    def _apply_mark_read():
         user_id = session.get('user', {}).get('id')
         client = get_user_client()
         client.table('notifications')\
@@ -1220,9 +1228,22 @@ def mark_notification_read(notification_id):
             .eq("id", notification_id)\
             .eq("user_id", user_id)\
             .execute()
-        return {"status": "success"}
+
+    try:
+        _apply_mark_read()
+        return jsonify({"status": "success"})
     except Exception as e:
-        return {"error": str(e)}, 500
+        if is_jwt_error(e) and refresh_supabase_auth():
+            try:
+                _apply_mark_read()
+                return jsonify({"status": "success"})
+            except Exception as retry_error:
+                if is_jwt_error(retry_error):
+                    return jsonify({"status": "error", "reason": "session_expired"}), 401
+                return jsonify({"status": "error", "reason": "mark_read_failed"}), 500
+        if is_jwt_error(e):
+            return jsonify({"status": "error", "reason": "session_expired"}), 401
+        return jsonify({"status": "error", "reason": "mark_read_failed"}), 500
 
 @core.route('/login')
 def login():

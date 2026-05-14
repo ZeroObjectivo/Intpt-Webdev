@@ -452,6 +452,10 @@
                                 method: 'POST',
                                 headers: { 'X-CSRFToken': getCSRFToken() }
                             });
+                            if (res.status === 401) {
+                                window.location.href = '/login';
+                                return;
+                            }
                             const data = await res.json();
                             if (data.status === 'success') {
                                 const title = el ? el.querySelector('h4') : null;
@@ -708,6 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const supabaseUrl = '{{ SUPABASE_URL }}';
     const supabaseAnonKey = '{{ SUPABASE_ANON_KEY }}';
     const userId = '{{ session['user']['id'] }}';
+    const accessToken = {{ session.get('access_token')|tojson }};
 
     if (!supabaseUrl || !supabaseAnonKey || !window.supabase) {
         console.error('Supabase credentials or client not found.');
@@ -716,27 +721,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const { createClient } = window.supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    if (accessToken) {
+        try {
+            supabaseClient.realtime.setAuth(accessToken);
+        } catch (e) {
+            console.warn('Failed to set realtime auth token:', e);
+        }
+    }
 
     function handleNewNotification(notif) {
-        // 1. Update main icon badge
-        let iconBadge = document.querySelector('#notification-dropdown-trigger .notification-icon-badge');
-        if (!iconBadge) {
-            iconBadge = document.createElement('span');
-            iconBadge.className = 'notification-icon-badge absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-[#001035] rounded-full';
-            document.getElementById('notification-dropdown-trigger').appendChild(iconBadge);
-        }
-
-        // 2. Update dropdown header count
-        const header = document.getElementById('notification-header');
-        let countBadge = header.querySelector('.notification-count-badge');
-        if (!countBadge) {
-            countBadge = document.createElement('span');
-            countBadge.className = 'notification-count-badge px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black';
-            header.appendChild(countBadge);
-            countBadge.textContent = '1 New';
-        } else {
-            const currentCount = parseInt(countBadge.textContent) || 0;
-            countBadge.textContent = `${currentCount + 1} New`;
+        // 1-2. Update unread indicators via shared helper to avoid duplicate badge elements.
+        const countBadge = document.getElementById('notification-unread-count');
+        const currentCount = countBadge && countBadge.textContent ? (parseInt(countBadge.textContent, 10) || 0) : 0;
+        if (typeof updateNotificationBadge === 'function') {
+            updateNotificationBadge(currentCount + 1);
         }
         
         // 3. Hide empty state if visible
