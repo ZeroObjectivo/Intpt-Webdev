@@ -147,7 +147,7 @@
                 <div class="hh-main-group flex items-center gap-4">
                     <!-- 1. Name -->
                     <span class="hh-user-name text-sm font-medium text-white whitespace-nowrap capitalize">
-                        {{ session.get('user', {}).get('user_metadata', {}).get('full_name', 'Name').split(' ')[0] | title }}
+                        {{ session.get('user', {}).get('user_metadata', {}).get('full_name', 'Name') | title }}
                     </span>
                     
                     <!-- 2. Profile Icon with Dropdown -->
@@ -248,6 +248,8 @@
                             <a href="{{ url_for('core.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Home Feed</a>
                             <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Marketplace</a>
                             <a href="{{ url_for('core.dashboard', category='Events') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Events</a>
+                            <a href="{{ url_for('core.dashboard', category='Scholarship') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Scholarship</a>
+                            <a href="{{ url_for('core.dashboard', category='UMak Coop') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">UMak Coop</a>
                             <a href="{{ url_for('core.home') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">About</a>
                         </div>
                     </div>

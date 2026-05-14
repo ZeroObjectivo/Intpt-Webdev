@@ -71,6 +71,24 @@ def format_relative_time(created_at, now=None):
 
     return created_local.strftime("%b %d, %Y").replace(" 0", " ")
 
+def build_comment_count_map(client, post_ids):
+    if not post_ids:
+        return {}
+
+    unique_post_ids = list(dict.fromkeys(post_ids))
+    count_map = {pid: 0 for pid in unique_post_ids}
+
+    comments_res = client.table('comments')\
+        .select("post_id")\
+        .in_("post_id", unique_post_ids).execute()
+
+    for row in (comments_res.data or []):
+        post_id = row.get('post_id')
+        if post_id in count_map:
+            count_map[post_id] += 1
+
+    return count_map
+
 @core.route('/')
 def home():
     user = session.get('user')
@@ -163,10 +181,12 @@ def load_profile_data(user_id, viewer_id=None):
             likes_res = client.table('likes').select("post_id").eq("user_id", viewer_id).in_("post_id", post_ids).execute()
             liked_post_ids = {l['post_id'] for l in likes_res.data}
 
+    comments_count_map = build_comment_count_map(client, [p['id'] for p in posts])
+
     for post in posts:
         post['user_has_liked'] = post['id'] in liked_post_ids
         post['likes_count'] = post.get('likes_count') or 0
-        post['comments_count'] = post.get('comments_count') or 0
+        post['comments_count'] = comments_count_map.get(post['id'], 0)
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
 
     likes_activity = client.table('likes')\
@@ -260,10 +280,12 @@ def load_dashboard_data(user_id, category=None):
         likes_res = client.table('likes').select("post_id").eq("user_id", user_id).in_("post_id", post_ids).execute()
         liked_post_ids = {l['post_id'] for l in likes_res.data}
 
+    comments_count_map = build_comment_count_map(client, post_ids)
+
     for post in posts:
         post['user_has_liked'] = post['id'] in liked_post_ids
         post['likes_count'] = post.get('likes_count') or 0
-        post['comments_count'] = post.get('comments_count') or 0
+        post['comments_count'] = comments_count_map.get(post['id'], 0)
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
 
     trending_response = client.table('posts')\
@@ -279,10 +301,12 @@ def load_dashboard_data(user_id, category=None):
         t_likes_res = client.table('likes').select("post_id").eq("user_id", user_id).in_("post_id", trending_ids).execute()
         trending_liked_ids = {l['post_id'] for l in t_likes_res.data}
 
+    trending_comments_map = build_comment_count_map(client, trending_ids)
+
     for t_post in trending:
         t_post['user_has_liked'] = t_post['id'] in trending_liked_ids
         t_post['likes_count'] = t_post.get('likes_count') or 0
-        t_post['comments_count'] = t_post.get('comments_count') or 0
+        t_post['comments_count'] = trending_comments_map.get(t_post['id'], 0)
         t_post['relative_created_at'] = format_relative_time(t_post.get('created_at'))
 
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -398,9 +422,11 @@ def build_interactions_payload(client, user_id, post_ids):
         return []
 
     posts_res = client.table('posts')\
-        .select("id, likes_count, comments_count")\
+        .select("id, likes_count")\
         .in_("id", post_ids).execute()
     posts = posts_res.data or []
+
+    comments_count_map = build_comment_count_map(client, post_ids)
 
     liked_res = client.table('likes')\
         .select("post_id")\
@@ -413,7 +439,7 @@ def build_interactions_payload(client, user_id, post_ids):
         row_map[row['id']] = {
             "id": row['id'],
             "likes_count": row.get('likes_count') or 0,
-            "comments_count": row.get('comments_count') or 0,
+            "comments_count": comments_count_map.get(row['id'], 0),
             "user_has_liked": row['id'] in liked_post_ids,
         }
 
@@ -655,6 +681,49 @@ def delete_post(post_id):
     except Exception as e:
         print(f"Error deleting post: {e}")
         return {"error": "Failed to delete post."}, 500
+
+@core.route('/posts/<post_id>/report', methods=['POST'])
+@login_required
+def report_post(post_id):
+    user_session = session.get('user')
+    reporter_id = user_session.get('id')
+    data = request.get_json(silent=True) or {}
+    reason = (data.get('reason') or '').strip()
+
+    if not reason:
+        return {"error": "Report reason is required."}, 400
+
+    client = get_user_client()
+
+    try:
+        post_res = client.table('posts').select("id, user_id").eq("id", post_id).single().execute()
+        post = post_res.data or {}
+        if not post:
+            return {"error": "Post not found."}, 404
+
+        if post.get('user_id') == reporter_id:
+            return {"error": "You cannot report your own post."}, 400
+
+        existing_res = client.table('reports')\
+            .select("id, status")\
+            .eq("post_id", post_id)\
+            .eq("reporter_id", reporter_id)\
+            .eq("status", "pending")\
+            .limit(1).execute()
+
+        if existing_res.data:
+            return {"status": "already_reported"}
+
+        client.table('reports').insert({
+            "post_id": post_id,
+            "reporter_id": reporter_id,
+            "reason": reason
+        }).execute()
+
+        return {"status": "reported"}
+    except Exception as e:
+        print(f"Error reporting post: {e}")
+        return {"error": "Failed to report post."}, 500
 
 @core.route('/comments/<comment_id>/update', methods=['POST'])
 @login_required
