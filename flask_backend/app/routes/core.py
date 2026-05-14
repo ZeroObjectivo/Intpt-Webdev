@@ -869,7 +869,11 @@ def sync_realtime():
         "interactions": interactions,
     }
 
-    if role in ['admin', 'super_admin', 'superadmin', 'content_manager', 'content_moderator', 'account_manager']:
+    admin_domain = (os.getenv('ADMIN_DOMAIN') or '').strip().lower()
+    current_host = request.host.split(':')[0].lower()
+    is_admin_domain = bool(admin_domain and current_host == admin_domain)
+
+    if is_admin_domain and role in ['admin', 'super_admin', 'superadmin', 'content_manager', 'content_moderator', 'account_manager']:
         payload["admin"] = build_admin_activity_payload(client)
 
     response = jsonify(payload)

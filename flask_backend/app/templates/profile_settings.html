@@ -215,19 +215,6 @@
                 <span class="bg-slate-50 text-slate-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-100">
                     {{ user.role }}
                 </span>
-                
-                {% if is_own_profile and user.role != 'super_admin' %}
-                <form action="{{ url_for('admin.become_admin') }}" method="POST" class="inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition-colors">
-                        Switch to Admin
-                    </button>
-                </form>
-                {% elif is_own_profile and user.role == 'super_admin' %}
-                <a href="{{ url_for('admin.dashboard') }}" class="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100 hover:bg-indigo-100 transition-colors">
-                    Admin Dashboard
-                </a>
-                {% endif %}
             </div>
 
             {% if user.bio %}

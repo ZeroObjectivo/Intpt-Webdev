@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, session
+from flask import Flask, request, redirect, session, url_for
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, timezone
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -90,6 +90,9 @@ def create_app():
         def enforce_domain_separation():
             host = request.host.split(':')[0]  # strip port for local dev
             path = request.path
+            user = session.get('user') or {}
+            role = (user.get('role') or '').strip().lower()
+            admin_portal_roles = {'admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'}
 
             # Allow static files on any domain
             if path.startswith('/static/'):
@@ -106,20 +109,12 @@ def create_app():
                 if path.startswith(allowed_prefixes):
                     return None
 
-                # Logged-in non-admin trying to reach other pages → reject
-                user = session.get('user')
-                if user and user.get('role') not in ('admin', 'super_admin', 'superadmin'):
-                    if main_domain:
-                        scheme = request.headers.get('X-Forwarded-Proto', 'https')
-                        return redirect(f"{scheme}://{main_domain}/dashboard")
-                    return redirect('/login')
-
-                # Any other path on dev domain → send to main domain
-                if main_domain and not path.startswith(allowed_prefixes):
-                    scheme = request.headers.get('X-Forwarded-Proto', 'https')
-                    return redirect(f"{scheme}://{main_domain}{path}")
-
-                return None
+                # Dev domain must never render user-facing pages.
+                # Logged-in admin-portal roles are redirected to admin dashboard;
+                # everyone else returns to login.
+                if role in admin_portal_roles:
+                    return redirect(url_for('admin.dashboard'))
+                return redirect('/login')
 
             # On the MAIN domain (heronshub.social)
             if host == main_domain or (main_domain and host == main_domain):

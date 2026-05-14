@@ -75,6 +75,7 @@ body.login-page {
     flex-direction: column;
     align-items: center;
     position: relative;
+    isolation: isolate;
 }
 
 .card-logo {
@@ -84,9 +85,32 @@ body.login-page {
     margin-bottom: 2rem;
 }
 
-/* Admin domain: keep the same layout, only logo color shifts */
+/* Login color split by domain */
+body.login-page .login-card::before {
+    content: "";
+    position: absolute;
+    width: 210px;
+    height: 210px;
+    border-radius: 999px;
+    top: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    filter: blur(24px);
+    opacity: 0.22;
+    z-index: -1;
+}
+
+body.login-page.user-login .login-card::before {
+    background: linear-gradient(135deg, #2f6dff 0%, #8fb7ff 100%);
+}
+
+body.login-page.admin-login .login-card::before {
+    background: linear-gradient(135deg, #ffe36a 0%, #f8b32f 100%);
+    opacity: 0.28;
+}
+
 body.login-page.admin-login .card-logo {
-    filter: sepia(0.9) saturate(1.7) hue-rotate(338deg) brightness(1.04);
+    filter: sepia(0.9) saturate(1.45) hue-rotate(342deg) brightness(1.02);
 }
 
 .card-subtitle {
@@ -119,6 +143,18 @@ body.login-page.admin-login .card-logo {
     transform: translateY(-2px);
     box-shadow: 0 15px 30px rgba(49, 108, 255, 0.3);
     background-color: var(--umak-blue, #001035);
+}
+
+body.login-page.admin-login .btn-google {
+    background: linear-gradient(135deg, #ffd94f 0%, #f6b738 100%);
+    color: #1f2937;
+    box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+}
+
+body.login-page.admin-login .btn-google:hover {
+    background: linear-gradient(135deg, #ffe06c 0%, #f8b32c 100%);
+    color: #111827;
+    box-shadow: 0 14px 28px rgba(217, 119, 6, 0.34);
 }
 
 .btn-google svg {
