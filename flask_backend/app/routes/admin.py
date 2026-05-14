@@ -247,7 +247,7 @@ def warn_user():
         # 2. Insert into notifications table
         admin_client.table('notifications').insert({
             "user_id": user_id,
-            "title": "Community Warning",
+            "title": f"Community Warning: {reason}",
             "message": message,
             "type": "warning"
         }).execute()
