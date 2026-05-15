@@ -4,6 +4,7 @@ from app.routes.auth import login_required
 from services.supabase_client import supabase, supabase_service, get_user_client
 from functools import wraps
 import datetime
+import uuid
 
 admin = Blueprint('admin', __name__)
 
@@ -16,6 +17,7 @@ ADMIN_PORTAL_ROLES = SUPER_ADMIN_ROLES | ADMIN_ROLES | ACCOUNT_MANAGER_ROLES | C
 ACCOUNT_ACCESS_ROLES = SUPER_ADMIN_ROLES | ADMIN_ROLES | ACCOUNT_MANAGER_ROLES
 CONTENT_ACCESS_ROLES = SUPER_ADMIN_ROLES | ADMIN_ROLES | CONTENT_MODERATOR_ROLES
 CATALOG_MANAGE_ROLES = SUPER_ADMIN_ROLES | ADMIN_ROLES
+ALLOWED_CATALOG_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
 
 def get_service_client():
     """
@@ -461,6 +463,36 @@ def _parse_catalog_price(raw_value):
     except ValueError:
         return None
 
+def _upload_catalog_image(image_file, uploader_id):
+    if not image_file or not getattr(image_file, 'filename', ''):
+        return None
+
+    filename = image_file.filename.strip()
+    if '.' not in filename:
+        raise ValueError("Image must have a valid extension.")
+
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext not in ALLOWED_CATALOG_IMAGE_EXTENSIONS:
+        raise ValueError("Unsupported image type. Use JPG, PNG, WEBP, or GIF.")
+
+    timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+    object_path = f"catalog/{uploader_id}/{timestamp}_{uuid.uuid4().hex}.{ext}"
+    bucket_name = (os.getenv('CATALOG_IMAGE_BUCKET') or 'post-images').strip() or 'post-images'
+    content_type = image_file.mimetype or image_file.content_type or f"image/{ext}"
+
+    image_file.seek(0)
+    file_bytes = image_file.read()
+    if not file_bytes:
+        raise ValueError("Uploaded image is empty.")
+
+    admin_client = get_service_client()
+    admin_client.storage.from_(bucket_name).upload(
+        path=object_path,
+        file=file_bytes,
+        file_options={"content-type": content_type}
+    )
+    return admin_client.storage.from_(bucket_name).get_public_url(object_path)
+
 @admin.route('/admin/catalog/scholarship')
 @login_required
 @content_access_required
@@ -577,6 +609,7 @@ def create_umak_coop_item():
     details = request.form.get('details', '').strip()
     availability = request.form.get('availability', 'Available').strip() or 'Available'
     image_url = request.form.get('image_url', '').strip()
+    image_file = request.files.get('image_file')
     price = _parse_catalog_price(request.form.get('price'))
 
     if not name or not details:
@@ -588,6 +621,11 @@ def create_umak_coop_item():
 
     try:
         admin_client = get_service_client()
+        if image_file and getattr(image_file, 'filename', '').strip():
+            uploaded_url = _upload_catalog_image(image_file, session.get('user', {}).get('id', 'admin'))
+            if uploaded_url:
+                image_url = uploaded_url
+
         admin_client.table('umak_coop_items').insert({
             "name": name,
             "details": details,
@@ -597,6 +635,8 @@ def create_umak_coop_item():
             "created_by": session.get('user', {}).get('id')
         }).execute()
         flash("UMak Coop item created.", "success")
+    except ValueError as ve:
+        flash(str(ve), "error")
     except Exception as e:
         print(f"Error creating UMak Coop item: {e}")
         flash("Failed to create UMak Coop item.", "error")
@@ -610,6 +650,7 @@ def update_umak_coop_item(item_id):
     details = request.form.get('details', '').strip()
     availability = request.form.get('availability', 'Available').strip() or 'Available'
     image_url = request.form.get('image_url', '').strip()
+    image_file = request.files.get('image_file')
     price = _parse_catalog_price(request.form.get('price'))
 
     if not name or not details:
@@ -621,6 +662,11 @@ def update_umak_coop_item(item_id):
 
     try:
         admin_client = get_service_client()
+        if image_file and getattr(image_file, 'filename', '').strip():
+            uploaded_url = _upload_catalog_image(image_file, session.get('user', {}).get('id', 'admin'))
+            if uploaded_url:
+                image_url = uploaded_url
+
         admin_client.table('umak_coop_items').update({
             "name": name,
             "details": details,
@@ -629,6 +675,8 @@ def update_umak_coop_item(item_id):
             "image_url": image_url
         }).eq('id', item_id).execute()
         flash("UMak Coop item updated.", "success")
+    except ValueError as ve:
+        flash(str(ve), "error")
     except Exception as e:
         print(f"Error updating UMak Coop item: {e}")
         flash("Failed to update UMak Coop item.", "error")

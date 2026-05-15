@@ -188,11 +188,12 @@
         </div>
     </form>
     {% else %}
-    <form method="POST" action="{{ url_for('admin.create_umak_coop_item') }}" class="catalog-fields">
+    <form method="POST" action="{{ url_for('admin.create_umak_coop_item') }}" class="catalog-fields" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input name="name" type="text" placeholder="Item Name" required>
         <textarea name="details" placeholder="Details" required></textarea>
         <input name="price" type="number" min="0" step="0.01" placeholder="Price" required>
+        <input name="image_file" type="file" accept="image/*">
         <input name="image_url" type="url" placeholder="Picture URL (optional)">
         <select name="availability">
             <option value="Available">Available</option>
@@ -246,11 +247,12 @@
                 <img src="{{ item.image_url }}" alt="{{ item.name }} image" class="item-image">
             {% endif %}
             {% if can_edit %}
-            <form method="POST" action="{{ url_for('admin.update_umak_coop_item', item_id=item.id) }}" class="catalog-fields">
+            <form method="POST" action="{{ url_for('admin.update_umak_coop_item', item_id=item.id) }}" class="catalog-fields" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input name="name" type="text" value="{{ item.name or '' }}" required>
                 <textarea name="details" required>{{ item.details or '' }}</textarea>
                 <input name="price" type="number" min="0" step="0.01" value="{{ item.price if item.price is not none else '' }}" required>
+                <input name="image_file" type="file" accept="image/*">
                 <input name="image_url" type="url" value="{{ item.image_url or '' }}">
                 <select name="availability">
                     <option value="Available" {% if item.availability == 'Available' %}selected{% endif %}>Available</option>

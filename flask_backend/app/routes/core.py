@@ -23,6 +23,17 @@ VIMEO_ID_RE = re.compile(r'^\d+$')
 DAILYMOTION_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
 TIKTOK_ID_RE = re.compile(r'^\d{8,}$')
 
+def normalize_domain(raw_value):
+    raw = (raw_value or '').strip().lower()
+    if not raw:
+        return ''
+    if '://' in raw:
+        raw = raw.split('://', 1)[1]
+    raw = raw.split('/', 1)[0]
+    raw = raw.split('@')[-1]
+    raw = raw.split(':', 1)[0]
+    return raw.strip().strip('.')
+
 def normalize_dashboard_category(category):
     if category == 'Buy & Sell':
         return 'Heron Business'
@@ -849,8 +860,8 @@ def sync_realtime():
         "interactions": interactions,
     }
 
-    admin_domain = (os.getenv('ADMIN_DOMAIN') or '').strip().lower()
-    current_host = request.host.split(':')[0].lower()
+    admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
+    current_host = normalize_domain(request.host)
     is_admin_domain = bool(admin_domain and current_host == admin_domain)
 
     if is_admin_domain and role in ['admin', 'super_admin', 'superadmin', 'content_manager', 'content_moderator', 'account_manager']:
@@ -1219,8 +1230,8 @@ def mark_notification_read(notification_id):
 
 @core.route('/login')
 def login():
-    admin_domain = (os.getenv('ADMIN_DOMAIN') or '').strip().lower()
-    host = request.host.split(':')[0].lower()
+    admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
+    host = normalize_domain(request.host)
     is_admin_login = bool(admin_domain and host == admin_domain)
 
     return render_template(

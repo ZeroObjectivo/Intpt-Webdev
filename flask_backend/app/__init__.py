@@ -81,25 +81,39 @@ def create_app():
     app.register_blueprint(auth)
     app.register_blueprint(admin)
 
-    # Domain-based routing: separate admin (dev.) from public site
-    admin_domain = os.getenv('ADMIN_DOMAIN', '').strip()
-    main_domain = os.getenv('MAIN_DOMAIN', '').strip()
+    def normalize_domain(raw_value):
+        raw = (raw_value or '').strip().lower()
+        if not raw:
+            return ''
+        if '://' in raw:
+            raw = raw.split('://', 1)[1]
+        raw = raw.split('/', 1)[0]
+        raw = raw.split('@')[-1]
+        raw = raw.split(':', 1)[0]
+        return raw.strip().strip('.')
 
-    if admin_domain:
+    # Domain-based routing: separate admin (dev.) from public site
+    admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
+    main_domain = normalize_domain(os.getenv('MAIN_DOMAIN', ''))
+
+    if admin_domain or main_domain:
         @app.before_request
         def enforce_domain_separation():
-            host = request.host.split(':')[0]  # strip port for local dev
+            host = normalize_domain(request.host)
             path = request.path
             user = session.get('user') or {}
             role = (user.get('role') or '').strip().lower()
             admin_portal_roles = {'admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'}
+            is_admin_host = bool(admin_domain and host == admin_domain)
+            if not is_admin_host and main_domain and host.startswith('dev.') and host.endswith(f".{main_domain}"):
+                is_admin_host = True
 
             # Allow static files on any domain
             if path.startswith('/static/'):
                 return None
 
             # On the ADMIN domain (dev.heronshub.social)
-            if host == admin_domain:
+            if is_admin_host:
                 # Admin domain root should always land on its login screen.
                 if path == '/':
                     return redirect('/login')
@@ -117,9 +131,9 @@ def create_app():
                 return redirect('/login')
 
             # On the MAIN domain (heronshub.social)
-            if host == main_domain or (main_domain and host == main_domain):
+            if main_domain and host in {main_domain, f"www.{main_domain}"}:
                 # Redirect /admin/* to the admin domain
-                if path.startswith('/admin/'):
+                if path.startswith('/admin/') and admin_domain:
                     scheme = request.headers.get('X-Forwarded-Proto', 'https')
                     return redirect(f"{scheme}://{admin_domain}{path}")
 

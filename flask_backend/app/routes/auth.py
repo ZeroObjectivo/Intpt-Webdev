@@ -7,6 +7,17 @@ from postgrest.exceptions import APIError
 
 auth = Blueprint('auth', __name__)
 
+def normalize_domain(raw_value):
+    raw = (raw_value or '').strip().lower()
+    if not raw:
+        return ''
+    if '://' in raw:
+        raw = raw.split('://', 1)[1]
+    raw = raw.split('/', 1)[0]
+    raw = raw.split('@')[-1]
+    raw = raw.split(':', 1)[0]
+    return raw.strip().strip('.')
+
 def login_required(f):
     """
     Decorator to protect routes from unauthorized access.
@@ -256,8 +267,8 @@ def set_session():
             "user_metadata": user.user_metadata
         }
 
-        admin_domain = os.getenv('ADMIN_DOMAIN', '').strip()
-        current_host = request.host.split(':')[0]
+        admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
+        current_host = normalize_domain(request.host)
 
         # 2. Check if user exists in profiles table
         user_client = get_user_client()
@@ -342,8 +353,8 @@ def complete_onboarding():
         # 2. Move from temp_user to full user session
         session['user'] = session.pop('temp_user')
 
-        admin_domain = os.getenv('ADMIN_DOMAIN', '').strip()
-        current_host = request.host.split(':')[0]
+        admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
+        current_host = normalize_domain(request.host)
         if admin_domain and current_host == admin_domain:
             profile_res = user_client.table('profiles').select("role").eq("id", user['id']).single().execute()
             role = (profile_res.data.get('role', '') if profile_res.data else '').strip().lower()
