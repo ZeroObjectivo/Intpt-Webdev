@@ -44,11 +44,11 @@
                         </svg>
                         <span>Marketplace</span>
                     </a>
-                    <a href="{{ url_for('core.dashboard', category='Events') }}" class="primary-nav-link rounded-lg {% if active_category == 'Events' %}active{% endif %}" {% if active_category == 'Events' %}aria-current="page"{% endif %} data-nav-item>
+                    <a href="{{ url_for('core.event_calendar') }}" class="primary-nav-link rounded-lg" data-nav-item>
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"></path>
                         </svg>
-                        <span>Events</span>
+                        <span>Event Calendar</span>
                     </a>
                     <a href="{{ url_for('core.scholarship') }}" class="primary-nav-link rounded-lg" data-nav-item>
                         <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

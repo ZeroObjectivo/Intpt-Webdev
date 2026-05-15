@@ -11,6 +11,7 @@ import datetime
 import time
 import os
 import re
+import calendar as month_calendar
 
 logger = logging.getLogger(__name__)
 from urllib.parse import parse_qs, urlparse
@@ -518,6 +519,146 @@ def load_catalog_page_data(user_id, catalog_kind):
         card['price_label'] = f"PHP {numeric_price:,.2f}" if numeric_price is not None else "N/A"
     return profile, cards
 
+def normalize_calendar_month(month_param):
+    now_local = datetime.datetime.now(DISPLAY_TIMEZONE)
+    month_anchor = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    raw_month = (month_param or '').strip()
+    if not raw_month:
+        return month_anchor
+
+    try:
+        parsed = datetime.datetime.strptime(raw_month, "%Y-%m")
+        safe_year = max(2000, min(parsed.year, 2100))
+        return month_anchor.replace(year=safe_year, month=parsed.month)
+    except ValueError:
+        return month_anchor
+
+def shift_calendar_month(month_anchor, delta):
+    month_index = (month_anchor.year * 12 + (month_anchor.month - 1)) + delta
+    year = month_index // 12
+    month = (month_index % 12) + 1
+    return month_anchor.replace(year=year, month=month, day=1)
+
+def format_calendar_time_range(start_local, end_local):
+    start_label = start_local.strftime('%I:%M %p').lstrip('0')
+    if not end_local or end_local == start_local:
+        return start_label
+    if end_local.date() == start_local.date():
+        end_label = end_local.strftime('%I:%M %p').lstrip('0')
+        return f"{start_label} - {end_label}"
+    start_full = start_local.strftime('%b %d %I:%M %p')
+    end_full = end_local.strftime('%b %d %I:%M %p')
+    return f"{start_full} - {end_full}"
+
+def load_event_calendar_page_data(user_id, month_param=None):
+    client = get_user_client()
+    profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
+    profile = profile_res.data or {}
+
+    month_anchor = normalize_calendar_month(month_param)
+    month_start_local = month_anchor
+    month_end_local = shift_calendar_month(month_anchor, 1)
+    month_start_date = month_start_local.date()
+    month_last_date = (month_end_local - datetime.timedelta(days=1)).date()
+
+    window_start_utc = (month_start_local - datetime.timedelta(days=31)).astimezone(datetime.timezone.utc).isoformat()
+    window_end_utc = (month_end_local + datetime.timedelta(days=31)).astimezone(datetime.timezone.utc).isoformat()
+
+    events_res = client.table('posts')\
+        .select("id, content, event_title, event_date, event_end_date, location")\
+        .eq("category", "Events")\
+        .gte("event_date", window_start_utc)\
+        .lt("event_date", window_end_utc)\
+        .order("event_date", desc=False)\
+        .limit(400).execute()
+
+    now_local = datetime.datetime.now(DISPLAY_TIMEZONE)
+    events_by_day = {}
+    month_events = []
+
+    for event in (events_res.data or []):
+        try:
+            start_dt = parse_post_datetime(event.get('event_date'))
+            if not start_dt:
+                continue
+
+            end_dt = parse_post_datetime(event.get('event_end_date')) or start_dt
+            start_local = start_dt.astimezone(DISPLAY_TIMEZONE)
+            end_local = end_dt.astimezone(DISPLAY_TIMEZONE)
+            if end_local < start_local:
+                end_local = start_local
+
+            if end_local < month_start_local or start_local >= month_end_local:
+                continue
+
+            if start_local <= now_local <= end_local:
+                status = "Ongoing"
+            elif start_local > now_local:
+                status = "Upcoming"
+            else:
+                status = "Ended"
+
+            title = (event.get('event_title') or '').strip() or (event.get('content') or 'Untitled Event').strip() or 'Untitled Event'
+            location = (event.get('location') or 'UMak Campus').strip() or 'UMak Campus'
+
+            event_item = {
+                "id": event.get('id'),
+                "title": title,
+                "location": location,
+                "status": status,
+                "time_display": format_calendar_time_range(start_local, end_local),
+                "day_label": start_local.strftime('%b %d'),
+                "start_iso": start_local.isoformat(),
+            }
+            month_events.append(event_item)
+
+            span_start = max(start_local.date(), month_start_date)
+            span_end = min(end_local.date(), month_last_date)
+            cursor_date = span_start
+            while cursor_date <= span_end:
+                events_by_day.setdefault(cursor_date.day, []).append(event_item)
+                cursor_date += datetime.timedelta(days=1)
+        except Exception as e:
+            logger.warning("Skipping malformed calendar event row: %s", e)
+
+    for day in events_by_day:
+        events_by_day[day].sort(key=lambda item: item.get('start_iso') or '')
+    month_events.sort(key=lambda item: item.get('start_iso') or '')
+
+    weekday_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    first_weekday, days_in_month = month_calendar.monthrange(month_anchor.year, month_anchor.month)
+    today_local = now_local.date()
+    calendar_cells = []
+
+    for _ in range(first_weekday):
+        calendar_cells.append(None)
+
+    for day in range(1, days_in_month + 1):
+        day_events = events_by_day.get(day, [])
+        cell_date = datetime.date(month_anchor.year, month_anchor.month, day)
+        calendar_cells.append({
+            "day": day,
+            "event_count": len(day_events),
+            "events": day_events[:2],
+            "is_today": cell_date == today_local,
+        })
+
+    while len(calendar_cells) % 7 != 0:
+        calendar_cells.append(None)
+
+    prev_month = shift_calendar_month(month_anchor, -1).strftime('%Y-%m')
+    next_month = shift_calendar_month(month_anchor, 1).strftime('%Y-%m')
+
+    return profile, {
+        "month_label": month_anchor.strftime('%B %Y'),
+        "month_key": month_anchor.strftime('%Y-%m'),
+        "prev_month": prev_month,
+        "next_month": next_month,
+        "weekday_labels": weekday_labels,
+        "calendar_cells": calendar_cells,
+        "month_events": month_events,
+    }
+
 def build_comment_count_map(client, post_ids):
     if not post_ids:
         return {}
@@ -634,6 +775,46 @@ def umak_coop():
         'umak_coop.html',
         user=profile,
         cards=cards
+    ))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@core.route('/event-calendar')
+@login_required
+def event_calendar():
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    month_param = request.args.get('month')
+
+    try:
+        profile, calendar_payload = load_event_calendar_page_data(user_id, month_param)
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            profile, calendar_payload = load_event_calendar_page_data(user_id, month_param)
+        elif is_jwt_error(e):
+            session.clear()
+            flash("Your login session expired. Please sign in again.", "error")
+            return redirect(url_for('core.login'))
+        else:
+            logger.error("Error loading event calendar: %s", e)
+            profile = user_session or {}
+            month_anchor = normalize_calendar_month(month_param)
+            calendar_payload = {
+                "month_label": month_anchor.strftime('%B %Y'),
+                "month_key": month_anchor.strftime('%Y-%m'),
+                "prev_month": shift_calendar_month(month_anchor, -1).strftime('%Y-%m'),
+                "next_month": shift_calendar_month(month_anchor, 1).strftime('%Y-%m'),
+                "weekday_labels": ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                "calendar_cells": [],
+                "month_events": [],
+            }
+
+    response = make_response(render_template(
+        'event_calendar.html',
+        user=profile,
+        **calendar_payload
     ))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
