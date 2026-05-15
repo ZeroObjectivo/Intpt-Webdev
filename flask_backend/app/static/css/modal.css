@@ -369,12 +369,12 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
     .modal-container {
         flex-direction: column;
     }
     .modal-main-view {
-        height: 50vh;
+        height: 45vh;
         flex: none;
     }
     .modal-side-panel {
@@ -385,6 +385,12 @@
     }
     .modal-close {
         background: rgba(0,0,0,0.5);
+    }
+    .modal-container.no-image .modal-side-panel {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        border-radius: 0;
     }
 }
 
@@ -401,13 +407,41 @@
     backdrop-filter: blur(4px);
     justify-content: center;
     align-items: center;
+    opacity: 0;
+    transition: opacity 200ms ease;
 }
 
 .confirm-modal.active {
     display: flex;
+    opacity: 1;
+}
+
+.confirm-content {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform 200ms ease, opacity 200ms ease;
 }
 
 .confirm-modal.active .confirm-content {
     transform: scale(1);
     opacity: 1;
+}
+
+/* Image modal open/close animations */
+.image-modal {
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+
+.image-modal.modal-visible {
+    opacity: 1;
+}
+
+.image-modal .modal-container {
+    transform: scale(0.95);
+    transition: transform 200ms ease;
+}
+
+.image-modal.modal-visible .modal-container {
+    transform: scale(1);
 }

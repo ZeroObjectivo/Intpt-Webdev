@@ -73,6 +73,9 @@ function openImageModal(post, index, updateHash = true) {
     container.classList.remove('no-image');
     document.body.style.overflow = 'hidden';
 
+    // Trigger fade-in/scale animation
+    requestAnimationFrame(() => modal.classList.add('modal-visible'));
+
     // Update URL hash for persistence (e.g., #view-post-uuid-0)
     if (updateHash) {
         window.location.hash = `view-post-${post.id}-${index}`;
@@ -122,6 +125,10 @@ function openCommentModal(post) {
     }
 
     document.body.style.overflow = 'hidden';
+
+    // Trigger fade-in/scale animation
+    requestAnimationFrame(() => modal.classList.add('modal-visible'));
+
     currentCommentsSignature = '';
     fetchComments(post.id);
     startModalCommentPolling(post.id);
@@ -134,9 +141,15 @@ function closeImageModal(event) {
         if (document.fullscreenElement) {
             document.exitFullscreen();
         }
-        modal.style.display = 'none';
+
+        // Animate out then hide
+        modal.classList.remove('modal-visible');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 200);
+
         document.body.style.overflow = 'auto';
-        
+
         // Clear hash on close
         if (window.location.hash.startsWith('#view-post-')) {
             history.pushState("", document.title, window.location.pathname + window.location.search);
