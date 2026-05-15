@@ -206,16 +206,22 @@
             <p class="text-slate-400 font-bold text-sm mb-4 uppercase tracking-wide">Public Profile</p>
             {% endif %}
             
-            <div class="flex justify-center flex-wrap gap-3 mb-6">
-                {% if user.college %}
-                <span class="bg-blue-50 text-umak-blue px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                    {{ user.college }}
-                </span>
-                {% endif %}
-                <span class="bg-slate-50 text-slate-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-100">
-                    {{ user.role }}
-                </span>
-            </div>
+                <div class="flex justify-center flex-wrap gap-3 mb-6">
+                    {% if user.college %}
+                    <span class="bg-blue-50 text-umak-blue px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                        {{ user.college }}
+                    </span>
+                    {% endif %}
+                    <span class="bg-slate-50 text-slate-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-100">
+                        {{ user.role }}
+                    </span>
+                    
+                    {% if not is_own_profile %}
+                    <button onclick="reportUser('{{ user.id }}')" class="bg-rose-50 text-rose-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
+                        Report Account
+                    </button>
+                    {% endif %}
+                </div>
 
             {% if user.bio %}
             <p class="max-w-xl mx-auto text-slate-600 text-sm leading-relaxed mb-6 font-medium">
@@ -394,16 +400,19 @@
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label class="form-label" for="college">College</label>
+                            <label class="form-label" for="college">College / Institute</label>
                             <select name="college" id="college" class="form-select">
-                                <option value="" {% if not user.college %}selected{% endif %}>Select College</option>
-                                <option value="CCIS" {% if user.college == 'CCIS' %}selected{% endif %}>CCIS</option>
-                                <option value="CBFS" {% if user.college == 'CBFS' %}selected{% endif %}>CBFS</option>
-                                <option value="COE" {% if user.college == 'COE' %}selected{% endif %}>COE</option>
-                                <option value="CAS" {% if user.college == 'CAS' %}selected{% endif %}>CAS</option>
-                                <option value="CTHM" {% if user.college == 'CTHM' %}selected{% endif %}>CTHM</option>
-                                <option value="CON" {% if user.college == 'CON' %}selected{% endif %}>CON</option>
-                                <option value="COA" {% if user.college == 'COA' %}selected{% endif %}>COA</option>
+                                <option value="" {% if not user.college %}selected{% endif %}>Select Unit</option>
+                                <optgroup label="Colleges">
+                                    {% for item in colleges %}
+                                    <option value="{{ item.name }}" {% if user.college == item.name %}selected{% endif %}>{{ item.name }} - {{ item.full_name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Schools & Institutes">
+                                    {% for item in institutes %}
+                                    <option value="{{ item.name }}" {% if user.college == item.name %}selected{% endif %}>{{ item.name }} - {{ item.full_name }}</option>
+                                    {% endfor %}
+                                </optgroup>
                             </select>
                         </div>
                         <div>
@@ -472,6 +481,45 @@
 <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
 
 <script>
+async function reportUser(targetId) {
+    const reason = window.prompt(
+        'Why are you reporting this account? (e.g., Harassment, Fake Profile, Inappropriate content)',
+        'Violation of community standards'
+    );
+
+    if (reason === null) return;
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+        if (window.createToast) window.createToast('Report reason is required.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/profiles/${targetId}/report`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ reason: trimmedReason })
+        });
+        const data = await response.json();
+
+        if (data.status === 'reported') {
+            if (window.createToast) window.createToast('User report submitted. Thank you.', 'success');
+            return;
+        }
+        if (data.status === 'already_reported') {
+            if (window.createToast) window.createToast('You already reported this user.', 'info');
+            return;
+        }
+        throw new Error(data.error || 'Failed to submit report');
+    } catch (e) {
+        console.error(e);
+        if (window.createToast) window.createToast('Error submitting report. Please try again.', 'error');
+    }
+}
+
 function switchTab(tabId, el) {
     // Update active tab link
     document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));

@@ -571,12 +571,20 @@ def dashboard():
         else:
             raise
 
+    # Fetch colleges/institutes for the Create Post modal
+    client = get_user_client()
+    units_res = client.table('colleges_institutes').select("name, full_name, type").order('name').execute()
+    colleges = [u for u in units_res.data if u['type'] == 'College']
+    institutes = [u for u in units_res.data if u['type'] == 'Institute']
+
     response = make_response(render_template('dashboard.html',
                            user=profile,
                            posts=posts,
                            active_category=category,
                            trending=trending,
                            events=upcoming_events,
+                           colleges=colleges,
+                           institutes=institutes,
                            now=datetime.datetime.now(datetime.timezone.utc)))
     # Prevent stale dashboard snapshots from cache/CDN.
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
@@ -653,11 +661,19 @@ def view_profile(target_user_id):
         profile, posts, activity = load_profile_data(target_user_id, viewer_id=current_user_id)
         is_own_profile = (current_user_id == target_user_id)
 
+        # Fetch colleges/institutes for settings dropdown
+        client = get_user_client()
+        units_res = client.table('colleges_institutes').select("name, full_name, type").order('name').execute()
+        colleges = [u for u in units_res.data if u['type'] == 'College']
+        institutes = [u for u in units_res.data if u['type'] == 'Institute']
+
         return render_template('profile_settings.html',
                                user=profile,
                                posts=posts,
                                activity=activity,
                                is_own_profile=is_own_profile,
+                               colleges=colleges,
+                               institutes=institutes,
                                now=datetime.datetime.now(datetime.timezone.utc))
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
@@ -747,10 +763,15 @@ def load_profile_data(user_id, viewer_id=None):
         if profile.get('contact_privacy') == 'only_me':
             profile['contact_number'] = None
 
-    posts_response = client.table('posts')\
+    posts_query = client.table('posts')\
         .select("*, profiles(full_name, avatar_url, college, course, level)")\
-        .eq("user_id", user_id)\
-        .order("created_at", desc=True).execute()
+        .eq("user_id", user_id)
+    
+    # If not owner, only show approved posts
+    if str(viewer_id) != str(user_id):
+        posts_query = posts_query.eq('status', 'approved')
+        
+    posts_response = posts_query.order("created_at", desc=True).execute()
     posts = posts_response.data
 
     liked_post_ids = set()
@@ -845,7 +866,9 @@ def load_dashboard_data(user_id, category=None):
     profile_response = client.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
 
-    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
+    query = client.table('posts')\
+        .select("*, profiles(full_name, avatar_url, college, course, level)")\
+        .eq('status', 'approved')
 
     if category:
         if category == 'Heron Business':
@@ -873,6 +896,7 @@ def load_dashboard_data(user_id, category=None):
 
     trending_response = client.table('posts')\
         .select("*, profiles(full_name, avatar_url, college, course, level)")\
+        .eq('status', 'approved')\
         .gt("likes_count", 0)\
         .order("likes_count", desc=True)\
         .limit(3).execute()
@@ -897,6 +921,7 @@ def load_dashboard_data(user_id, category=None):
     events_response = client.table('posts')\
         .select("*, profiles(full_name, avatar_url, college, course, level)")\
         .eq("category", "Events")\
+        .eq('status', 'approved')\
         .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")\
         .order("event_date", desc=False)\
         .limit(3).execute()
@@ -951,7 +976,7 @@ def parse_sync_post_ids(raw_ids):
 def build_dashboard_sync_state(client, category=None):
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-    latest_query = client.table('posts').select("id, created_at")
+    latest_query = client.table('posts').select("id, created_at").eq('status', 'approved')
     if category:
         latest_query = latest_query.eq('category', category)
     latest_post_res = latest_query.order("created_at", desc=True).limit(1).execute()
@@ -959,6 +984,7 @@ def build_dashboard_sync_state(client, category=None):
 
     trending_res = client.table('posts')\
         .select("id")\
+        .eq('status', 'approved')\
         .gt("likes_count", 0)\
         .order("likes_count", desc=True)\
         .order("created_at", desc=True)\
@@ -967,6 +993,7 @@ def build_dashboard_sync_state(client, category=None):
 
     events_res = client.table('posts')\
         .select("id")\
+        .eq('status', 'approved')\
         .eq("category", "Events")\
         .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")\
         .order("event_date", desc=False)\
@@ -1382,6 +1409,45 @@ def delete_post(post_id):
         logger.error("Error deleting post: %s", e)
         return {"error": "Failed to delete post."}, 500
 
+@core.route('/profiles/<target_user_id>/report', methods=['POST'])
+@login_required
+def report_user(target_user_id):
+    user_session = session.get('user')
+    reporter_id = user_session.get('id')
+    data = request.get_json(silent=True) or {}
+    reason = (data.get('reason') or '').strip()
+
+    if not reason:
+        return {"error": "Report reason is required."}, 400
+    
+    if reporter_id == target_user_id:
+        return {"error": "You cannot report yourself."}, 400
+
+    client = get_user_client()
+
+    try:
+        # Verify user exists
+        profile_res = client.table('profiles').select("id").eq("id", target_user_id).single().execute()
+        if not profile_res.data:
+            return {"error": "Target user not found."}, 404
+
+        # Check for duplicate pending report
+        existing = client.table('reports').select("id").eq("reporter_id", reporter_id).eq("reported_user_id", target_user_id).eq("status", "pending").execute()
+        if existing.data:
+            return {"status": "already_reported"}
+
+        # Insert report
+        client.table('reports').insert({
+            "reporter_id": reporter_id,
+            "reported_user_id": target_user_id,
+            "reason": reason
+        }).execute()
+
+        return {"status": "reported"}
+    except Exception as e:
+        logger.error("Error reporting user: %s", e)
+        return {"error": "Failed to submit report."}, 500
+
 @core.route('/posts/<post_id>/report', methods=['POST'])
 @login_required
 def report_post(post_id):
@@ -1562,6 +1628,10 @@ def create_post():
                     flash(f"Failed to upload image {img_file.filename}.", "warning")
 
     try:
+        # Determine Approval Status
+        # Rule: Posts with images REQUIRE admin approval. Text-only posts are approved by default.
+        post_status = 'pending' if image_urls else 'approved'
+
         post_data = {
             "user_id": user_id,
             "content": content,
@@ -1569,7 +1639,7 @@ def create_post():
             "event_title": event_title,
             "price": price,
             "location": location,
-            "status": status,
+            "status": post_status,
             "event_date": event_date,
             "event_end_date": event_end_date,
             "image_url": image_urls[0] if image_urls else None,
@@ -1579,7 +1649,10 @@ def create_post():
 
         session['last_post_time'] = current_time
 
-        flash("Post created successfully!", "success")
+        if post_status == 'pending':
+            flash("Post submitted! Since it contains media, it will be visible after admin approval.", "success")
+        else:
+            flash("Post created successfully!", "success")
     except Exception as e:
         logger.critical("Post insertion failed: %s", e)
         flash("Something went wrong. Please try again.", "error")

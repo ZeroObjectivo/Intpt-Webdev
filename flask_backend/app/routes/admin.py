@@ -224,6 +224,21 @@ def build_admin_permissions(role):
         "can_modify_admin_accounts": is_super_admin,
     }
 
+def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None):
+    if not user_id:
+        return
+    sender_client = supabase_service or client
+    try:
+        sender_client.table('notifications').insert({
+            "user_id": user_id,
+            "type": notif_type,
+            "reference_id": reference_id,
+            "title": title,
+            "message": message,
+        }).execute()
+    except Exception as e:
+        logger.warning("Notification insert skipped for user %s: %s", user_id, e)
+
 @admin.route('/admin/dashboard')
 @login_required
 @admin_required
@@ -242,6 +257,7 @@ def dashboard():
         "total_users": 0,
         "total_posts": 0,
         "reported_posts": 0,
+        "pending_approvals": 0,
         "banned_accounts": 0,
         "user_list": [],
         "reports_list": [],
@@ -257,26 +273,63 @@ def dashboard():
         stats["user_list"] = users_res.data
         
         # Fetch all posts for category counts
-        posts_res = client.table('posts').select("id, category").execute()
+        posts_res = client.table('posts').select("id, category, status").execute()
         stats["total_posts"] = len(posts_res.data)
         
         cat_counts = {}
+        pending_count = 0
         for p in posts_res.data:
             cat = p.get('category', 'General')
             cat_counts[cat] = cat_counts.get(cat, 0) + 1
+            if p.get('status') == 'pending':
+                pending_count += 1
+        
         stats["posts_by_category"] = [{"category": k, "count": v} for k, v in cat_counts.items()]
+        stats["pending_approvals"] = pending_count
 
         # Fetch reports
         reports_res = client.table('reports').select("*, posts(content), profiles!reports_reporter_id_fkey(full_name)").order("created_at", desc=True).execute()
         stats["reported_posts"] = len(reports_res.data)
         stats["reports_list"] = reports_res.data
         
+        # New reports (last 24 hours)
+        now = datetime.datetime.now(datetime.timezone.utc)
+        day_ago = now - datetime.timedelta(hours=24)
+        new_reports_count = 0
+        for r in reports_res.data:
+            try:
+                created_at = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00'))
+                if created_at > day_ago:
+                    new_reports_count += 1
+            except Exception:
+                pass
+        stats["new_reports_count"] = new_reports_count
+        
         # Banned accounts
         banned_res = client.table('profiles').select("id").eq("status", "banned").execute()
         stats["banned_accounts"] = len(banned_res.data)
 
+        # User Breakdown (by college)
+        college_counts = {}
+        course_counts = {}
+        for profile in users_res.data:
+            col = profile.get('college') or 'Other'
+            course = profile.get('course') or 'Unknown'
+            college_counts[col] = college_counts.get(col, 0) + 1
+            course_counts[course] = course_counts.get(course, 0) + 1
+        
+        total = stats["total_users"] or 1
+        stats["college_breakdown"] = [
+            {"label": k, "count": v, "percentage": round((v / total) * 100)} 
+            for k, v in sorted(college_counts.items(), key=lambda x: x[1], reverse=True)
+        ]
+        stats["course_breakdown"] = [
+            {"label": k, "count": v, "percentage": round((v / total) * 100)} 
+            for k, v in sorted(course_counts.items(), key=lambda x: x[1], reverse=True)
+        ]
+
         # Recent Activities (Admin Logs)
-        logs_res = client.table('admin_logs').select("*, profiles!admin_logs_admin_id_fkey(full_name)").order("created_at", desc=True).limit(5).execute()
+        logs_res = client.table('admin_logs').select("*, profiles!admin_logs_admin_id_fkey(full_name)").order("created_at", desc=True).limit(20).execute()
         stats["recent_activities"] = logs_res.data
 
         # Verification Disputes Count
@@ -435,6 +488,38 @@ def lift_user_suspension(user_id):
 
     return redirect(url_for('admin.user_management', user_id=user_id))
 
+@admin.route('/admin/approvals')
+@login_required
+@content_access_required
+def approvals_queue():
+    client = get_admin_read_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    
+    category = request.args.get('category', 'All')
+    sort_method = request.args.get('sort', 'recent')
+    
+    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)").eq('status', 'pending')
+    
+    if category != 'All':
+        query = query.eq('category', category)
+        
+    res = query.execute()
+    posts = res.data or []
+    
+    # Sort
+    if sort_method == 'oldest':
+        posts.sort(key=lambda x: x.get('created_at', ''))
+    else:
+        posts.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        
+    return render_template('admin/approvals.html', 
+                           posts=posts, 
+                           category=category, 
+                           sort=sort_method,
+                           user=session.get('user'), 
+                           permissions=permissions)
+
 @admin.route('/admin/content/<category>')
 @login_required
 @content_access_required
@@ -442,11 +527,174 @@ def content_management(category):
     client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
-    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
-    if category != 'All':
-        query = query.eq('category', category)
-    res = query.order('created_at', desc=True).execute()
-    return render_template('admin/content_manage.html', posts=res.data, category=category, user=session.get('user'), permissions=permissions)
+    
+    sort_method = request.args.get('sort', 'recent_reports')
+    report_type = request.args.get('type', 'posts') # 'posts' or 'accounts'
+    
+    if report_type == 'accounts':
+        # 1. Fetch all pending user reports
+        reports_res = client.table('reports').select("reported_user_id, created_at").eq('status', 'pending').not_.is_('reported_user_id', 'null').execute()
+        pending_reports = reports_res.data or []
+        
+        if not pending_reports:
+            return render_template('admin/content_manage.html', accounts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+
+        # 2. Group reports by user_id
+        report_stats = {}
+        for r in pending_reports:
+            uid = r['reported_user_id']
+            if uid not in report_stats:
+                report_stats[uid] = {"total": 0, "latest_report": r['created_at'], "earliest_report": r['created_at']}
+            report_stats[uid]["total"] += 1
+            if r['created_at'] > report_stats[uid]["latest_report"]:
+                report_stats[uid]["latest_report"] = r['created_at']
+            if r['created_at'] < report_stats[uid]["earliest_report"]:
+                report_stats[uid]["earliest_report"] = r['created_at']
+
+        # 3. Fetch details for these users
+        user_ids = list(report_stats.keys())
+        res = client.table('profiles').select("*").in_('id', user_ids).execute()
+        accounts = res.data or []
+
+        # 4. Attach stats and Sort
+        for a in accounts:
+            stats = report_stats.get(a['id'], {"total": 0, "latest_report": "", "earliest_report": ""})
+            a['report_count'] = stats["total"]
+            a['latest_report_at'] = stats["latest_report"]
+            a['earliest_report_at'] = stats["earliest_report"]
+
+        if sort_method == 'most_reports':
+            accounts.sort(key=lambda x: x.get('report_count', 0), reverse=True)
+        elif sort_method == 'oldest_reports':
+            accounts.sort(key=lambda x: x.get('earliest_report_at', ''))
+        else:
+            accounts.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
+
+        return render_template('admin/content_manage.html', accounts=accounts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+
+    else: # report_type == 'posts' (Reported Posts)
+        # 1. Fetch all pending post reports
+        reports_res = client.table('reports').select("post_id, created_at").eq('status', 'pending').not_.is_('post_id', 'null').execute()
+        pending_reports = reports_res.data or []
+        
+        if not pending_reports:
+            return render_template('admin/content_manage.html', posts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+
+        # 2. Group reports by post_id
+        report_stats = {}
+        for r in pending_reports:
+            pid = r['post_id']
+            if pid not in report_stats:
+                report_stats[pid] = {"total": 0, "latest_report": r['created_at'], "earliest_report": r['created_at']}
+            report_stats[pid]["total"] += 1
+            if r['created_at'] > report_stats[pid]["latest_report"]:
+                report_stats[pid]["latest_report"] = r['created_at']
+            if r['created_at'] < report_stats[pid]["earliest_report"]:
+                report_stats[pid]["earliest_report"] = r['created_at']
+
+        # 3. Fetch details for these posts
+        post_ids = list(report_stats.keys())
+        query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)").in_('id', post_ids)
+        if category != 'All':
+            query = query.eq('category', category)
+        res = query.execute()
+        posts = res.data or []
+
+        # 4. Attach stats and Sort
+        for p in posts:
+            stats = report_stats.get(p['id'], {"total": 0, "latest_report": "", "earliest_report": ""})
+            p['report_count'] = stats["total"]
+            p['latest_report_at'] = stats["latest_report"]
+            p['earliest_report_at'] = stats["earliest_report"]
+
+        if sort_method == 'most_reports':
+            posts.sort(key=lambda x: x.get('report_count', 0), reverse=True)
+        elif sort_method == 'oldest_reports':
+            posts.sort(key=lambda x: x.get('earliest_report_at', ''))
+        else:
+            posts.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
+
+        return render_template('admin/content_manage.html', posts=posts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+
+@admin.route('/admin/posts/<post_id>/approve', methods=['POST'])
+@login_required
+@content_access_required
+def approve_post(post_id):
+    try:
+        admin_client = get_service_client()
+        
+        # 1. Update post status
+        res = admin_client.table('posts').update({"status": "approved"}).eq("id", post_id).execute()
+        if not res.data:
+            return jsonify({"status": "error", "message": "Post not found"}), 404
+            
+        post = res.data[0]
+        owner_id = post.get('user_id')
+        
+        # 2. Notify user
+        if owner_id:
+            push_notification(
+                admin_client, owner_id,
+                title="Post Approved!",
+                message="Your post has been reviewed and is now visible to the community.",
+                notif_type="system",
+                reference_id=post_id
+            )
+            
+        # 3. Log action
+        admin_client.table('admin_logs').insert({
+            "admin_id": session.get('user', {}).get('id'),
+            "action_type": "approve_post",
+            "target_id": post_id,
+            "details": f"Approved post with media from user_id: {owner_id}"
+        }).execute()
+        
+        return jsonify({"status": "success", "message": "Post approved."})
+    except Exception as e:
+        logger.error("Error approving post: %s", e)
+        return jsonify({"status": "error", "message": "Failed to approve post."}), 500
+
+@admin.route('/admin/posts/<post_id>/reject', methods=['POST'])
+@login_required
+@content_access_required
+def reject_post(post_id):
+    reason = request.form.get('reason', 'Content violates media policy')
+    try:
+        admin_client = get_service_client()
+        
+        # 1. Fetch post info before deletion/update
+        post_res = admin_client.table('posts').select("user_id, content").eq("id", post_id).single().execute()
+        if not post_res.data:
+            return jsonify({"status": "error", "message": "Post not found"}), 404
+            
+        post = post_res.data
+        owner_id = post.get('user_id')
+
+        # 2. Update status to rejected (or delete if preferred, but rejected allows tracking)
+        admin_client.table('posts').update({"status": "rejected"}).eq("id", post_id).execute()
+        
+        # 3. Notify user
+        if owner_id:
+            push_notification(
+                admin_client, owner_id,
+                title="Post Rejected",
+                message=f"Your post was rejected by moderation. Reason: {reason}",
+                notif_type="warning",
+                reference_id=post_id
+            )
+            
+        # 4. Log action
+        admin_client.table('admin_logs').insert({
+            "admin_id": session.get('user', {}).get('id'),
+            "action_type": "reject_post",
+            "target_id": post_id,
+            "details": f"Rejected post from user_id: {owner_id}. Reason: {reason}"
+        }).execute()
+        
+        return jsonify({"status": "success", "message": "Post rejected."})
+    except Exception as e:
+        logger.error("Error rejecting post: %s", e)
+        return jsonify({"status": "error", "message": "Failed to reject post."}), 500
 
 @admin.route('/admin/posts/<post_id>/likers')
 @login_required
@@ -916,6 +1164,119 @@ def _upload_catalog_image(image_file, uploader_id):
         file_options={"content-type": content_type}
     )
     return admin_client.storage.from_(bucket_name).get_public_url(object_path)
+
+@admin.route('/admin/logs')
+@login_required
+@admin_required
+def view_logs():
+    client = get_admin_read_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    
+    search = request.args.get('search', '')
+    action_filter = request.args.get('action', '')
+    
+    query = client.table('admin_logs').select("*, profiles!admin_logs_admin_id_fkey(full_name, role)")
+    
+    if search:
+        query = query.ilike('details', f'%{search}%')
+    if action_filter:
+        query = query.eq('action_type', action_filter)
+        
+    res = query.order('created_at', desc=True).limit(100).execute()
+    
+    # Get unique action types for filter dropdown
+    actions_res = client.table('admin_logs').select("action_type").execute()
+    action_types = sorted(list(set(item['action_type'] for item in actions_res.data)))
+    
+    return render_template('admin/logs.html', 
+                           logs=res.data, 
+                           user=session.get('user'), 
+                           permissions=permissions,
+                           search=search,
+                           action_filter=action_filter,
+                           action_types=action_types)
+
+@admin.route('/admin/colleges')
+@login_required
+@admin_required
+def manage_colleges():
+    client = get_admin_read_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    
+    res = client.table('colleges_institutes').select("*").order('type').order('name').execute()
+    
+    colleges = [item for item in res.data if item['type'] == 'College']
+    institutes = [item for item in res.data if item['type'] == 'Institute']
+    
+    return render_template('admin/colleges_manage.html', 
+                           colleges=colleges, 
+                           institutes=institutes,
+                           user=session.get('user'), 
+                           permissions=permissions)
+
+@admin.route('/admin/colleges/add', methods=['POST'])
+@login_required
+@admin_required
+def add_college():
+    name = request.form.get('name', '').strip().upper()
+    full_name = request.form.get('full_name', '').strip()
+    unit_type = request.form.get('type', 'College')
+    
+    if not name:
+        flash("Unit abbreviation (name) is required.", "error")
+        return redirect(url_for('admin.manage_colleges'))
+    
+    try:
+        admin_client = get_service_client()
+        admin_client.table('colleges_institutes').insert({
+            "name": name,
+            "full_name": full_name,
+            "type": unit_type
+        }).execute()
+        
+        # Log action
+        admin_client.table('admin_logs').insert({
+            "admin_id": session.get('user', {}).get('id'),
+            "action_type": "add_academic_unit",
+            "details": f"Added {unit_type}: {name} ({full_name})"
+        }).execute()
+        
+        flash(f"Successfully added {name}.", "success")
+    except Exception as e:
+        logger.error("Error adding academic unit: %s", e)
+        flash("Error adding unit. It might already exist.", "error")
+    
+    return redirect(url_for('admin.manage_colleges'))
+
+@admin.route('/admin/colleges/<unit_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_college(unit_id):
+    try:
+        admin_client = get_service_client()
+        
+        # Get info for logging before delete
+        unit_res = admin_client.table('colleges_institutes').select("name, type").eq("id", unit_id).single().execute()
+        unit_info = unit_res.data
+        
+        admin_client.table('colleges_institutes').delete().eq("id", unit_id).execute()
+        
+        # Log action
+        if unit_info:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": "delete_academic_unit",
+                "details": f"Deleted {unit_info['type']}: {unit_info['name']}"
+            }).execute()
+            
+        flash("Academic unit removed.", "success")
+    except Exception as e:
+        logger.error("Error deleting academic unit: %s", e)
+        flash("Failed to remove academic unit.", "error")
+    
+    return redirect(url_for('admin.manage_colleges'))
 
 @admin.route('/admin/catalog/scholarship')
 @login_required

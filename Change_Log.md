@@ -8,7 +8,28 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 ## [Unreleased] - 2026-05-14
 
 ### Added
-- **Real-Time Notifications:** Implemented real-time notifications using Supabase Realtime. New notifications now appear instantly without requiring a page refresh. The system pushes updates to the client, which dynamically updates the notification count and prepends the new notification to the dropdown list. A toast message is also displayed to the user. (References: `flask_backend/app/templates/base.html`, `flask_backend/app/__init__.py`, `flask_backend/app/templates/includes/navbar.html`)
+- **Unified Reporting & Moderation:**
+    - Updated `reports` table to support reporting user accounts (`reported_user_id`).
+    - Implemented **Account Reporting** on the user side (profile page) with a new route `/profiles/<id>/report`.
+    - Consolidated "Reports Queue" and "Posts Reported" into a single, unified moderation interface.
+    - Added **Type Filtering** (Posts vs Accounts) and advanced sorting to the moderation queue.
+    - Updated Admin Dashboard overview to remove redundant cards and streamline navigation.
+- **UI Fixes:**
+    - Corrected the logo in the Admin Portal sidebar to use the standardized `Logo.png`.
+- **Centralized Academic Units:**
+    - Created a new database table `colleges_institutes` for managing Colleges, Schools, and Institutes.
+    - Added an Admin management interface (`/admin/colleges`) to add/remove academic units.
+    - Synchronized dropdowns across **Event Creation** and **Profile Settings** to use the same dynamic database list.
+    - Separated "Colleges" from "Schools & Institutes" in all dropdowns for better organization.
+- **Admin Dashboard Enhancements:**
+    - Implemented dynamic **User Breakdown** statistics by college and course in `flask_backend/app/routes/admin.py`.
+    - Updated `flask_backend/app/templates/admin/dashboard.html` to display live student distribution data instead of placeholders.
+- **System Audit Logs:**
+    - Created a new **System Logs** page (`flask_backend/app/templates/admin/logs.html`) to view a comprehensive audit trail of administrative actions.
+    - Added a new route `/admin/logs` in `flask_backend/app/routes/admin.py` with search and action filtering capabilities.
+    - Integrated the logs page into the admin sidebar in `flask_backend/app/templates/admin/admin_base.html`.
+- **Real-Time Notifications:**
+ Implemented real-time notifications using Supabase Realtime. New notifications now appear instantly without requiring a page refresh. The system pushes updates to the client, which dynamically updates the notification count and prepends the new notification to the dropdown list. A toast message is also displayed to the user. (References: `flask_backend/app/templates/base.html`, `flask_backend/app/__init__.py`, `flask_backend/app/templates/includes/navbar.html`)
 
 ### Fixed
 - **Real-Time Notification Bug:** Fixed a bug that prevented real-time notifications from appearing without a page refresh. The client-side JavaScript was refactored to ensure the Supabase client is correctly initialized, to robustly handle UI updates (especially when going from 0 to 1+ notifications), and to include subscription status logging for easier debugging. A database migration was also added to explicitly enable Supabase Realtime on the `notifications` table, which was a likely root cause. (References: `flask_backend/app/templates/includes/navbar.html`, `supabase/migrations/20260514000800_enable_realtime_for_notifications.sql`)
