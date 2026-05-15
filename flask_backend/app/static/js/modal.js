@@ -26,6 +26,7 @@ let currentReplyTo = null;
 let modalCommentRefreshTimer = null;
 let modalCommentPollTimer = null;
 let currentCommentsSignature = '';
+const isAdminContext = window.location.pathname.startsWith('/admin/');
 
 function resetZoomState() {
     const wrapper = document.querySelector('.modal-image-wrapper');
@@ -396,7 +397,8 @@ async function fetchComments(postId, options = {}) {
     }
     
     try {
-        const response = await fetch(`/posts/${postId}/comments`);
+        const commentsUrl = isAdminContext ? `/admin/posts/${postId}/comments` : `/posts/${postId}/comments`;
+        const response = await fetch(commentsUrl, { headers: { 'Accept': 'application/json' } });
         if (!response.ok) throw new Error(`Comments request failed (${response.status})`);
         const data = await response.json();
 
@@ -438,6 +440,7 @@ function renderComment(comment, isReply = false) {
     const avatar = comment.profiles.avatar_url || "/static/images/Logo.png";
     const isOwner = window.currentUser && window.currentUser.id === comment.user_id;
     const isAdmin = window.currentUser && (window.currentUser.role === 'admin' || window.currentUser.role === 'super_admin');
+    const allowOwnEdit = isOwner && !isAdminContext;
     
     const div = document.createElement('div');
     div.className = 'flex flex-col gap-2 group';
@@ -452,7 +455,7 @@ function renderComment(comment, isReply = false) {
                     <p id="comment-text-${comment.id}">${comment.content}</p>
                     
                     <div class="absolute right-2 top-2 hidden group-hover/comment:flex items-center gap-1">
-                        ${isOwner ? `
+                        ${allowOwnEdit ? `
                             <button onclick="startEditComment('${comment.id}')" class="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 transition-all">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
@@ -499,6 +502,10 @@ function cancelEditComment(commentId) {
 }
 
 async function saveEditComment(commentId) {
+    if (isAdminContext) {
+        showModerationPopup('Comment editing is disabled in admin moderation view.');
+        return;
+    }
     const input = document.getElementById(`comment-edit-input-${commentId}`);
     const content = input.value.trim();
     if (!content) return;
@@ -529,7 +536,8 @@ async function deleteComment(commentId) {
         'Are you sure you want to delete this comment?',
         async () => {
             try {
-                const response = await fetch(`/comments/${commentId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
+                const endpoint = isAdminContext ? `/admin/comments/${commentId}/delete` : `/comments/${commentId}/delete`;
+                const response = await fetch(endpoint, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } });
                 const data = await response.json();
                 if (data.status === 'deleted') {
                     document.getElementById(`comment-${commentId}`).remove();
@@ -582,6 +590,11 @@ function closeConfirmModal(event) {
 }
 
 async function submitComment(event) {
+    if (isAdminContext) {
+        event.preventDefault();
+        showModerationPopup('Commenting is disabled in admin moderation view.');
+        return;
+    }
     event.preventDefault();
     const textarea = document.getElementById('commentTextarea');
     const content = textarea.value.trim();
@@ -599,7 +612,7 @@ async function submitComment(event) {
     try {
         const response = await fetch(`/posts/${currentPost.id}/comments`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' },
             body: JSON.stringify(body)
         });
         
@@ -684,6 +697,10 @@ function cancelReply() {
 let isLiking = false;
 
 async function toggleLike(postId, btn) {
+    if (isAdminContext) {
+        showModerationPopup('Liking is disabled in admin moderation view.');
+        return;
+    }
     if (isLiking || btn.disabled) return;
     isLiking = true;
     
@@ -711,7 +728,7 @@ async function toggleLike(postId, btn) {
     }
     
     try {
-        const response = await fetch(`/posts/${postId}/like`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
+        const response = await fetch(`/posts/${postId}/like`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } });
         const data = await response.json();
         
         // Update currentPost state if in modal
@@ -837,6 +854,13 @@ function updateModalActions(post) {
     commentBtn.onclick = () => {
         document.getElementById('commentTextarea').focus();
     };
+
+    if (isAdminContext) {
+        likeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        commentBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        likeBtn.onclick = () => showModerationPopup('Liking is disabled in admin moderation view.');
+        commentBtn.onclick = () => showModerationPopup('Commenting is disabled in admin moderation view.');
+    }
 }
 
 function syncModalFromInteractionRows(rows) {

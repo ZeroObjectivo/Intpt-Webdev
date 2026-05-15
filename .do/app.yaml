@@ -19,6 +19,9 @@ services:
       - key: SUPABASE_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_TIME
+        type: SECRET
       - key: DATABASE_URL
         scope: RUN_TIME
         type: SECRET

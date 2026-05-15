@@ -13,8 +13,15 @@ load_dotenv()
 
 # Supabase Credentials (strip whitespace/newlines from env vars)
 url: str = os.getenv("SUPABASE_URL", "").strip()
-key: str = os.getenv("SUPABASE_KEY", "").strip()
-service_key: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip() or None
+key: str = (
+    os.getenv("SUPABASE_KEY", "")
+    or os.getenv("SUPABASE_ANON_KEY", "")
+).strip()
+service_key: str = (
+    os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    or os.getenv("SUPABASE_SERVICE_KEY", "")
+    or os.getenv("SUPABASE_SECRET_KEY", "")
+).strip() or None
 db_url: str = os.getenv("DATABASE_URL", "").strip()
 
 # Shared client for auth operations (sign_in, sign_out, get_user, exchange_code)

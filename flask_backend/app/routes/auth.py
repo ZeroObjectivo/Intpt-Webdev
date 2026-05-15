@@ -33,6 +33,15 @@ def is_admin_domain_request():
         return True
     return host.startswith('dev.')
 
+def wants_json_response():
+    if request.is_json:
+        return True
+    accept = (request.headers.get('Accept') or '').lower()
+    if 'application/json' in accept:
+        return True
+    requested_with = (request.headers.get('X-Requested-With') or '').lower()
+    return requested_with == 'xmlhttprequest'
+
 def login_required(f):
     """
     Decorator to protect routes from unauthorized access.
@@ -41,13 +50,22 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user' not in session or 'access_token' not in session:
+            if wants_json_response():
+                return jsonify({"status": "error", "reason": "unauthenticated"}), 401
             return redirect(url_for('core.login'))
 
         # Proactively refresh if we know the token has expired
         expires_at = session.get('expires_at')
-        if expires_at and expires_at < __import__('time').time():
+        now_ts = __import__('time').time()
+        try:
+            expires_ts = float(expires_at) if expires_at is not None else None
+        except (TypeError, ValueError):
+            expires_ts = None
+        if expires_ts and expires_ts < now_ts:
             if not refresh_supabase_auth():
                 session.clear()
+                if wants_json_response():
+                    return jsonify({"status": "error", "reason": "session_expired"}), 401
                 return redirect(url_for('core.login', error="session_expired"))
 
         return f(*args, **kwargs)
@@ -77,6 +95,9 @@ def refresh_supabase_auth():
 
         session['access_token'] = access_token
         session['refresh_token'] = new_refresh_token
+        expires_at = getattr(auth_session, "expires_at", None)
+        if expires_at is not None:
+            session['expires_at'] = expires_at
         return True
     except Exception as e:
         logger.error("Supabase session refresh error: %s", e)

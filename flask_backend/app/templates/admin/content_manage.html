@@ -240,7 +240,8 @@
         const list = document.getElementById('adminLikersList');
         if (!list) return;
         try {
-            const res = await fetch(`/admin/posts/${postId}/likers`);
+            const res = await fetch(`/admin/posts/${postId}/likers`, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) throw new Error(`Likers request failed (${res.status})`);
             const data = await res.json();
             
             if (data.likers && data.likers.length > 0) {
@@ -324,9 +325,13 @@
         try {
             const res = await fetch('/admin/warn-user', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' },
                 body: JSON.stringify({ user_id: userId, post_id: postId, reason, message })
             });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || `Warn request failed (${res.status})`);
+            }
             const data = await res.json();
             console.log('Server response:', data);
             
@@ -349,7 +354,11 @@
                 'Are you sure you want to PERMANENTLY remove this post? This action cannot be undone.',
                 async () => {
                     try {
-                        const res = await fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
+                        const res = await fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } });
+                        if (!res.ok) {
+                            const text = await res.text();
+                            throw new Error(text || `Delete request failed (${res.status})`);
+                        }
                         const data = await res.json();
                         if (data.status === 'deleted') {
                             location.reload();
@@ -362,13 +371,14 @@
                 }
             );
         } else if (confirm('Remove this post?')) {
-            fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } }).then(() => location.reload());
+            fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } }).then(() => location.reload());
         }
     }
 
     async function flagPost(postId) {
         try {
-            const res = await fetch(`/admin/posts/${postId}/flag`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
+            const res = await fetch(`/admin/posts/${postId}/flag`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } });
+            if (!res.ok) throw new Error(`Flag request failed (${res.status})`);
             const data = await res.json();
             if (data.status === 'success') showToast('Post flagged', 'success');
         } catch (e) { showToast('Action failed', 'error'); }
@@ -376,7 +386,8 @@
 
     async function flagComment(commentId) {
         try {
-            const res = await fetch(`/admin/comments/${commentId}/flag`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
+            const res = await fetch(`/admin/comments/${commentId}/flag`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } });
+            if (!res.ok) throw new Error(`Flag request failed (${res.status})`);
             const data = await res.json();
             if (data.status === 'success') showToast('Comment flagged', 'success');
         } catch (e) { showToast('Action failed', 'error'); }

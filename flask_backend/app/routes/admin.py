@@ -32,12 +32,13 @@ def get_service_client():
     Helper to get a service role client that bypasses RLS.
     Used for administrative actions that standard users shouldn't have permissions for.
     """
-    if not supabase_service:
-        raise RuntimeError(
-            "SUPABASE_SERVICE_ROLE_KEY is not configured. "
-            "Admin operations require a service role key to bypass RLS."
-        )
-    return supabase_service
+    if supabase_service:
+        return supabase_service
+    logger.warning(
+        "SUPABASE service-role client is not configured; "
+        "falling back to user-scoped admin client (RLS still applies)."
+    )
+    return get_user_client()
 
 
 def get_admin_read_client():
@@ -45,9 +46,7 @@ def get_admin_read_client():
     Read-only admin pages should not hard-crash when service key is absent.
     Fallback to per-user client for graceful behavior.
     """
-    if supabase_service:
-        return supabase_service
-    return get_user_client()
+    return get_service_client()
 
 def normalize_role(role):
     value = (role or '').strip().lower()
@@ -430,6 +429,22 @@ def get_post_likers(post_id):
     res = client.table('likes').select("profiles(id, full_name, avatar_url)").eq('post_id', post_id).execute()
     likers = [item['profiles'] for item in res.data if item.get('profiles')]
     return jsonify({"likers": likers})
+
+@admin.route('/admin/posts/<post_id>/comments')
+@login_required
+@content_access_required
+def admin_get_post_comments(post_id):
+    client = get_admin_read_client()
+    try:
+        comments_response = client.table('comments')\
+            .select("*, profiles(full_name, avatar_url)")\
+            .eq("post_id", post_id)\
+            .order("created_at", desc=False)\
+            .execute()
+        return jsonify({"comments": comments_response.data or []})
+    except Exception as e:
+        logger.error("Error fetching comments for admin view: %s", e)
+        return jsonify({"error": "Failed to load comments."}), 500
 
 @admin.route('/admin/posts/<post_id>/flag', methods=['POST'])
 @login_required
