@@ -1024,6 +1024,10 @@ h1,
   display: grid;
 }
 
+.contents {
+  display: contents;
+}
+
 .hidden {
   display: none;
 }
@@ -1246,6 +1250,14 @@ h1,
 
 .w-9 {
   width: 2.25rem;
+}
+
+.w-1\/2 {
+  width: 50%;
+}
+
+.w-3\/4 {
+  width: 75%;
 }
 
 .min-w-0 {
@@ -1610,6 +1622,10 @@ h1,
 
 .rounded-sm {
   border-radius: 0.125rem;
+}
+
+.rounded-\[22px\] {
+  border-radius: 22px;
 }
 
 .rounded-b-\[32px\] {
