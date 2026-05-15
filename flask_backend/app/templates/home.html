@@ -4,93 +4,398 @@
 
 {% block styles %}
 <style>
-    .branding-overlay {
+    .home-page {
+        background: #070d1f;
+        color: #f8fafc;
+    }
+
+    .home-hero {
+        position: relative;
+        min-height: calc(100vh - 96px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: radial-gradient(circle at 20% 20%, rgba(29, 78, 216, 0.3), rgba(2, 6, 23, 0.02) 45%),
+                    radial-gradient(circle at 80% 10%, rgba(30, 64, 175, 0.34), rgba(2, 6, 23, 0.02) 42%),
+                    linear-gradient(180deg, #090f26 0%, #080c1d 100%);
+    }
+
+    .home-hero::after {
+        content: "";
         position: absolute;
-        top: 45%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        padding: 0 1.5rem;
-        display: flex;
-        justify-content: center;
-        pointer-events: auto;
-        z-index: 20;
+        inset: 0;
+        background: url("{{ url_for('static', filename='images/landing/landing-glow.svg') }}") center 58% / cover no-repeat;
+        opacity: 0.28;
+        pointer-events: none;
     }
 
-    .branding-content {
-        width: 100%;
-        display: flex;
-        justify-content: center;
+    .home-hero-inner {
+        position: relative;
+        z-index: 1;
+        width: min(1200px, calc(100% - 2rem));
+        text-align: center;
+        padding: clamp(2rem, 5vw, 5rem) 0;
     }
 
-    .branding-logo {
-        width: 85%;
-        max-width: 700px;
+    .hero-logo-mark {
+        width: clamp(110px, 14vw, 190px);
         height: auto;
+        margin: 0 auto 1.5rem;
+        filter: drop-shadow(0 10px 28px rgba(2, 6, 23, 0.5));
+    }
+
+    .hero-title {
+        margin: 0;
+        font-family: 'Metropolis', sans-serif;
+        font-size: clamp(2.2rem, 6.8vw, 5.8rem);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        line-height: 1.05;
+        color: #98b8ee;
+        text-transform: uppercase;
+    }
+
+    .hero-subtitle {
+        margin-top: 0.85rem;
+        font-family: 'Metropolis', sans-serif;
+        font-size: clamp(1.1rem, 2.1vw, 2.8rem);
+        font-weight: 300;
+        color: #f8fafc;
+    }
+
+    .hero-actions {
+        margin-top: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.85rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        min-height: 44px;
+        padding: 0.6rem 1.4rem;
+        font-size: 0.92rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        text-decoration: none;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    }
+
+    .hero-btn-primary {
+        background: #f7d751;
+        color: #0f172a;
+        box-shadow: 0 10px 20px rgba(2, 6, 23, 0.34);
+    }
+
+    .hero-btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: #f8fafc;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .hero-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .home-content {
+        position: relative;
+        padding: clamp(2.2rem, 5.5vw, 4rem) 0 0;
+        background:
+            linear-gradient(180deg, rgba(8, 12, 29, 0.92) 0%, rgba(8, 12, 29, 0.88) 38%, rgba(19, 24, 40, 0.9) 100%),
+            url("{{ url_for('static', filename='images/landing/paper-texture.png') }}") center / cover no-repeat;
+    }
+
+    .home-content::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url("{{ url_for('static', filename='images/landing/landing-outline.svg') }}") center top / min(1300px, 92vw) no-repeat;
+        opacity: 0.34;
+        pointer-events: none;
+    }
+
+    .home-section {
+        position: relative;
+        z-index: 1;
+        width: min(1160px, calc(100% - 2rem));
+        margin: 0 auto;
+    }
+
+    .section-kicker {
+        margin: 0;
+        text-align: center;
+        font-size: 0.88rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #dbeafe;
+    }
+
+    .about-copy {
+        margin: 1.25rem auto 0;
+        max-width: 880px;
+        text-align: center;
+        font-size: clamp(1rem, 1.3vw, 1.2rem);
+        font-weight: 500;
+        line-height: 1.7;
+        color: #e2e8f0;
+    }
+
+    .features-section {
+        margin-top: clamp(2.4rem, 5.2vw, 4rem);
+        padding-bottom: clamp(2.4rem, 5.2vw, 4rem);
+    }
+
+    .features-grid {
+        margin-top: 1.4rem;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .feature-card {
+        border-radius: 28px;
+        padding: 1.2rem 1rem 1.1rem;
+        border: 1px solid rgba(219, 234, 254, 0.18);
+        background: rgba(226, 232, 240, 0.13);
+        box-shadow: 0 7px 18px rgba(2, 6, 23, 0.22);
+        text-align: center;
+    }
+
+    .feature-icon-wrap {
+        width: 44px;
+        height: 44px;
+        margin: 0 auto 0.65rem;
+        border-radius: 9999px;
+        background: rgba(147, 197, 253, 0.24);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .feature-icon-wrap svg {
+        width: 21px;
+        height: 21px;
+        color: #dbeafe;
+    }
+
+    .feature-value {
+        margin: 0;
+        font-size: clamp(1.55rem, 2.3vw, 2.25rem);
+        line-height: 1;
+        font-weight: 900;
+        color: #f8fafc;
+    }
+
+    .feature-label {
+        margin: 0.48rem 0 0.3rem;
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #dbeafe;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .feature-note {
+        margin: 0;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        line-height: 1.45;
+    }
+
+    .home-footer {
+        position: relative;
+        z-index: 1;
+        margin-top: 0.5rem;
+        background: #e5e7eb;
+        color: #111827;
+    }
+
+    .home-footer-inner {
+        width: min(1160px, calc(100% - 2rem));
+        margin: 0 auto;
+        min-height: 148px;
+        padding: 1.4rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .home-footer-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.72rem;
+        min-width: 0;
+    }
+
+    .home-footer-brand img {
+        width: 48px;
+        height: 48px;
         object-fit: contain;
-        filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));
+        background: #001035;
+        border-radius: 9999px;
+        padding: 4px;
     }
 
-    .animate-fade-up {
-        animation: fade-up 1s ease-out 0.5s both;
+    .home-footer-brand-text {
+        font-size: 0.92rem;
+        line-height: 1.35;
+        font-weight: 700;
+        color: #0f172a;
     }
 
-    @keyframes fade-up {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+    .home-footer-contact {
+        text-align: right;
     }
 
-    @media (min-width: 768px) {
-        .branding-logo {
-            width: 65%;
+    .home-footer-contact h3 {
+        margin: 0;
+        font-size: 0.86rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: #334155;
+        font-weight: 900;
+    }
+
+    .home-footer-contact a {
+        display: inline-block;
+        margin-top: 0.35rem;
+        color: #001035;
+        font-weight: 800;
+        font-size: 0.94rem;
+        text-decoration: none;
+    }
+
+    .home-footer-contact a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 1080px) {
+        .features-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
-    @media (min-width: 1024px) {
-        .branding-logo {
-            width: 55%;
+    @media (max-width: 768px) {
+        .home-hero {
+            min-height: calc(100vh - 84px);
+        }
+
+        .home-footer-inner {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .home-footer-contact {
+            text-align: left;
         }
     }
 
-    @keyframes zoom-in {
-        from { opacity: 0; transform: scale(0.97); }
-        to { opacity: 1; transform: scale(1); }
-    }
-    .animate-zoom-in {
-        animation: zoom-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    @media (max-width: 640px) {
+        .home-hero {
+            min-height: calc(100vh - 74px);
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Full-Page Background Container -->
-<div class="fixed inset-0 w-screen h-screen overflow-hidden -z-10 bg-umak-blue">
-    <!-- Background Image -->
-    <img src="{{ url_for('static', filename='images/Main_Frame.png') }}" 
-         alt="UMak Campus Background" 
-         class="w-full h-full object-cover object-center scale-105">
-    <!-- Overlay for depth and contrast -->
-    <div class="absolute inset-0 bg-black/35 backdrop-blur-[1px]"></div>
-</div>
-
-<!-- Centered Branding Overlay -->
-<div class="branding-overlay">
-    <div class="branding-content animate-zoom-in flex flex-col items-center">
-        <img src="{{ url_for('static', filename='images/Herons_Hub.png') }}" 
-             alt="Herons' Hub - Community for everyone" 
-             class="branding-logo">
-        
-        {% if user %}
-        <div class="mt-8 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-center animate-fade-up">
-            <h2 class="text-3xl md:text-4xl font-bold text-white mb-2">Welcome back, {{ user.user_metadata.full_name }}!</h2>
-            <p class="text-white/80 text-lg">Ready to see what's happening at UMak today?</p>
-            <div class="mt-6 flex gap-4 justify-center">
-                <a href="{{ url_for('core.dashboard') }}" class="bg-umak-yellow text-umak-blue px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform shadow-lg">Enter Dashboard</a>
-                <a href="{{ url_for('core.dashboard') }}?filter=my-posts" class="bg-white/10 text-white px-8 py-3 rounded-xl font-bold hover:bg-white/20 transition-all border border-white/30">View Your Posts</a>
+<div class="home-page">
+    <section class="home-hero">
+        <div class="home-hero-inner">
+            <img src="{{ url_for('static', filename='images/landing/landing-logo-large.svg') }}" alt="Herons Hub mark" class="hero-logo-mark">
+            <h1 class="hero-title">Herons' Hub</h1>
+            <p class="hero-subtitle">Community for everyone</p>
+            <div class="hero-actions">
+                {% if user %}
+                <a href="{{ url_for('core.dashboard') }}" class="hero-btn hero-btn-primary">Go to Dashboard</a>
+                <a href="{{ url_for('core.event_calendar') }}" class="hero-btn hero-btn-secondary">View Event Calendar</a>
+                {% else %}
+                <a href="{{ url_for('core.login') }}" class="hero-btn hero-btn-primary">Log In / Sign Up</a>
+                <a href="{{ url_for('core.login') }}" class="hero-btn hero-btn-secondary">Continue with Google</a>
+                {% endif %}
             </div>
         </div>
-        {% endif %}
-    </div>
-</div>
+    </section>
 
+    <section class="home-content">
+        <div class="home-section">
+            <p class="section-kicker">About Us</p>
+            <p class="about-copy">
+                Herons' Hub is a University of Makati digital community where students can share campus updates, discover opportunities, join events, and connect through verified school identities.
+                Built for collaboration, it keeps discussions relevant, student-focused, and easy to navigate.
+            </p>
+
+            <div class="features-section">
+                <p class="section-kicker">Features</p>
+                <div class="features-grid">
+                    <article class="feature-card">
+                        <div class="feature-icon-wrap">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"></path></svg>
+                        </div>
+                        <p class="feature-value">{{ "{:,}".format(metrics.members_count or 0) }}</p>
+                        <p class="feature-label">Active Members</p>
+                        <p class="feature-note">Verified UMak profiles in the community.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <div class="feature-icon-wrap">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 8h10M7 12h10M7 16h6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"></path></svg>
+                        </div>
+                        <p class="feature-value">{{ "{:,}".format(metrics.posts_count or 0) }}</p>
+                        <p class="feature-label">Community Posts</p>
+                        <p class="feature-note">Discussions, announcements, and student updates.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <div class="feature-icon-wrap">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>
+                        </div>
+                        <p class="feature-value">{{ "{:,}".format(metrics.upcoming_events_count or 0) }}</p>
+                        <p class="feature-label">Upcoming Events</p>
+                        <p class="feature-note">Event posts with schedule and campus location.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <div class="feature-icon-wrap">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h16M4 17h10"></path></svg>
+                        </div>
+                        <p class="feature-value">{{ "{:,}".format(metrics.catalog_count or 0) }}</p>
+                        <p class="feature-label">Catalog Entries</p>
+                        <p class="feature-note">Combined scholarship and UMak coop listings.</p>
+                    </article>
+                </div>
+            </div>
+        </div>
+
+        <footer class="home-footer">
+            <div class="home-footer-inner">
+                <div class="home-footer-brand">
+                    <img src="{{ url_for('static', filename='images/landing/umak-white-logo.png') }}" alt="UMak logo">
+                    <p class="home-footer-brand-text">
+                        Herons' Hub<br>
+                        University of Makati
+                    </p>
+                </div>
+                <div class="home-footer-contact">
+                    <h3>Developers / Contact</h3>
+                    <a href="mailto:sample@heronshub.social">sample@heronshub.social</a>
+                </div>
+            </div>
+        </footer>
+    </section>
+</div>
 {% endblock %}
