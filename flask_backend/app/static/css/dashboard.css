@@ -591,12 +591,6 @@
     }
 }
 
-@media (max-width: 980px) {
-    .dashboard-container {
-        grid-template-columns: minmax(170px, 190px) minmax(0, 1fr);
-    }
-}
-
 .post-card.has-attachment .fb-grid {
     background: #d3d3d6;
     border: 1px solid #c4c6cc;
@@ -610,38 +604,14 @@
     }
 
     .dashboard-container {
-        display: block;
+        grid-template-columns: minmax(170px, 200px) minmax(0, 1fr);
         width: min(100%, 860px);
         margin: 0 auto;
     }
 
     .primary-sidebar {
-        position: static;
-        top: auto;
-        margin-bottom: 12px;
-    }
-
-    .primary-nav {
-        flex-direction: row;
-        align-items: center;
-        gap: 8px;
-        padding: 8px;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-
-    .primary-nav-link {
-        min-height: 38px;
-        padding: 8px 10px;
-        font-size: 0.82rem;
-        gap: 8px;
-        flex: 0 0 auto;
-    }
-
-    .primary-nav-icon {
-        width: 18px;
-        height: 18px;
-        flex-basis: 18px;
+        position: sticky;
+        top: 112px;
     }
 
     .sidebar {
@@ -672,6 +642,7 @@
     }
 
     .dashboard-container {
+        grid-template-columns: 1fr;
         width: 100%;
     }
 
