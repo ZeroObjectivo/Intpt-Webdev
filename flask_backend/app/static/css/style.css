@@ -978,6 +978,10 @@ h1,
   margin-top: 0.125rem;
 }
 
+.ml-12 {
+  margin-left: 3rem;
+}
+
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
