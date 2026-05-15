@@ -356,8 +356,15 @@
                     try {
                         const res = await fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } });
                         if (!res.ok) {
-                            const text = await res.text();
-                            throw new Error(text || `Delete request failed (${res.status})`);
+                            let errorMessage = `Delete request failed (${res.status})`;
+                            try {
+                                const errData = await res.json();
+                                if (errData && errData.message) errorMessage = errData.message;
+                            } catch (_) {
+                                const text = await res.text();
+                                if (text) errorMessage = text;
+                            }
+                            throw new Error(errorMessage);
                         }
                         const data = await res.json();
                         if (data.status === 'deleted') {
@@ -366,12 +373,24 @@
                             showToast(data.message || 'Error removing post', 'error');
                         }
                     } catch (e) {
-                        showToast('Failed to remove post', 'error');
+                        showToast(e.message || 'Failed to remove post', 'error');
                     }
                 }
             );
         } else if (confirm('Remove this post?')) {
-            fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } }).then(() => location.reload());
+            fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } })
+                .then(async (res) => {
+                    if (!res.ok) {
+                        let errorMessage = `Delete request failed (${res.status})`;
+                        try {
+                            const errData = await res.json();
+                            if (errData && errData.message) errorMessage = errData.message;
+                        } catch (_) {}
+                        throw new Error(errorMessage);
+                    }
+                    location.reload();
+                })
+                .catch((e) => showToast(e.message || 'Failed to remove post', 'error'));
         }
     }
 

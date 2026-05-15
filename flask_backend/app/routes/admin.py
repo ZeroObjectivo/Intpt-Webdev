@@ -101,10 +101,15 @@ def delete_comment_thread(admin_client, root_comment_id):
 
 def delete_post_dependencies(admin_client, post_id):
     # Clear references before removing the post in schemas without ON DELETE CASCADE.
+    comments_res = admin_client.table('comments').select('id').eq('post_id', post_id).execute()
+    for row in (comments_res.data or []):
+        comment_id = row.get('id')
+        if comment_id:
+            delete_comment_thread(admin_client, comment_id)
+
     admin_client.table('likes').delete().eq('post_id', post_id).execute()
     admin_client.table('reports').delete().eq('post_id', post_id).execute()
     admin_client.table('warnings').update({"post_id": None}).eq('post_id', post_id).execute()
-    admin_client.table('comments').delete().eq('post_id', post_id).execute()
 
 def get_current_role():
     user = session.get('user')
@@ -129,8 +134,17 @@ def get_current_role():
         logger.error("Error verifying admin role: %s", e)
         return current_role
 
-def role_block_response(message):
+def wants_json_response():
     if request.is_json:
+        return True
+    accept = (request.headers.get('Accept') or '').lower()
+    if 'application/json' in accept:
+        return True
+    requested_with = (request.headers.get('X-Requested-With') or '').lower()
+    return requested_with == 'xmlhttprequest'
+
+def role_block_response(message):
+    if wants_json_response():
         return jsonify({"status": "error", "message": message}), 403
 
     flash(message, "error")
@@ -147,7 +161,7 @@ def role_required(allowed_roles, denied_message):
         def decorated_function(*args, **kwargs):
             user = session.get('user')
             if not user:
-                if request.is_json:
+                if wants_json_response():
                     return jsonify({"status": "error", "message": "Session expired"}), 401
                 return redirect(url_for('core.login'))
 
@@ -480,7 +494,7 @@ def warn_user():
     reason = data.get('reason')
     message = data.get('message')
 
-    is_json = request.is_json
+    is_json = wants_json_response()
 
     if not all([user_id, reason, message]):
         if is_json:
@@ -630,7 +644,17 @@ def ban_user(user_id):
 @content_access_required
 def admin_delete_post(post_id):
     try:
-        admin_client = get_service_client()
+        if not supabase_service:
+            logger.error("Admin delete blocked: SUPABASE_SERVICE_ROLE_KEY is not configured.")
+            if wants_json_response():
+                return jsonify({
+                    "status": "error",
+                    "message": "Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY.",
+                }), 500
+            flash("Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY.", "error")
+            return redirect(request.referrer or url_for('admin.dashboard'))
+
+        admin_client = supabase_service
         delete_post_dependencies(admin_client, post_id)
         admin_client.table('posts').delete().eq("id", post_id).execute()
 
@@ -644,13 +668,17 @@ def admin_delete_post(post_id):
         except Exception as log_e:
             logger.error("Audit log error (delete post): %s", log_e)
 
-        if request.is_json:
+        if wants_json_response():
             return jsonify({"status": "deleted"})
         flash("Post removed.", "success")
     except Exception as e:
         logger.error("Error deleting post (admin): %s", e)
-        if request.is_json:
-            return jsonify({"status": "error", "message": "Failed to remove post."}), 500
+        if wants_json_response():
+            return jsonify({
+                "status": "error",
+                "message": "Failed to remove post.",
+                "details": str(e),
+            }), 500
         flash("Failed to remove post.", "error")
 
     return redirect(request.referrer or url_for('admin.dashboard'))
