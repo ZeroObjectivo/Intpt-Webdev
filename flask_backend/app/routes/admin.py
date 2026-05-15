@@ -1,3 +1,4 @@
+import logging
 import os
 from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify, request
 from app.routes.auth import login_required
@@ -5,6 +6,8 @@ from services.supabase_client import supabase, supabase_service, get_user_client
 from functools import wraps
 import datetime
 import uuid
+
+logger = logging.getLogger(__name__)
 
 admin = Blueprint('admin', __name__)
 
@@ -25,8 +28,10 @@ def get_service_client():
     Used for administrative actions that standard users shouldn't have permissions for.
     """
     if not supabase_service:
-        # Fallback to standard client if service key isn't configured
-        return supabase
+        raise RuntimeError(
+            "SUPABASE_SERVICE_ROLE_KEY is not configured. "
+            "Admin operations require a service role key to bypass RLS."
+        )
     return supabase_service
 
 def normalize_role(role):
@@ -52,7 +57,7 @@ def get_current_role():
             session.modified = True
         return db_role or current_role
     except Exception as e:
-        print(f"Error verifying admin role: {e}")
+        logger.error("Error verifying admin role: %s", e)
         return current_role
 
 def role_block_response(message):
@@ -183,7 +188,7 @@ def dashboard():
         stats["disputes_count"] = disputes_res.count if hasattr(disputes_res, 'count') else len(disputes_res.data)
             
     except Exception as e:
-        print(f"Error fetching admin stats: {e}")
+        logger.error("Error fetching admin stats: %s", e)
 
     return render_template('admin/dashboard.html', stats=stats, user=session.get('user'), permissions=permissions)
 
@@ -286,7 +291,7 @@ def update_user_role(user_id):
                 "details": f"Updated role to {new_role}"
             }).execute()
         except Exception as log_e:
-            print(f"Audit Log Error: {str(log_e)}")
+            logger.error("Audit log error: %s", log_e)
         
         flash(f"User role updated successfully to {new_role.replace('_', ' ').title()}.", "success")
     except Exception as e:
@@ -318,11 +323,11 @@ def lift_user_suspension(user_id):
                 "details": "Manual override: lifted moderation suspension and reset profanity counters."
             }).execute()
         except Exception as log_error:
-            print(f"Admin log insert failed (lift suspension): {log_error}")
+            logger.error("Admin log insert failed (lift suspension): %s", log_error)
 
         flash("Suspension lifted and moderation counter reset.", "success")
     except Exception as e:
-        print(f"Error lifting suspension: {e}")
+        logger.error("Error lifting suspension: %s", e)
         flash("Failed to lift suspension.", "error")
 
     return redirect(url_for('admin.user_management', user_id=user_id))
@@ -417,32 +422,7 @@ def manage_disputes():
     res = client.table('verification_disputes').select("*").order('created_at', desc=True).execute()
     return render_template('admin/disputes.html', disputes=res.data, user=session.get('user'), permissions=permissions)
 
-@admin.route('/admin/become-admin', methods=['POST'])
-@login_required
-@role_required(SUPER_ADMIN_ROLES, "Only Super Admin can access this action.")
-def become_admin():
-    """Temporary route for testing to promote current user to super_admin."""
-    user_id = session['user']['id']
-    client = get_user_client()
-    
-    try:
-        # 1. Update in database
-        client.table('profiles').update({"role": "super_admin"}).eq("id", user_id).execute()
-        
-        # 2. Re-fetch profile to ensure session is perfectly synced
-        profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
-        profile = profile_res.data
-        
-        # 3. Update the full user object in session
-        # We preserve the user_metadata from the auth session but update the profile info
-        session['user'].update(profile)
-        session.modified = True
-        
-        flash("You are now a Super Admin!", "success")
-        return redirect(url_for('admin.dashboard'))
-    except Exception as e:
-        flash("Failed to become admin.", "error")
-        return redirect(url_for('core.profile_settings'))
+# /admin/become-admin route removed — was a temporary testing endpoint.
 
 @admin.route('/admin/forbidden-words')
 @login_required
@@ -570,7 +550,7 @@ def create_scholarship_catalog_item():
         }).execute()
         flash("Scholarship card created.", "success")
     except Exception as e:
-        print(f"Error creating scholarship catalog item: {e}")
+        logger.error("Error creating scholarship catalog item: %s", e)
         flash("Failed to create scholarship card.", "error")
     return redirect(url_for('admin.manage_scholarship_catalog'))
 
@@ -599,7 +579,7 @@ def update_scholarship_catalog_item(item_id):
         }).eq('id', item_id).execute()
         flash("Scholarship card updated.", "success")
     except Exception as e:
-        print(f"Error updating scholarship catalog item: {e}")
+        logger.error("Error updating scholarship catalog item: %s", e)
         flash("Failed to update scholarship card.", "error")
     return redirect(url_for('admin.manage_scholarship_catalog'))
 
@@ -612,7 +592,7 @@ def delete_scholarship_catalog_item(item_id):
         admin_client.table('scholarship_catalog').delete().eq('id', item_id).execute()
         flash("Scholarship card deleted.", "success")
     except Exception as e:
-        print(f"Error deleting scholarship catalog item: {e}")
+        logger.error("Error deleting scholarship catalog item: %s", e)
         flash("Failed to delete scholarship card.", "error")
     return redirect(url_for('admin.manage_scholarship_catalog'))
 
@@ -671,7 +651,7 @@ def create_umak_coop_item():
     except ValueError as ve:
         flash(str(ve), "error")
     except Exception as e:
-        print(f"Error creating UMak Coop item: {e}")
+        logger.error("Error creating UMak Coop item: %s", e)
         flash("Failed to create UMak Coop item.", "error")
     return redirect(url_for('admin.manage_umak_coop_catalog'))
 
@@ -711,7 +691,7 @@ def update_umak_coop_item(item_id):
     except ValueError as ve:
         flash(str(ve), "error")
     except Exception as e:
-        print(f"Error updating UMak Coop item: {e}")
+        logger.error("Error updating UMak Coop item: %s", e)
         flash("Failed to update UMak Coop item.", "error")
     return redirect(url_for('admin.manage_umak_coop_catalog'))
 
@@ -724,6 +704,6 @@ def delete_umak_coop_item(item_id):
         admin_client.table('umak_coop_items').delete().eq('id', item_id).execute()
         flash("UMak Coop item deleted.", "success")
     except Exception as e:
-        print(f"Error deleting UMak Coop item: {e}")
+        logger.error("Error deleting UMak Coop item: %s", e)
         flash("Failed to delete UMak Coop item.", "error")
     return redirect(url_for('admin.manage_umak_coop_catalog'))

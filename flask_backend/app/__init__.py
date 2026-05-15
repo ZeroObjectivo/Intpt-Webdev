@@ -1,8 +1,11 @@
+import logging
 from flask import Flask, request, redirect, session, url_for
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, timezone
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os
+
+logger = logging.getLogger(__name__)
 
 csrf = CSRFProtect()
 
@@ -17,6 +20,9 @@ def create_app():
     if not secret_key:
         raise RuntimeError("SECRET_KEY environment variable is not set.")
     app.config['SECRET_KEY'] = secret_key
+    app.config['SESSION_COOKIE_SECURE'] = os.getenv('FLASK_ENV') == 'production'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
     # CSRF protection for all POST forms
     csrf.init_app(app)
@@ -58,7 +64,7 @@ def create_app():
                 'unread_notifications_count': unread_count
             }
         except Exception as e:
-            print(f"Error injecting notifications: {e}")
+            logger.error("Error injecting notifications: %s", e)
             return {'notifications': [], 'unread_notifications_count': 0}
 
     @app.context_processor

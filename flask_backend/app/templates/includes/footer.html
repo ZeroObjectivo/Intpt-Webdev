@@ -1,0 +1,12 @@
+<footer class="w-full bg-[#001035] text-slate-400 text-xs py-4 mt-auto">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>&copy; {{ now.year }} Herons' Hub &mdash; University of Makati</span>
+        <div class="flex items-center gap-4">
+            <a href="{{ url_for('core.home') }}" class="hover:text-white transition-colors">About</a>
+            <span class="text-slate-600">|</span>
+            <a href="{{ url_for('core.home') }}" class="hover:text-white transition-colors">Terms</a>
+            <span class="text-slate-600">|</span>
+            <a href="{{ url_for('core.home') }}" class="hover:text-white transition-colors">Privacy</a>
+        </div>
+    </div>
+</footer>

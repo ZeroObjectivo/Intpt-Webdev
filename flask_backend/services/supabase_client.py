@@ -1,5 +1,8 @@
+import logging
 import os
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 from supabase import create_client, Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -66,6 +69,6 @@ def init_supabase():
     Verifies that the credentials are loaded properly.
     """
     if not url or not key or "your-project-id" in url:
-        print("Error: Supabase credentials not found. Please update your .env file.")
+        logger.error("Supabase credentials not found. Please update your .env file.")
         return False
     return True
