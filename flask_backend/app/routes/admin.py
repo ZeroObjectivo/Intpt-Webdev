@@ -294,6 +294,39 @@ def update_user_role(user_id):
         
     return redirect(url_for('admin.user_management', user_id=user_id))
 
+@admin.route('/admin/users/<user_id>/lift-suspension', methods=['POST'])
+@login_required
+@account_access_required
+def lift_user_suspension(user_id):
+    try:
+        admin_client = get_service_client()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        admin_client.table('profiles').update({
+            "status": "active",
+            "ban_reason": None,
+            "suspended_until": None,
+            "profanity_count": 0,
+            "profanity_warning_sent": False,
+            "profanity_counter_started_at": now_iso
+        }).eq("id", user_id).execute()
+
+        try:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": "lift_suspension_override",
+                "target_id": user_id,
+                "details": "Manual override: lifted moderation suspension and reset profanity counters."
+            }).execute()
+        except Exception as log_error:
+            print(f"Admin log insert failed (lift suspension): {log_error}")
+
+        flash("Suspension lifted and moderation counter reset.", "success")
+    except Exception as e:
+        print(f"Error lifting suspension: {e}")
+        flash("Failed to lift suspension.", "error")
+
+    return redirect(url_for('admin.user_management', user_id=user_id))
+
 @admin.route('/admin/content/<category>')
 @login_required
 @content_access_required

@@ -6,6 +6,15 @@ function getCSRFToken() {
     return meta ? meta.getAttribute('content') : '';
 }
 
+function showModerationPopup(message) {
+    const text = message || 'Your content violates community policy.';
+    if (window.createToast) {
+        window.createToast(`⚠ ${text}`, 'error');
+        return;
+    }
+    alert(`⚠ ${text}`);
+}
+
 let currentPost = null;
 let currentIdx = 0;
 let isDragging = false;
@@ -488,6 +497,10 @@ async function saveEditComment(commentId) {
             body: JSON.stringify({ content })
         });
         const data = await response.json();
+        if (!response.ok || data.status === 'blocked') {
+            showModerationPopup(data.error || 'Comment update blocked by policy.');
+            return;
+        }
         if (data.comment) {
             document.getElementById(`comment-text-${commentId}`).innerText = data.comment.content;
             cancelEditComment(commentId);
@@ -578,6 +591,10 @@ async function submitComment(event) {
         });
         
         const data = await response.json();
+        if (!response.ok || data.status === 'blocked') {
+            showModerationPopup(data.error || 'Comment blocked by policy.');
+            return;
+        }
         
         if (data.comment) {
             const list = document.getElementById('modalCommentsList');

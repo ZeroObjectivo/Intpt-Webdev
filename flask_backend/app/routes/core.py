@@ -4,7 +4,7 @@ from .auth import (
     login_required,
     refresh_supabase_auth,
 )
-from services.supabase_client import get_user_client
+from services.supabase_client import get_user_client, supabase_service
 import datetime
 import time
 import os
@@ -22,6 +22,21 @@ LOOM_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
 VIMEO_ID_RE = re.compile(r'^\d+$')
 DAILYMOTION_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
 TIKTOK_ID_RE = re.compile(r'^\d{8,}$')
+PROFANITY_WARNING_THRESHOLD = 5
+PROFANITY_SUSPEND_THRESHOLD = 10
+PROFANITY_WEEK_RESET_DAYS = 7
+PROFANITY_SUSPEND_DAYS = 3
+PROFANITY_TERM_CACHE_SECONDS = 300
+_PROFANITY_TERM_CACHE = {"fetched_at": 0.0, "terms": []}
+
+DEFAULT_FORBIDDEN_TERMS = [
+    "putang ina", "putangina", "tang ina", "tangina", "puta ka", "anak ka ng puta",
+    "gago", "gaga", "ulol", "tanga", "bobo", "pakshet", "punyeta", "kantot", "burat", "bayag", "jakol",
+    "fuck", "fucking", "shit", "bitch", "asshole", "motherfucker", "bastard", "dick", "pussy", "cunt", "slut", "whore", "bullshit",
+    "puta", "hijo de puta", "coño", "mierda", "cabron",
+    "madarchod", "behenchod", "chutiya", "randi", "gandu",
+    "شرموطة", "قحبة", "كس", "طيز", "زب"
+]
 
 def normalize_domain(raw_value):
     raw = (raw_value or '').strip().lower()
@@ -33,6 +48,221 @@ def normalize_domain(raw_value):
     raw = raw.split('@')[-1]
     raw = raw.split(':', 1)[0]
     return raw.strip().strip('.')
+
+def normalize_text_for_moderation(text):
+    lowered = (text or "").lower()
+    collapsed = re.sub(r"[^\w]+", " ", lowered, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", collapsed).strip()
+
+def load_forbidden_terms():
+    now_ts = time.time()
+    if _PROFANITY_TERM_CACHE["terms"] and (now_ts - float(_PROFANITY_TERM_CACHE["fetched_at"] or 0) < PROFANITY_TERM_CACHE_SECONDS):
+        return _PROFANITY_TERM_CACHE["terms"]
+
+    terms = set(DEFAULT_FORBIDDEN_TERMS)
+    client = supabase_service or get_user_client()
+    try:
+        res = client.table('forbidden_words').select("word").execute()
+        for row in (res.data or []):
+            word = (row.get("word") or "").strip().lower()
+            if word:
+                terms.add(word)
+    except Exception as e:
+        print(f"Warning: failed loading forbidden words from DB, using defaults ({e})")
+
+    normalized_terms = sorted({normalize_text_for_moderation(term) for term in terms if term})
+    _PROFANITY_TERM_CACHE["fetched_at"] = now_ts
+    _PROFANITY_TERM_CACHE["terms"] = normalized_terms
+    return normalized_terms
+
+def find_profanity_match(content):
+    normalized_text = normalize_text_for_moderation(content)
+    if not normalized_text:
+        return None
+    padded_text = f" {normalized_text} "
+    for term in load_forbidden_terms():
+        if not term:
+            continue
+        token = f" {term} "
+        if token in padded_text:
+            return term
+    return None
+
+def _safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+def _upsert_policy_warning_notification(client, user_id, title, message, warn_reason=None):
+    try:
+        client.table('notifications').insert({
+            "user_id": user_id,
+            "title": title,
+            "message": message,
+            "type": "warning"
+        }).execute()
+    except Exception as e:
+        print(f"Failed to create policy notification: {e}")
+
+    if not warn_reason:
+        return
+
+    try:
+        client.table('warnings').insert({
+            "user_id": user_id,
+            "admin_id": None,
+            "reason": warn_reason
+        }).execute()
+    except Exception as e:
+        print(f"Failed to create automated warning row: {e}")
+
+def evaluate_submission_policy(user_id, content, submission_type):
+    now = datetime.datetime.now(datetime.timezone.utc)
+    moderation_client = supabase_service or get_user_client()
+    profile_res = moderation_client.table('profiles')\
+        .select("id, status, ban_reason, suspended_until, profanity_count, profanity_counter_started_at, profanity_warning_sent")\
+        .eq("id", user_id).single().execute()
+    profile = profile_res.data or {}
+
+    status = (profile.get("status") or "active").strip().lower()
+    ban_reason = profile.get("ban_reason") or ""
+    suspended_until = parse_post_datetime(profile.get("suspended_until"))
+    counter_started = parse_post_datetime(profile.get("profanity_counter_started_at"))
+    profanity_count = _safe_int(profile.get("profanity_count"), 0)
+    warning_sent = bool(profile.get("profanity_warning_sent"))
+    profile_updates = {}
+
+    if counter_started is None:
+        counter_started = now
+        profile_updates["profanity_counter_started_at"] = now.isoformat()
+
+    if counter_started and now - counter_started >= datetime.timedelta(days=PROFANITY_WEEK_RESET_DAYS):
+        profanity_count = 0
+        warning_sent = False
+        counter_started = now
+        profile_updates.update({
+            "profanity_count": 0,
+            "profanity_warning_sent": False,
+            "profanity_counter_started_at": now.isoformat()
+        })
+
+    if status == "suspended":
+        if suspended_until and suspended_until <= now:
+            status = "active"
+            ban_reason = ""
+            suspended_until = None
+            profanity_count = 0
+            warning_sent = False
+            counter_started = now
+            profile_updates.update({
+                "status": "active",
+                "ban_reason": None,
+                "suspended_until": None,
+                "profanity_count": 0,
+                "profanity_warning_sent": False,
+                "profanity_counter_started_at": now.isoformat()
+            })
+        else:
+            if profile_updates:
+                moderation_client.table('profiles').update(profile_updates).eq("id", user_id).execute()
+            remaining = "temporarily suspended"
+            if suspended_until:
+                remaining = f"suspended until {suspended_until.astimezone(DISPLAY_TIMEZONE).strftime('%b %d, %Y %I:%M %p')}"
+            return {
+                "allowed": False,
+                "reason": "suspended",
+                "message": f"Your account is {remaining}. Posting and commenting are disabled.",
+                "count": profanity_count,
+                "threshold_warning": PROFANITY_WARNING_THRESHOLD,
+                "threshold_suspend": PROFANITY_SUSPEND_THRESHOLD
+            }
+
+    if status == "banned":
+        if profile_updates:
+            moderation_client.table('profiles').update(profile_updates).eq("id", user_id).execute()
+        reason_text = f" Reason: {ban_reason}" if ban_reason else ""
+        return {
+            "allowed": False,
+            "reason": "banned",
+            "message": f"Your account is banned and cannot create posts or comments.{reason_text}",
+            "count": profanity_count,
+            "threshold_warning": PROFANITY_WARNING_THRESHOLD,
+            "threshold_suspend": PROFANITY_SUSPEND_THRESHOLD
+        }
+
+    matched_term = find_profanity_match(content)
+    if matched_term:
+        profanity_count += 1
+        profile_updates.update({
+            "profanity_count": profanity_count,
+            "profanity_counter_started_at": (counter_started or now).isoformat()
+        })
+
+        auto_action = None
+        if profanity_count >= PROFANITY_SUSPEND_THRESHOLD:
+            suspended_until = now + datetime.timedelta(days=PROFANITY_SUSPEND_DAYS)
+            profile_updates.update({
+                "status": "suspended",
+                "suspended_until": suspended_until.isoformat(),
+                "ban_reason": "Automatic moderation suspension due to repeated blocked language.",
+                "profanity_warning_sent": True
+            })
+            auto_action = "suspended"
+            _upsert_policy_warning_notification(
+                moderation_client,
+                user_id,
+                "Account Suspended (Policy)",
+                f"Your account has been suspended for {PROFANITY_SUSPEND_DAYS} days due to repeated blocked language.",
+                warn_reason=f"Automatic suspension ({profanity_count}/{PROFANITY_SUSPEND_THRESHOLD}) for blocked language."
+            )
+        elif profanity_count >= PROFANITY_WARNING_THRESHOLD and not warning_sent:
+            profile_updates["profanity_warning_sent"] = True
+            auto_action = "warned"
+            _upsert_policy_warning_notification(
+                moderation_client,
+                user_id,
+                "Content Warning (Policy)",
+                f"You have reached {profanity_count} blocked-language violations. At {PROFANITY_SUSPEND_THRESHOLD}, your account will be suspended.",
+                warn_reason=f"Automatic profanity warning ({profanity_count}/{PROFANITY_SUSPEND_THRESHOLD})."
+            )
+
+        moderation_client.table('profiles').update(profile_updates).eq("id", user_id).execute()
+
+        if auto_action == "suspended":
+            return {
+                "allowed": False,
+                "reason": "suspended",
+                "message": f"Blocked language detected. Your account is suspended for {PROFANITY_SUSPEND_DAYS} days.",
+                "count": profanity_count,
+                "threshold_warning": PROFANITY_WARNING_THRESHOLD,
+                "threshold_suspend": PROFANITY_SUSPEND_THRESHOLD
+            }
+
+        return {
+            "allowed": False,
+            "reason": "profanity",
+            "message": (
+                f"Blocked language detected in your {submission_type}. "
+                f"Strike {profanity_count}/{PROFANITY_SUSPEND_THRESHOLD}. "
+                f"At {PROFANITY_WARNING_THRESHOLD} you receive a warning, at {PROFANITY_SUSPEND_THRESHOLD} you are suspended."
+            ),
+            "count": profanity_count,
+            "threshold_warning": PROFANITY_WARNING_THRESHOLD,
+            "threshold_suspend": PROFANITY_SUSPEND_THRESHOLD
+        }
+
+    if profile_updates:
+        moderation_client.table('profiles').update(profile_updates).eq("id", user_id).execute()
+
+    return {
+        "allowed": True,
+        "reason": None,
+        "message": None,
+        "count": profanity_count,
+        "threshold_warning": PROFANITY_WARNING_THRESHOLD,
+        "threshold_suspend": PROFANITY_SUSPEND_THRESHOLD
+    }
 
 def normalize_dashboard_category(category):
     if category == 'Buy & Sell':
@@ -922,6 +1152,19 @@ def add_comment(post_id):
     if not content:
         return {"error": "Comment cannot be empty"}, 400
 
+    try:
+        moderation = evaluate_submission_policy(user_id, content, "comment")
+    except Exception as e:
+        print(f"Moderation policy check failed for comment: {e}")
+        return {"error": "Unable to validate content policy right now."}, 500
+
+    if not moderation.get("allowed"):
+        return {
+            "status": "blocked",
+            "error": moderation.get("message") or "Your comment violates content policy.",
+            "policy": moderation
+        }, 403
+
     client = get_user_client()
     try:
         comment_data = {
@@ -1059,6 +1302,19 @@ def update_comment(comment_id):
     if not content:
         return {"error": "Comment cannot be empty"}, 400
 
+    try:
+        moderation = evaluate_submission_policy(user_id, content, "comment")
+    except Exception as e:
+        print(f"Moderation policy check failed for comment update: {e}")
+        return {"error": "Unable to validate content policy right now."}, 500
+
+    if not moderation.get("allowed"):
+        return {
+            "status": "blocked",
+            "error": moderation.get("message") or "Your comment violates content policy.",
+            "policy": moderation
+        }, 403
+
     client = get_user_client()
     try:
         result = client.table('comments').update({
@@ -1137,6 +1393,20 @@ def create_post():
 
     if not content and (not image_files or not image_files[0].filename):
         flash("Post content cannot be empty!", "error")
+        return redirect(url_for('core.dashboard'))
+
+    try:
+        moderation = evaluate_submission_policy(user_id, content or "", "post")
+    except Exception as e:
+        print(f"Moderation policy check failed for post: {e}")
+        flash("Unable to validate content policy right now. Please try again.", "error")
+        return redirect(url_for('core.dashboard'))
+
+    if not moderation.get("allowed"):
+        policy_message = moderation.get("message") or "Your post violates content policy."
+        if not policy_message.startswith("⚠"):
+            policy_message = f"⚠ {policy_message}"
+        flash(policy_message, "error")
         return redirect(url_for('core.dashboard'))
 
     if not access_token:

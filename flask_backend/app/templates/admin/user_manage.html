@@ -82,6 +82,12 @@
                     {% endif %}
                 </div>
                 <span class="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest">{{ target_user.status or 'active' }}</span>
+                {% if target_user.suspended_until %}
+                <span class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Until {{ target_user.suspended_until[:10] }}</span>
+                {% endif %}
+                {% if target_user.profanity_count is not none %}
+                <span class="px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-widest">Profanity Strike {{ target_user.profanity_count }}</span>
+                {% endif %}
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -94,6 +100,14 @@
                 <button class="py-3 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-indigo-100 hover:bg-indigo-100 transition-colors col-span-2">
                     Issue Warning
                 </button>
+                {% if permissions.can_access_accounts %}
+                <form class="col-span-2" action="{{ url_for('admin.lift_user_suspension', user_id=target_user.id) }}" method="POST" onsubmit="return confirm('[!] Override Confirmation: This will lift suspension and reset profanity counters. Continue?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="w-full py-3 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-emerald-100 hover:bg-emerald-100 transition-colors">
+                        Override and Lift Suspension
+                    </button>
+                </form>
+                {% endif %}
             </div>
         </div>
 
