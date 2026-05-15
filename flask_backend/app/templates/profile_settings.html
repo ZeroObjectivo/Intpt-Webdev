@@ -293,14 +293,13 @@
                                         {% if loop.index <= 5 %}
                                             <div class="relative group overflow-hidden cursor-pointer w-full h-full"
                                                  onclick='{% if post.image_urls or post.image_url %}openImageModal({{ post|tojson|safe }}, {{ loop.index0 }}){% else %}openCommentModal({{ post|tojson|safe }}){% endif %}'>
-                                                <img src="{{ url }}" alt="Post image" class="w-full h-full object-cover rounded-lg">
+                                                <img src="{{ url }}" alt="Post image" class="w-full h-full object-cover">
                                                 {% if loop.index == 5 and post_images|length > 5 %}
-                                                    <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl rounded-lg">
+                                                    <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl">
                                                         +{{ post_images|length - 5 }}
                                                     </div>
                                                 {% endif %}
-                                            </div>
-                                        {% endif %}
+                                            </div>                                        {% endif %}
                                     {% endfor %}
                                 </div>
                             {% endif %}
