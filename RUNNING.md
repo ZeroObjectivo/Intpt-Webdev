@@ -1,6 +1,6 @@
 # How to Run the UMak Herons Community Platform
 
-This document provides step-by-step instructions for setting up and running the application locally.
+This document provides the recommended local setup for the project, including the admin local domain flow, important prerequisites, and the proxy-related authentication issue discovered on May 16, 2026.
 
 ---
 
@@ -11,6 +11,8 @@ Before getting started, ensure you have the following installed:
 - **Python 3.12+** - [Download here](https://www.python.org/downloads/)
 - **Node.js 16+** and **npm** - [Download here](https://nodejs.org/)
 - **Git** - [Download here](https://git-scm.com/)
+- **Windows PowerShell access** - needed for local commands in this guide
+- **Administrator access** - needed once for editing the Windows hosts file
 - **Supabase CLI** (optional, for database management) - [Download here](https://supabase.com/docs/guides/cli)
 
 ### Verify Installations
@@ -19,6 +21,54 @@ Before getting started, ensure you have the following installed:
 python --version
 node --version
 npm --version
+```
+
+Recommended:
+
+- Use the project virtual environment in `Intpt-Webdev\venv`
+- Keep `.env` inside `flask_backend\.env`
+- Confirm `dev.localhost` is mapped before testing admin login
+
+## Important Precautions
+
+Read these before troubleshooting login:
+
+- Do not assume a login failure means the Supabase keys are wrong. In this project, a machine-level proxy setting can break auth even when `.env` is correct.
+- Do not commit `.env`, copied tokens, or local debugging output.
+- Restart the Flask server after changing environment variables or auth-related Python files.
+- Use `http://localhost:5000` for the user flow and `http://dev.localhost:5000` for the admin flow. Testing only one host can hide domain-specific issues.
+- `DATABASE_URL` must be a SQLAlchemy Postgres URL, not an HTTPS dashboard URL.
+- If login fails only on one machine while another developer can log in with the same `.env`, compare shell environment variables before rotating credentials.
+
+## Known Local Authentication Pitfall
+
+On May 16, 2026, local login failures were traced to machine-level proxy variables:
+
+```env
+HTTP_PROXY=http://127.0.0.1:9
+HTTPS_PROXY=http://127.0.0.1:9
+ALL_PROXY=http://127.0.0.1:9
+```
+
+These values point to a dead local proxy. The Python Supabase client used by Flask previously inherited them automatically, which caused `/auth/session` to fail with a generic authentication error even though the returned Google/Supabase token was valid.
+
+The codebase now uses Supabase client wrappers that ignore inherited proxy environment variables for auth, PostgREST, and storage requests. Even so, you should still check for these variables when diagnosing other network-related issues.
+
+Quick check in PowerShell:
+
+```powershell
+cmd /c set HTTP
+cmd /c set HTTPS
+cmd /c set ALL_PROXY
+cmd /c set NO_PROXY
+```
+
+If you need to test the shell manually without those proxy values:
+
+```powershell
+$env:HTTP_PROXY=''
+$env:HTTPS_PROXY=''
+$env:ALL_PROXY=''
 ```
 
 ---
@@ -95,6 +145,9 @@ FLASK_DEBUG=True
 SUPABASE_URL=your-supabase-url
 SUPABASE_KEY=your-supabase-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+DATABASE_URL=postgresql+psycopg2://postgres:<DB_PASSWORD>@db.<project-ref>.supabase.co:5432/postgres
+MAIN_DOMAIN=localhost
+ADMIN_DOMAIN=dev.localhost
 ```
 
 **Get your Supabase credentials:**
@@ -104,7 +157,24 @@ SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 4. Copy the `URL` and `anon` public key
 5. Copy the `service_role` key for admin operations (keep this server-side only)
 
-### Step 5: Install Node.js Dependencies
+Important checks:
+
+- `SUPABASE_URL` should look like `https://<project-ref>.supabase.co/`
+- `DATABASE_URL` should begin with `postgresql+psycopg2://`
+- `MAIN_DOMAIN` should be `localhost`
+- `ADMIN_DOMAIN` should be `dev.localhost`
+
+### Step 5: Map the Local Admin Host
+
+Run this once in **PowerShell as Administrator**:
+
+```powershell
+Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n127.0.0.1 dev.localhost"
+```
+
+This is required for admin-domain testing at `http://dev.localhost:5000`.
+
+### Step 6: Install Node.js Dependencies
 
 Install frontend dependencies for Tailwind CSS:
 
@@ -144,6 +214,8 @@ python run.py
 ```
 
 The Flask server will run on `http://localhost:5000`
+
+If you recently changed auth or environment settings, stop any existing Flask process first and start a fresh one.
 
 #### Terminal 2: Tailwind CSS Watcher
 
@@ -185,6 +257,8 @@ Once both services are running:
 - **Main App:** Open http://localhost:5000 in your browser
 - **Login Page:** http://localhost:5000/login
 - **Dashboard:** http://localhost:5000/dashboard (after login)
+- **Admin Login:** http://dev.localhost:5000/login
+- **Admin Dashboard:** http://dev.localhost:5000/admin/dashboard
 
 ---
 
@@ -258,6 +332,43 @@ npm ci  # Clean install
 # Verify environment variables are set correctly
 cat .env
 ```
+
+Also verify proxy environment variables:
+
+```powershell
+cmd /c set HTTP
+cmd /c set HTTPS
+cmd /c set ALL_PROXY
+```
+
+If any of them point to `127.0.0.1:9` or another dead proxy, local auth and API calls may fail on this machine only.
+
+### Issue 6: Login shows "Authentication failed. Please try again."
+
+Possible causes:
+
+1. The Flask process is still running old code
+- Fix: stop the server and start it again.
+
+2. `dev.localhost` is not mapped in the hosts file
+- Fix: add `127.0.0.1 dev.localhost` as shown above.
+
+3. Shell-level proxy variables are hijacking Supabase requests
+- Fix: inspect `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY`.
+
+4. You are testing the wrong host for the intended role flow
+- Fix: use `localhost` for the user side and `dev.localhost` for the admin side.
+
+### Issue 7: Another developer can log in with the same `.env`, but this machine cannot
+
+Most likely causes:
+
+- dead proxy environment variables in the current shell or OS session
+- stale Flask process that has not been restarted
+- missing `dev.localhost` hosts entry
+- local firewall or proxy tooling injecting network behavior outside the repo
+
+Do not rotate Supabase credentials until these machine-level differences have been checked.
 
 ---
 
@@ -334,5 +445,6 @@ For production deployment, see [Execution.md](./Md/Execution.md) and the project
 - Check [ProjectPlan.md](./Md/ProjectPlan.md) for feature overview
 - Check [DESIGN.md](./Md/DESIGN.md) for design system
 - Review [Execution.md](./Md/Execution.md) for architecture details
+- Review [Local_Domain_Testing.md](./Md/Local_Domain_Testing.md) for user/admin local host testing
 - Check Flask documentation: https://flask.palletsprojects.com/
 - Check Tailwind documentation: https://tailwindcss.com/

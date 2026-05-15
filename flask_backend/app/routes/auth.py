@@ -1,7 +1,13 @@
 import logging
 import os
 from flask import Blueprint, request, redirect, session, url_for, jsonify, render_template
-from services.supabase_client import supabase, engine, get_user_client
+from services.supabase_client import (
+    supabase,
+    supabase_service,
+    engine,
+    get_public_client,
+    get_user_client,
+)
 from sqlalchemy import text
 from functools import wraps
 from postgrest.exceptions import APIError
@@ -308,8 +314,8 @@ def set_session():
         is_admin_host = is_admin_domain_request()
 
         # 2. Check if user exists in profiles table
-        user_client = get_user_client()
-        profile_check = user_client.table('profiles').select("id").eq("id", user.id).execute()
+        profile_client = supabase_service or get_public_client()
+        profile_check = profile_client.table('profiles').select("id").eq("id", user.id).execute()
 
         # 3. REDIRECT: New user vs Existing user
         if not profile_check.data:
@@ -323,7 +329,7 @@ def set_session():
             return redirect(url_for('auth.onboarding'))
         
         # Fetch full profile to get role and other details
-        profile_res = user_client.table('profiles').select("*").eq("id", user.id).single().execute()
+        profile_res = profile_client.table('profiles').select("*").eq("id", user.id).single().execute()
 
         # Admin domain gate: only admin-portal roles can log in on dev.heronshub.social
         if is_admin_host:
