@@ -67,6 +67,37 @@
         .hh-navbar #notification-footer {
             padding: 0.75rem;
         }
+
+        .hh-navbar #mobile-search-panel {
+            left: 0.5rem;
+            right: 0.5rem;
+            margin-top: 0.45rem;
+        }
+    }
+
+    .hh-navbar .hh-hamburger-line {
+        display: block;
+        width: 1.1rem;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+    }
+
+    .hh-navbar #mobile-nav-trigger[aria-expanded="true"] .hh-hamburger-line:nth-child(1) {
+        transform: translateY(6px) rotate(45deg);
+    }
+
+    .hh-navbar #mobile-nav-trigger[aria-expanded="true"] .hh-hamburger-line:nth-child(2) {
+        opacity: 0;
+    }
+
+    .hh-navbar #mobile-nav-trigger[aria-expanded="true"] .hh-hamburger-line:nth-child(3) {
+        transform: translateY(-6px) rotate(-45deg);
+    }
+
+    .hh-navbar .hh-mobile-menu-badge {
+        min-width: 1.2rem;
+        text-align: center;
     }
 
     .hh-navbar .hh-search-wrap {
@@ -255,9 +286,9 @@
                         </div>
                     </button>
                     
-                    <!-- 3. Notification Icon with Dropdown -->
+                    <!-- 3. Notification Icon with Dropdown (Desktop) -->
                     <div class="relative" id="notification-dropdown-container">
-                        <button class="hh-icon-btn p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors relative" 
+                        <button class="hh-icon-btn p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors relative hidden lg:inline-flex" 
                                 id="notification-dropdown-trigger" aria-label="Notifications">
                             <svg class="hh-control-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"></path>
@@ -302,8 +333,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 4. Mobile Search Trigger -->
+                    {% if request.endpoint == 'core.dashboard' %}
+                    <button id="mobile-search-trigger" type="button" class="hh-icon-btn p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors inline-flex lg:hidden" aria-label="Search" aria-expanded="false">
+                        <svg class="hh-control-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35m1.6-5.15a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0Z"></path>
+                        </svg>
+                    </button>
+                    {% endif %}
                     
-                    <!-- 4. Settings / Mobile Navigation -->
+                    <!-- 5. Settings / Mobile Navigation -->
                     <a href="{{ url_for('core.profile_settings') }}" class="hh-icon-btn p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors hidden lg:inline-flex" aria-label="Settings">
                         <svg class="hh-control-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.127c-.332.183-.582.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"></path>
@@ -312,12 +352,19 @@
                     </a>
                     <div class="relative lg:hidden">
                         <button id="mobile-nav-trigger" type="button" class="hh-icon-btn p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors inline-flex" aria-label="Navigation menu" aria-expanded="false">
-                            <svg class="hh-control-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.127c-.332.183-.582.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
+                            <span class="flex flex-col justify-center items-center gap-[4px] w-6 h-6">
+                                <span class="hh-hamburger-line transition-all duration-200"></span>
+                                <span class="hh-hamburger-line transition-all duration-200"></span>
+                                <span class="hh-hamburger-line transition-all duration-200"></span>
+                            </span>
                         </button>
                         <div id="mobile-nav-menu" class="hidden absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-2xl py-2 text-[#101828] z-[70] border border-slate-100">
+                            <button id="mobile-notification-trigger" type="button" class="w-full flex items-center justify-between px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors text-left">
+                                <span>Notifications</span>
+                                <span id="mobile-notification-count" class="hh-mobile-menu-badge px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-600 {% if unread_notifications_count <= 0 %}hidden{% endif %}">
+                                    {{ unread_notifications_count }}
+                                </span>
+                            </button>
                             <a href="{{ url_for('core.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Home Feed</a>
                             <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Marketplace</a>
                             <a href="{{ url_for('core.dashboard', category='Events') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Events</a>
@@ -328,6 +375,29 @@
                     </div>
                 </div>
             </div>
+
+            {% if request.endpoint == 'core.dashboard' %}
+            <div id="mobile-search-panel" class="hidden lg:hidden absolute top-full left-3 right-3 bg-white rounded-2xl border border-slate-100 shadow-2xl p-3 z-[80]">
+                <div id="navbarSearchContainerMobile" class="hh-search-wrap relative w-full">
+                    <input
+                        type="text"
+                        placeholder="Search users or posts..."
+                        id="navbarSearchInputMobile"
+                        aria-label="Search"
+                        autocomplete="off"
+                        class="hh-search-input w-full py-2 pl-10 pr-4 text-gray-700 rounded-full transition-all"
+                    >
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="hh-search-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <div id="navbarSearchDropdownMobile" class="hh-search-dropdown hidden" role="listbox" aria-label="Search suggestions">
+                        <div id="navbarSearchDropdownContentMobile"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <script>
                 function getCSRFToken() {
@@ -348,12 +418,17 @@
                 function updateNotificationBadge(unreadCount) {
                     const dot = document.getElementById('notification-unread-dot');
                     const count = document.getElementById('notification-unread-count');
+                    const mobileCount = document.getElementById('mobile-notification-count');
                     const hasUnread = unreadCount > 0;
 
                     if (dot) dot.classList.toggle('hidden', !hasUnread);
                     if (count) {
                         count.classList.toggle('hidden', !hasUnread);
                         count.textContent = `${unreadCount} New`;
+                    }
+                    if (mobileCount) {
+                        mobileCount.classList.toggle('hidden', !hasUnread);
+                        mobileCount.textContent = String(unreadCount);
                     }
                 }
 
@@ -429,6 +504,9 @@
 
                     const mobileNavTrigger = document.getElementById('mobile-nav-trigger');
                     const mobileNavMenu = document.getElementById('mobile-nav-menu');
+                    const mobileNotifTrigger = document.getElementById('mobile-notification-trigger');
+                    const mobileSearchTrigger = document.getElementById('mobile-search-trigger');
+                    const mobileSearchPanel = document.getElementById('mobile-search-panel');
                     if (mobileNavTrigger && mobileNavMenu) {
                         mobileNavTrigger.addEventListener('click', function(e) {
                             e.stopPropagation();
@@ -436,11 +514,48 @@
                             mobileNavTrigger.setAttribute('aria-expanded', !mobileNavMenu.classList.contains('hidden'));
                             if (menu) menu.classList.add('hidden');
                             if (notifMenu) notifMenu.classList.add('hidden');
+                            if (mobileSearchPanel) mobileSearchPanel.classList.add('hidden');
+                            if (mobileSearchTrigger) mobileSearchTrigger.setAttribute('aria-expanded', 'false');
                         });
                         document.addEventListener('click', function(e) {
                             if (!mobileNavTrigger.contains(e.target) && !mobileNavMenu.contains(e.target)) {
                                 mobileNavMenu.classList.add('hidden');
                                 mobileNavTrigger.setAttribute('aria-expanded', 'false');
+                            }
+                        });
+                    }
+
+                    if (mobileNotifTrigger && notifMenu) {
+                        mobileNotifTrigger.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            notifMenu.classList.toggle('hidden');
+                            if (mobileNavMenu) {
+                                mobileNavMenu.classList.add('hidden');
+                                if (mobileNavTrigger) mobileNavTrigger.setAttribute('aria-expanded', 'false');
+                            }
+                        });
+                    }
+
+                    if (mobileSearchTrigger && mobileSearchPanel) {
+                        mobileSearchTrigger.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            const willShow = mobileSearchPanel.classList.contains('hidden');
+                            mobileSearchPanel.classList.toggle('hidden');
+                            mobileSearchTrigger.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+                            if (mobileNavMenu) {
+                                mobileNavMenu.classList.add('hidden');
+                                if (mobileNavTrigger) mobileNavTrigger.setAttribute('aria-expanded', 'false');
+                            }
+                            if (notifMenu) notifMenu.classList.add('hidden');
+                            if (willShow) {
+                                const mobileInput = document.getElementById('navbarSearchInputMobile');
+                                if (mobileInput) mobileInput.focus();
+                            }
+                        });
+                        document.addEventListener('click', function(e) {
+                            if (!mobileSearchTrigger.contains(e.target) && !mobileSearchPanel.contains(e.target)) {
+                                mobileSearchPanel.classList.add('hidden');
+                                mobileSearchTrigger.setAttribute('aria-expanded', 'false');
                             }
                         });
                     }
@@ -470,13 +585,41 @@
                         } catch (e) { console.error(e); }
                     };
 
-                    const searchInput = document.getElementById('navbarSearchInput');
-                    const searchContainer = document.getElementById('navbarSearchContainer');
-                    const searchDropdown = document.getElementById('navbarSearchDropdown');
-                    const searchDropdownContent = document.getElementById('navbarSearchDropdownContent');
                     const defaultAvatar = '{{ url_for('static', filename='images/Logo.png') }}';
+                    function filterPostCards(queryText, applyVisibility) {
+                        const lowered = (queryText || '').toLowerCase().trim();
+                        const posts = Array.from(document.querySelectorAll('.post-card'));
+                        const matches = [];
 
-                    if (searchInput && searchContainer && searchDropdown && searchDropdownContent) {
+                        posts.forEach((post) => {
+                            const postText = (post.textContent || '').toLowerCase();
+                            const isMatch = !lowered || postText.includes(lowered);
+                            if (applyVisibility) {
+                                post.style.display = isMatch ? '' : 'none';
+                            }
+
+                            if (lowered && isMatch && matches.length < 5) {
+                                const postId = post.dataset.postId || '';
+                                const authorEl = post.querySelector('.post-author-name') || post.querySelector('.post-user-info h4');
+                                const contentEl = post.querySelector('.post-content p');
+                                matches.push({
+                                    id: postId,
+                                    author: authorEl ? authorEl.textContent.trim() : 'Post',
+                                    snippet: contentEl ? contentEl.textContent.trim() : ''
+                                });
+                            }
+                        });
+
+                        return matches;
+                    }
+
+                    function initSearchBox(config) {
+                        const searchInput = document.getElementById(config.inputId);
+                        const searchContainer = document.getElementById(config.containerId);
+                        const searchDropdown = document.getElementById(config.dropdownId);
+                        const searchDropdownContent = document.getElementById(config.contentId);
+                        if (!searchInput || !searchContainer || !searchDropdown || !searchDropdownContent) return;
+
                         let userSearchTimer = null;
                         let searchRequestId = 0;
                         let lastUsers = [];
@@ -489,31 +632,6 @@
 
                         function openSearchDropdown() {
                             searchDropdown.classList.remove('hidden');
-                        }
-
-                        function filterPostCards(queryText) {
-                            const lowered = (queryText || '').toLowerCase().trim();
-                            const posts = Array.from(document.querySelectorAll('.post-card'));
-                            const matches = [];
-
-                            posts.forEach((post) => {
-                                const postText = (post.textContent || '').toLowerCase();
-                                const isMatch = !lowered || postText.includes(lowered);
-                                post.style.display = isMatch ? '' : 'none';
-
-                                if (lowered && isMatch && matches.length < 5) {
-                                    const postId = post.dataset.postId || '';
-                                    const authorEl = post.querySelector('.post-author-name') || post.querySelector('.post-user-info h4');
-                                    const contentEl = post.querySelector('.post-content p');
-                                    matches.push({
-                                        id: postId,
-                                        author: authorEl ? authorEl.textContent.trim() : 'Post',
-                                        snippet: contentEl ? contentEl.textContent.trim() : ''
-                                    });
-                                }
-                            });
-
-                            return matches;
                         }
 
                         function renderSearchDropdown(queryText, users, postMatches) {
@@ -549,7 +667,7 @@
                                 return `
                                     <button type="button" class="hh-search-item" role="option" data-search-kind="post" data-post-id="${safePostId}">
                                         <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h5M6 19h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h5M6 19h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"></path></svg>
                                         </div>
                                         <div class="min-w-0">
                                             <div class="hh-search-item-title truncate">${safeAuthor}</div>
@@ -579,7 +697,6 @@
                                 const res = await fetch(`/search/users?q=${encodeURIComponent(queryText)}&limit=6`, {
                                     headers: { 'Accept': 'application/json' }
                                 });
-
                                 if (res.status === 401) {
                                     window.location.href = '/login';
                                     return;
@@ -600,7 +717,7 @@
                         searchInput.addEventListener('input', function() {
                             const queryText = this.value.trim();
                             activeQuery = queryText;
-                            const postMatches = filterPostCards(queryText);
+                            const postMatches = filterPostCards(queryText, !!config.applyPostVisibility);
                             lastPostMatches = postMatches;
 
                             if (!queryText) {
@@ -639,17 +756,15 @@
                         searchDropdown.addEventListener('click', function(e) {
                             const button = e.target.closest('[data-search-kind="post"]');
                             if (!button) return;
-
                             const postId = button.getAttribute('data-post-id');
                             if (!postId) return;
-
                             const target = document.querySelector(`.post-card[data-post-id="${postId}"]`);
                             if (!target) return;
-
                             target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             target.classList.add('ring-2', 'ring-blue-500');
                             setTimeout(() => target.classList.remove('ring-2', 'ring-blue-500'), 1200);
                             closeSearchDropdown();
+                            if (config.onPostSelected) config.onPostSelected();
                         });
 
                         document.addEventListener('click', function(e) {
@@ -658,6 +773,30 @@
                             }
                         });
                     }
+
+                    initSearchBox({
+                        inputId: 'navbarSearchInput',
+                        containerId: 'navbarSearchContainer',
+                        dropdownId: 'navbarSearchDropdown',
+                        contentId: 'navbarSearchDropdownContent',
+                        applyPostVisibility: true
+                    });
+
+                    initSearchBox({
+                        inputId: 'navbarSearchInputMobile',
+                        containerId: 'navbarSearchContainerMobile',
+                        dropdownId: 'navbarSearchDropdownMobile',
+                        contentId: 'navbarSearchDropdownContentMobile',
+                        applyPostVisibility: false,
+                        onPostSelected: function() {
+                            if (mobileSearchPanel) {
+                                mobileSearchPanel.classList.add('hidden');
+                            }
+                            if (mobileSearchTrigger) {
+                                mobileSearchTrigger.setAttribute('aria-expanded', 'false');
+                            }
+                        }
+                    });
 
                     let notificationPollBusy = false;
                     let lastAdminVersion = null;

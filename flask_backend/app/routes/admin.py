@@ -442,7 +442,7 @@ def content_management(category):
     client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
-    query = client.table('posts').select("*, profiles(full_name, avatar_url)")
+    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
     if category != 'All':
         query = query.eq('category', category)
     res = query.order('created_at', desc=True).execute()
@@ -464,7 +464,7 @@ def admin_get_post_comments(post_id):
     client = get_admin_read_client()
     try:
         comments_response = client.table('comments')\
-            .select("*, profiles(full_name, avatar_url)")\
+            .select("*, profiles(full_name, avatar_url, college, course, level)")\
             .eq("post_id", post_id)\
             .order("created_at", desc=False)\
             .execute()

@@ -131,7 +131,13 @@
                                 <div class="flex items-start min-w-0">
                                     <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
                                     <div class="post-user-info">
-                                        <p class="post-author-name capitalize">{{ post.profiles.full_name | title }}</p>
+                                        <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="post-author-name capitalize hover:underline decoration-slate-300 underline-offset-2">{{ post.profiles.full_name | title }}</a>
+                                        {% if post.profiles.course or post.profiles.college %}
+                                        <span class="post-meta">
+                                            {{ post.profiles.course if post.profiles.course else post.profiles.college }}
+                                            {% if post.profiles.course and post.profiles.college %} • {{ post.profiles.college }}{% endif %}
+                                        </span>
+                                        {% endif %}
                                         <span class="post-meta">Posted {{ post.relative_created_at }}</span>
                                     </div>
                                 </div>

@@ -262,11 +262,27 @@ function updateModalContent() {
     const avatar = document.getElementById('modalUserAvatar');
     const embedContainer = document.getElementById('modalEmbedContainer');
     const embedIframe = document.getElementById('modalEmbedIframe');
+    const profileEmbed = document.getElementById('modalUserProfileEmbed');
+    const profileProgram = document.getElementById('modalUserProgram');
+    const profileLink = document.getElementById('modalUserProfileLink');
     const profile = currentPost.profiles || {};
     avatar.src = profile.avatar_url || "/static/images/Logo.png";
     document.getElementById('modalUserName').innerText = profile.full_name || 'Heron';
     document.getElementById('modalPostTime').innerText = formatPostTime(currentPost.created_at);
     document.getElementById('modalPostText').innerText = currentPost.content;
+
+    if (profileEmbed && profileProgram && profileLink) {
+        const profileBits = [profile.course, profile.college, profile.level].filter((v) => !!(v && String(v).trim()));
+        profileProgram.innerText = profileBits.length ? profileBits.join(' • ') : 'UMak community member';
+        const ownerId = currentPost.user_id || '';
+        if (ownerId) {
+            profileLink.href = `/profile/${encodeURIComponent(ownerId)}`;
+            profileLink.classList.remove('pointer-events-none', 'opacity-50');
+        } else {
+            profileLink.href = '#';
+            profileLink.classList.add('pointer-events-none', 'opacity-50');
+        }
+    }
 
     const badge = document.getElementById('modalCategoryBadge');
     badge.innerText = currentPost.category;

@@ -748,7 +748,7 @@ def load_profile_data(user_id, viewer_id=None):
             profile['contact_number'] = None
 
     posts_response = client.table('posts')\
-        .select("*, profiles(full_name, avatar_url)")\
+        .select("*, profiles(full_name, avatar_url, college, course, level)")\
         .eq("user_id", user_id)\
         .order("created_at", desc=True).execute()
     posts = posts_response.data
@@ -845,7 +845,7 @@ def load_dashboard_data(user_id, category=None):
     profile_response = client.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
 
-    query = client.table('posts').select("*, profiles(full_name, avatar_url)")
+    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
 
     if category:
         if category == 'Heron Business':
@@ -872,7 +872,7 @@ def load_dashboard_data(user_id, category=None):
         attach_embed_metadata(post)
 
     trending_response = client.table('posts')\
-        .select("*, profiles(full_name, avatar_url)")\
+        .select("*, profiles(full_name, avatar_url, college, course, level)")\
         .gt("likes_count", 0)\
         .order("likes_count", desc=True)\
         .limit(3).execute()
@@ -895,7 +895,7 @@ def load_dashboard_data(user_id, category=None):
 
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     events_response = client.table('posts')\
-        .select("*, profiles(full_name, avatar_url)")\
+        .select("*, profiles(full_name, avatar_url, college, course, level)")\
         .eq("category", "Events")\
         .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")\
         .order("event_date", desc=False)\
@@ -1192,7 +1192,7 @@ def get_comments(post_id):
     client = get_user_client()
     try:
         comments_response = client.table('comments')\
-            .select("*, profiles(full_name, avatar_url)")\
+            .select("*, profiles(full_name, avatar_url, college, course, level)")\
             .eq("post_id", post_id)\
             .order("created_at", desc=False)\
             .execute()
@@ -1239,7 +1239,7 @@ def add_comment(post_id):
         comment_response = client.table('comments').insert(comment_data).execute()
 
         new_comment = client.table('comments')\
-            .select("*, profiles(full_name, avatar_url)")\
+            .select("*, profiles(full_name, avatar_url, college, course, level)")\
             .eq("id", comment_response.data[0]['id'])\
             .single().execute()
 
