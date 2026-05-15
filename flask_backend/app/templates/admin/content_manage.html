@@ -349,7 +349,7 @@
                 'Are you sure you want to PERMANENTLY remove this post? This action cannot be undone.',
                 async () => {
                     try {
-                        const res = await fetch(`/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
+                        const res = await fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
                         const data = await res.json();
                         if (data.status === 'deleted') {
                             location.reload();
@@ -362,7 +362,7 @@
                 }
             );
         } else if (confirm('Remove this post?')) {
-            fetch(`/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } }).then(() => location.reload());
+            fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } }).then(() => location.reload());
         }
     }
 

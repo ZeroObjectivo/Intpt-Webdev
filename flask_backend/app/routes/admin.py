@@ -381,17 +381,24 @@ def flag_comment(comment_id):
 @warning_access_required
 def warn_user():
     data = request.get_json(silent=True) or {}
+    if not data:
+        data = request.form.to_dict()
     user_id = data.get('user_id')
-    post_id = data.get('post_id')
+    post_id = data.get('post_id') or None
     reason = data.get('reason')
     message = data.get('message')
 
+    is_json = request.is_json
+
     if not all([user_id, reason, message]):
-        return jsonify({"status": "error", "message": "Missing required fields."}), 400
+        if is_json:
+            return jsonify({"status": "error", "message": "Missing required fields."}), 400
+        flash("Missing required fields for warning.", "error")
+        return redirect(request.referrer or url_for('admin.dashboard'))
 
     try:
         admin_client = get_service_client()
-        
+
         # 1. Insert into warnings table
         admin_client.table('warnings').insert({
             "user_id": user_id,
@@ -408,9 +415,15 @@ def warn_user():
             "type": "warning"
         }).execute()
 
-        return jsonify({"status": "success", "message": "Warning sent successfully."})
+        if is_json:
+            return jsonify({"status": "success", "message": "Warning sent successfully."})
+        flash("Warning sent successfully.", "success")
+        return redirect(request.referrer or url_for('admin.dashboard'))
     except Exception as e:
-        return jsonify({"status": "error", "message": "An error occurred."}), 500
+        if is_json:
+            return jsonify({"status": "error", "message": "An error occurred."}), 500
+        flash("Failed to send warning.", "error")
+        return redirect(request.referrer or url_for('admin.dashboard'))
 
 @admin.route('/admin/disputes')
 @login_required
@@ -423,6 +436,171 @@ def manage_disputes():
     return render_template('admin/disputes.html', disputes=res.data, user=session.get('user'), permissions=permissions)
 
 # /admin/become-admin route removed — was a temporary testing endpoint.
+
+@admin.route('/admin/users/<user_id>/suspend', methods=['POST'])
+@login_required
+@account_access_required
+def suspend_user(user_id):
+    reason = request.form.get('reason', '').strip() or 'Suspended by admin'
+    days = int(request.form.get('days', 3))
+    days = max(1, min(days, 365))
+
+    try:
+        admin_client = get_service_client()
+        suspended_until = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=days)).isoformat()
+        admin_client.table('profiles').update({
+            "status": "suspended",
+            "ban_reason": reason,
+            "suspended_until": suspended_until
+        }).eq("id", user_id).execute()
+
+        admin_client.table('notifications').insert({
+            "user_id": user_id,
+            "title": "Account Suspended",
+            "message": f"Your account has been suspended for {days} day(s). Reason: {reason}",
+            "type": "warning"
+        }).execute()
+
+        try:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": "suspend",
+                "target_id": user_id,
+                "details": f"Suspended for {days} day(s). Reason: {reason}"
+            }).execute()
+        except Exception as log_e:
+            logger.error("Audit log error (suspend): %s", log_e)
+
+        flash(f"User suspended for {days} day(s).", "success")
+    except Exception as e:
+        logger.error("Error suspending user: %s", e)
+        flash("Failed to suspend user.", "error")
+
+    return redirect(url_for('admin.user_management', user_id=user_id))
+
+@admin.route('/admin/users/<user_id>/ban', methods=['POST'])
+@login_required
+@account_access_required
+def ban_user(user_id):
+    reason = request.form.get('reason', '').strip() or 'Banned by admin'
+
+    try:
+        admin_client = get_service_client()
+        admin_client.table('profiles').update({
+            "status": "banned",
+            "ban_reason": reason,
+            "suspended_until": None
+        }).eq("id", user_id).execute()
+
+        admin_client.table('notifications').insert({
+            "user_id": user_id,
+            "title": "Account Banned",
+            "message": f"Your account has been permanently banned. Reason: {reason}",
+            "type": "warning"
+        }).execute()
+
+        try:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": "ban",
+                "target_id": user_id,
+                "details": f"Banned. Reason: {reason}"
+            }).execute()
+        except Exception as log_e:
+            logger.error("Audit log error (ban): %s", log_e)
+
+        flash("User has been banned.", "success")
+    except Exception as e:
+        logger.error("Error banning user: %s", e)
+        flash("Failed to ban user.", "error")
+
+    return redirect(url_for('admin.user_management', user_id=user_id))
+
+@admin.route('/admin/posts/<post_id>/delete', methods=['POST'])
+@login_required
+@content_access_required
+def admin_delete_post(post_id):
+    try:
+        admin_client = get_service_client()
+        admin_client.table('posts').delete().eq("id", post_id).execute()
+
+        try:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": "remove_post",
+                "target_id": post_id,
+                "details": "Post removed by admin."
+            }).execute()
+        except Exception as log_e:
+            logger.error("Audit log error (delete post): %s", log_e)
+
+        if request.is_json:
+            return jsonify({"status": "deleted"})
+        flash("Post removed.", "success")
+    except Exception as e:
+        logger.error("Error deleting post (admin): %s", e)
+        if request.is_json:
+            return jsonify({"status": "error", "message": "Failed to remove post."}), 500
+        flash("Failed to remove post.", "error")
+
+    return redirect(request.referrer or url_for('admin.dashboard'))
+
+@admin.route('/admin/comments/<comment_id>/delete', methods=['POST'])
+@login_required
+@content_access_required
+def admin_delete_comment(comment_id):
+    try:
+        admin_client = get_service_client()
+        admin_client.table('comments').delete().eq("id", comment_id).execute()
+        return jsonify({"status": "deleted"})
+    except Exception as e:
+        logger.error("Error deleting comment (admin): %s", e)
+        return jsonify({"status": "error", "message": "Failed to remove comment."}), 500
+
+@admin.route('/admin/disputes/<dispute_id>/resolve', methods=['POST'])
+@login_required
+@account_access_required
+def resolve_dispute(dispute_id):
+    action = request.form.get('action', '').strip().lower()
+    if action not in ('approved', 'rejected'):
+        flash("Invalid action.", "error")
+        return redirect(url_for('admin.manage_disputes'))
+
+    try:
+        admin_client = get_service_client()
+        admin_client.table('verification_disputes').update({
+            "status": action
+        }).eq("id", dispute_id).execute()
+
+        try:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": f"dispute_{action}",
+                "target_id": dispute_id,
+                "details": f"Verification dispute {action}."
+            }).execute()
+        except Exception as log_e:
+            logger.error("Audit log error (dispute): %s", log_e)
+
+        flash(f"Dispute {action}.", "success")
+    except Exception as e:
+        logger.error("Error resolving dispute: %s", e)
+        flash("Failed to resolve dispute.", "error")
+
+    return redirect(url_for('admin.manage_disputes'))
+
+@admin.route('/admin/warnings/<warning_id>/delete', methods=['POST'])
+@login_required
+@account_access_required
+def delete_warning(warning_id):
+    try:
+        admin_client = get_service_client()
+        admin_client.table('warnings').delete().eq("id", warning_id).execute()
+        flash("Warning removed.", "success")
+    except Exception as e:
+        logger.error("Error deleting warning: %s", e)
+        flash("Failed to remove warning.", "error")
+    return redirect(request.referrer or url_for('admin.dashboard'))
 
 @admin.route('/admin/forbidden-words')
 @login_required
