@@ -678,10 +678,72 @@ def build_comment_count_map(client, post_ids):
 
     return count_map
 
+def _safe_exact_count(response):
+    try:
+        return int(response.count or 0)
+    except Exception:
+        return 0
+
+def load_home_metrics():
+    metrics = {
+        "members_count": 0,
+        "posts_count": 0,
+        "upcoming_events_count": 0,
+        "scholarship_count": 0,
+        "coop_count": 0,
+        "catalog_count": 0,
+    }
+
+    client = supabase_service or get_user_client()
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    try:
+        metrics["members_count"] = _safe_exact_count(
+            client.table('profiles').select("id", count='exact', head=True).execute()
+        )
+    except Exception as e:
+        logger.warning("Home metrics: profiles count unavailable: %s", e)
+
+    try:
+        metrics["posts_count"] = _safe_exact_count(
+            client.table('posts').select("id", count='exact', head=True).execute()
+        )
+    except Exception as e:
+        logger.warning("Home metrics: posts count unavailable: %s", e)
+
+    try:
+        metrics["upcoming_events_count"] = _safe_exact_count(
+            client.table('posts')
+                .select("id", count='exact', head=True)
+                .eq("category", "Events")
+                .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")
+                .execute()
+        )
+    except Exception as e:
+        logger.warning("Home metrics: events count unavailable: %s", e)
+
+    try:
+        metrics["scholarship_count"] = _safe_exact_count(
+            client.table('scholarship_catalog').select("id", count='exact', head=True).execute()
+        )
+    except Exception as e:
+        logger.warning("Home metrics: scholarship count unavailable: %s", e)
+
+    try:
+        metrics["coop_count"] = _safe_exact_count(
+            client.table('umak_coop_items').select("id", count='exact', head=True).execute()
+        )
+    except Exception as e:
+        logger.warning("Home metrics: coop count unavailable: %s", e)
+
+    metrics["catalog_count"] = metrics["scholarship_count"] + metrics["coop_count"]
+    return metrics
+
 @core.route('/')
 def home():
     user = session.get('user')
-    return render_template('home.html', user=user)
+    metrics = load_home_metrics()
+    return render_template('home.html', user=user, metrics=metrics)
 
 @core.route('/dashboard')
 @login_required
