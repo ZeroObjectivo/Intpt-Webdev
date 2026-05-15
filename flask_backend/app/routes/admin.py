@@ -11,6 +11,11 @@ logger = logging.getLogger(__name__)
 
 admin = Blueprint('admin', __name__)
 
+ROLE_ALIASES = {
+    "superadmin": "super_admin",
+    "content_manager": "content_moderator",
+}
+
 SUPER_ADMIN_ROLES = {'super_admin', 'superadmin'}
 ADMIN_ROLES = {'admin'}
 ACCOUNT_MANAGER_ROLES = {'account_manager'}
@@ -35,7 +40,62 @@ def get_service_client():
     return supabase_service
 
 def normalize_role(role):
-    return (role or '').strip().lower()
+    value = (role or '').strip().lower()
+    return ROLE_ALIASES.get(value, value)
+
+
+def can_manage_target_role(actor_role, target_role):
+    actor = normalize_role(actor_role)
+    target = normalize_role(target_role)
+
+    if actor in SUPER_ADMIN_ROLES:
+        return True
+    if target in SUPER_ADMIN_ROLES:
+        return False
+    if actor in ADMIN_ROLES:
+        return target not in ADMIN_ROLES
+    if actor in ACCOUNT_MANAGER_ROLES:
+        return target not in (ADMIN_ROLES | SUPER_ADMIN_ROLES)
+    return False
+
+
+def chunked(values, size=100):
+    for idx in range(0, len(values), size):
+        yield values[idx:idx + size]
+
+
+def delete_comment_thread(admin_client, root_comment_id):
+    pending = [root_comment_id]
+    seen = set()
+    collected = []
+
+    while pending:
+        current = pending.pop(0)
+        if not current or current in seen:
+            continue
+        seen.add(current)
+        collected.append(current)
+
+        children = admin_client.table('comments').select('id').eq('parent_id', current).execute()
+        for child in (children.data or []):
+            child_id = child.get('id')
+            if child_id and child_id not in seen:
+                pending.append(child_id)
+
+    if not collected:
+        return
+
+    # Delete leaf+parent ids in one grouped delete per batch.
+    for batch in chunked(collected, size=100):
+        admin_client.table('comments').delete().in_('id', batch).execute()
+
+
+def delete_post_dependencies(admin_client, post_id):
+    # Clear references before removing the post in schemas without ON DELETE CASCADE.
+    admin_client.table('likes').delete().eq('post_id', post_id).execute()
+    admin_client.table('reports').delete().eq('post_id', post_id).execute()
+    admin_client.table('warnings').update({"post_id": None}).eq('post_id', post_id).execute()
+    admin_client.table('comments').delete().eq('post_id', post_id).execute()
 
 def get_current_role():
     user = session.get('user')
@@ -138,7 +198,7 @@ def build_admin_permissions(role):
 @login_required
 @admin_required
 def dashboard():
-    client = get_user_client()
+    client = get_service_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     
@@ -196,7 +256,7 @@ def dashboard():
 @login_required
 @account_access_required
 def manage_users():
-    client = get_user_client()
+    client = get_service_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     search = request.args.get('search', '')
@@ -210,7 +270,7 @@ def manage_users():
 @login_required
 @account_access_required
 def user_management(user_id):
-    client = get_user_client()
+    client = get_service_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
@@ -230,7 +290,7 @@ def update_user_role(user_id):
     new_role = normalize_role(request.form.get('role'))
     actor_role = get_current_role()
 
-    valid_roles = {'student', 'content_moderator', 'account_manager', 'admin', 'super_admin', 'superadmin'}
+    valid_roles = {'student', 'content_moderator', 'content_manager', 'account_manager', 'admin', 'super_admin', 'superadmin'}
     if new_role not in valid_roles:
         flash("Invalid role selected.", "error")
         return redirect(url_for('admin.user_management', user_id=user_id))
@@ -305,6 +365,13 @@ def update_user_role(user_id):
 def lift_user_suspension(user_id):
     try:
         admin_client = get_service_client()
+        actor_role = get_current_role()
+        target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
+        target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
+        if not can_manage_target_role(actor_role, target_role):
+            flash("You cannot override this account level.", "error")
+            return redirect(url_for('admin.user_management', user_id=user_id))
+
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
         admin_client.table('profiles').update({
             "status": "active",
@@ -336,7 +403,7 @@ def lift_user_suspension(user_id):
 @login_required
 @content_access_required
 def content_management(category):
-    client = get_user_client()
+    client = get_service_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     query = client.table('posts').select("*, profiles(full_name, avatar_url)")
@@ -349,7 +416,7 @@ def content_management(category):
 @login_required
 @content_access_required
 def get_post_likers(post_id):
-    client = get_user_client()
+    client = get_service_client()
     res = client.table('likes').select("profiles(id, full_name, avatar_url)").eq('post_id', post_id).execute()
     likers = [item['profiles'] for item in res.data if item.get('profiles')]
     return jsonify({"likers": likers})
@@ -358,7 +425,7 @@ def get_post_likers(post_id):
 @login_required
 @content_access_required
 def flag_post(post_id):
-    client = get_user_client()
+    client = get_service_client()
     try:
         client.table('posts').update({"is_flagged": True}).eq("id", post_id).execute()
         return jsonify({"status": "success", "message": "Post flagged."})
@@ -369,7 +436,7 @@ def flag_post(post_id):
 @login_required
 @content_access_required
 def flag_comment(comment_id):
-    client = get_user_client()
+    client = get_service_client()
     try:
         client.table('comments').update({"is_flagged": True}).eq("id", comment_id).execute()
         return jsonify({"status": "success", "message": "Comment flagged."})
@@ -429,7 +496,7 @@ def warn_user():
 @login_required
 @account_access_required
 def manage_disputes():
-    client = get_user_client()
+    client = get_service_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     res = client.table('verification_disputes').select("*").order('created_at', desc=True).execute()
@@ -442,11 +509,21 @@ def manage_disputes():
 @account_access_required
 def suspend_user(user_id):
     reason = request.form.get('reason', '').strip() or 'Suspended by admin'
-    days = int(request.form.get('days', 3))
+    try:
+        days = int(request.form.get('days', 3))
+    except (TypeError, ValueError):
+        days = 3
     days = max(1, min(days, 365))
 
     try:
         admin_client = get_service_client()
+        actor_role = get_current_role()
+        target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
+        target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
+        if not can_manage_target_role(actor_role, target_role):
+            flash("You cannot suspend this account level.", "error")
+            return redirect(url_for('admin.user_management', user_id=user_id))
+
         suspended_until = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=days)).isoformat()
         admin_client.table('profiles').update({
             "status": "suspended",
@@ -486,6 +563,13 @@ def ban_user(user_id):
 
     try:
         admin_client = get_service_client()
+        actor_role = get_current_role()
+        target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
+        target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
+        if not can_manage_target_role(actor_role, target_role):
+            flash("You cannot ban this account level.", "error")
+            return redirect(url_for('admin.user_management', user_id=user_id))
+
         admin_client.table('profiles').update({
             "status": "banned",
             "ban_reason": reason,
@@ -522,6 +606,7 @@ def ban_user(user_id):
 def admin_delete_post(post_id):
     try:
         admin_client = get_service_client()
+        delete_post_dependencies(admin_client, post_id)
         admin_client.table('posts').delete().eq("id", post_id).execute()
 
         try:
@@ -551,7 +636,7 @@ def admin_delete_post(post_id):
 def admin_delete_comment(comment_id):
     try:
         admin_client = get_service_client()
-        admin_client.table('comments').delete().eq("id", comment_id).execute()
+        delete_comment_thread(admin_client, comment_id)
         return jsonify({"status": "deleted"})
     except Exception as e:
         logger.error("Error deleting comment (admin): %s", e)
@@ -606,7 +691,7 @@ def delete_warning(warning_id):
 @login_required
 @content_access_required
 def manage_forbidden_words():
-    client = get_user_client()
+    client = get_service_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     res = client.table('forbidden_words').select("*").order('word').execute()
@@ -616,7 +701,7 @@ def manage_forbidden_words():
 @login_required
 @content_access_required
 def add_forbidden_word():
-    client = get_user_client()
+    client = get_service_client()
     word = request.form.get('word', '').strip().lower()
     if not word:
         flash("Word cannot be empty.", "error")
@@ -634,7 +719,7 @@ def add_forbidden_word():
 @login_required
 @content_access_required
 def delete_forbidden_word(word):
-    client = get_user_client()
+    client = get_service_client()
     try:
         client.table('forbidden_words').delete().eq('word', word).execute()
         flash(f"Removed '{word}' from forbidden words.", "success")
@@ -688,7 +773,7 @@ def _upload_catalog_image(image_file, uploader_id):
 @login_required
 @content_access_required
 def manage_scholarship_catalog():
-    client = get_user_client()
+    client = get_service_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     res = client.table('scholarship_catalog')\
@@ -778,7 +863,7 @@ def delete_scholarship_catalog_item(item_id):
 @login_required
 @content_access_required
 def manage_umak_coop_catalog():
-    client = get_user_client()
+    client = get_service_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     res = client.table('umak_coop_items')\
