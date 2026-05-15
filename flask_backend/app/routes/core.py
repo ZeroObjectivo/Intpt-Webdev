@@ -485,6 +485,42 @@ def format_relative_time(created_at, now=None):
 
     return created_local.strftime("%b %d, %Y").replace(" 0", " ")
 
+def format_profile_date(value):
+    parsed = parse_post_datetime(value)
+    if parsed is None:
+        return ""
+    return parsed.astimezone(DISPLAY_TIMEZONE).strftime("%b %d, %Y").replace(" 0", " ")
+
+def load_college_institute_options():
+    client = supabase_service or get_user_client()
+    try:
+        response = client.table('colleges_institutes')\
+            .select("name, full_name, type")\
+            .order("type")\
+            .order("name")\
+            .execute()
+    except Exception as exc:
+        logger.warning("Unable to load colleges_institutes options: %s", exc)
+        return []
+
+    options = []
+    seen = set()
+    for row in (response.data or []):
+        code = (row.get('name') or '').strip()
+        if not code or code in seen:
+            continue
+        seen.add(code)
+        option_type = (row.get('type') or '').strip()
+        group_label = "Colleges" if option_type.lower() == "college" else "Institutes"
+        options.append({
+            "value": code,
+            "label": code,
+            "full_name": (row.get('full_name') or '').strip(),
+            "type": option_type,
+            "group": group_label,
+        })
+    return options
+
 def parse_catalog_multiline(value):
     if not value:
         return []
@@ -658,7 +694,7 @@ def view_profile(target_user_id):
     current_user_id = session.get('user').get('id')
 
     try:
-        profile, posts, activity = load_profile_data(target_user_id, viewer_id=current_user_id)
+        profile, posts, interactions, college_options = load_profile_data(target_user_id, viewer_id=current_user_id)
         is_own_profile = (current_user_id == target_user_id)
 
         # Fetch colleges/institutes for settings dropdown
@@ -670,17 +706,18 @@ def view_profile(target_user_id):
         return render_template('profile_settings.html',
                                user=profile,
                                posts=posts,
-                               activity=activity,
+                               interactions=interactions,
+                               college_options=college_options,
                                is_own_profile=is_own_profile,
                                colleges=colleges,
                                institutes=institutes,
                                now=datetime.datetime.now(datetime.timezone.utc))
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
-            profile, posts, activity = load_profile_data(target_user_id, viewer_id=current_user_id)
+            profile, posts, interactions, college_options = load_profile_data(target_user_id, viewer_id=current_user_id)
             is_own_profile = (current_user_id == target_user_id)
             return render_template('profile_settings.html',
-                                   user=profile, posts=posts, activity=activity,
+                                   user=profile, posts=posts, interactions=interactions, college_options=college_options,
                                    is_own_profile=is_own_profile,
                                    now=datetime.datetime.now(datetime.timezone.utc))
         elif is_jwt_error(e):
@@ -754,9 +791,17 @@ def search_users():
 
 def load_profile_data(user_id, viewer_id=None):
     client = get_user_client()
+    college_options = load_college_institute_options()
 
     profile_response = client.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
+
+    activity_timestamps = []
+    if profile:
+        profile_created_at = profile.get('created_at')
+        profile['joined_label'] = format_profile_date(profile_created_at)
+        if profile_created_at:
+            activity_timestamps.append(profile_created_at)
 
     # Enforce contact privacy: hide contact_number from non-owners
     if profile and str(viewer_id) != str(user_id):
@@ -789,44 +834,74 @@ def load_profile_data(user_id, viewer_id=None):
         post['comments_count'] = comments_count_map.get(post['id'], 0)
         post['relative_created_at'] = format_relative_time(post.get('created_at'))
         attach_embed_metadata(post)
+        if post.get('created_at'):
+            activity_timestamps.append(post.get('created_at'))
 
-    activity = []
+    likes_count_res = client.table('likes').select("post_id", count="exact").eq("user_id", user_id).execute()
+    comments_count_res = client.table('comments').select("id", count="exact").eq("user_id", user_id).execute()
+
+    interactions = {
+        "stats": {
+            "posts_count": len(posts),
+            "likes_count": likes_count_res.count or 0,
+            "comments_count": comments_count_res.count or 0,
+        },
+        "likes": [],
+        "comments": [],
+    }
     is_own_profile = str(viewer_id) == str(user_id)
     if is_own_profile:
         likes_activity = client.table('likes')\
             .select("created_at, posts(id, content, category)")\
             .eq("user_id", user_id)\
-            .order("created_at", desc=True).limit(10).execute()
+            .order("created_at", desc=True).limit(12).execute()
 
         comments_activity = client.table('comments')\
             .select("id, created_at, content, post_id, posts(id, content, category)")\
             .eq("user_id", user_id)\
-            .order("created_at", desc=True).limit(10).execute()
+            .order("created_at", desc=True).limit(12).execute()
 
         for l in likes_activity.data:
             if l.get('posts'):
-                activity.append({
-                    "type": "like",
+                activity_timestamps.append(l.get('created_at'))
+                interactions["likes"].append({
                     "created_at": l['created_at'],
                     "post_id": l['posts']['id'],
                     "post_content": l['posts']['content'],
-                    "category": l['posts']['category']
+                    "category": l['posts']['category'],
+                    "relative_created_at": format_relative_time(l.get('created_at')),
                 })
 
         for c in comments_activity.data:
             if c.get('posts'):
-                activity.append({
-                    "type": "comment",
+                activity_timestamps.append(c.get('created_at'))
+                interactions["comments"].append({
                     "created_at": c['created_at'],
                     "content": c['content'],
                     "post_id": c['posts']['id'],
                     "post_content": c['posts']['content'],
-                    "category": c['posts']['category']
+                    "category": c['posts']['category'],
+                    "relative_created_at": format_relative_time(c.get('created_at')),
                 })
 
-        activity.sort(key=lambda x: x['created_at'], reverse=True)
+    if profile:
+        last_seen_source = max(
+            (parse_post_datetime(value) for value in activity_timestamps if value),
+            default=None,
+        )
+        profile['last_seen_label'] = format_relative_time(last_seen_source) if last_seen_source else ""
 
-    return profile, posts, activity[:20]
+        current_college = (profile.get('college') or '').strip()
+        if current_college and all(option["value"] != current_college for option in college_options):
+            college_options.insert(0, {
+                "value": current_college,
+                "label": current_college,
+                "full_name": current_college,
+                "type": "",
+                "group": "Colleges",
+            })
+
+    return profile, posts, interactions, college_options
 
 @core.route('/settings/profile', methods=['POST'])
 @login_required

@@ -6,402 +6,710 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
 <style>
-    .profile-dashboard {
-        max-width: 1000px;
+    :root {
+        --profile-space-1: 0.75rem;
+        --profile-space-2: 1rem;
+        --profile-space-3: 1.5rem;
+        --profile-space-4: 2rem;
+        --profile-space-5: 2.5rem;
+        --profile-radius-card: 1.75rem;
+        --profile-radius-pill: 9999px;
+        --profile-shadow-card: 0 20px 50px rgba(15, 23, 42, 0.08);
+        --profile-border: rgb(226 232 240);
+        --profile-subtle-border: rgb(241 245 249);
+        --profile-surface: rgb(255 255 255);
+        --profile-muted-surface: rgb(248 250 252);
+    }
+
+    .profile-shell {
+        max-width: 1180px;
         margin: 0 auto;
-        padding: 2rem 1rem;
+        padding: 1.5rem 1.25rem 3rem;
     }
-    .profile-header-card {
-        background: white;
-        border-radius: 2rem;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+
+    .profile-hero-card {
         overflow: hidden;
-        margin-bottom: 2rem;
+        border-radius: 2.25rem;
+        border: 1px solid var(--profile-border);
+        background: var(--profile-surface);
+        box-shadow: var(--profile-shadow-card);
     }
-    .profile-cover {
-        height: 160px;
-        background: linear-gradient(135deg, #0038a8 0%, #001035 100%);
+
+    .profile-hero-cover {
+        height: 196px;
+        background:
+            radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 24%),
+            linear-gradient(135deg, #0d1b5e 0%, #243577 45%, #4351a3 100%);
+    }
+
+    .profile-hero-body {
         position: relative;
+        padding: 0 var(--profile-space-4) var(--profile-space-4);
     }
-    .profile-info-section {
-        padding: 0 2rem 2rem;
-        margin-top: -60px;
-        text-align: center;
-        position: relative;
-        z-index: 10;
+
+    .profile-avatar-wrap {
+        margin-top: -62px;
     }
-    .profile-avatar-giant {
+
+    .profile-avatar {
         width: 120px;
         height: 120px;
-        border-radius: 50%;
-        border: 5px solid white;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        margin: 0 auto 1rem;
+        border-radius: 9999px;
+        border: 6px solid white;
+        background: white;
         object-fit: cover;
-        background: white;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.14);
     }
-    .profile-tabs {
+
+    .profile-summary-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--profile-space-4);
+        align-items: start;
+    }
+
+    .profile-identity-block {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: var(--profile-space-3);
+        align-items: center;
+    }
+
+    .profile-copy-stack {
         display: flex;
-        justify-content: center;
-        gap: 2rem;
-        border-bottom: 1px solid #f1f5f9;
-        background: white;
-        padding: 0 2rem;
+        flex-direction: column;
+        gap: 0.35rem;
+        min-width: 0;
     }
-    .tab-link {
-        padding: 1rem 0.5rem;
-        font-size: 0.875rem;
-        font-weight: 800;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-bottom: 3px solid transparent;
-        transition: all 0.2s;
-        cursor: pointer;
+
+    .profile-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
     }
-    .tab-link:hover {
-        color: #0038a8;
+
+    .profile-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.15rem;
+        border-radius: 9999px;
+        border: 1px solid rgb(226 232 240);
+        background: rgb(248 250 252);
+        padding: 0.45rem 0.85rem;
+        color: rgb(100 116 139);
+        font-size: 0.9rem;
+        font-weight: 700;
+        line-height: 1;
     }
-    .tab-link.active {
-        color: #0038a8;
-        border-bottom-color: #0038a8;
+
+    .profile-supporting-line {
+        color: rgb(71 85 105);
+        font-size: 1rem;
+        line-height: 1.5;
+        font-weight: 600;
     }
-    .tab-content {
+
+    .profile-panel-shell {
+        max-width: 1060px;
+        margin: 0 auto;
+    }
+
+    .profile-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--profile-space-1);
+        padding-top: var(--profile-space-4);
+    }
+
+    .profile-stat-card {
+        min-height: 108px;
+        border-radius: 1.35rem;
+        border: 1px solid var(--profile-border);
+        background: var(--profile-surface);
+        padding: 1rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+    }
+
+    .profile-tab-nav {
+        display: flex;
+        align-items: center;
+        gap: 1.75rem;
+        margin-top: var(--profile-space-3);
+        padding-inline: 0.1rem;
+        border-bottom: 1px solid var(--profile-border);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .profile-tab-nav::-webkit-scrollbar {
         display: none;
-        animation: fadeIn 0.3s ease-out;
     }
-    .tab-content.active {
+
+    .profile-tab-button {
+        border: none;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        padding: 0.9rem 0.15rem 1rem;
+        color: rgb(100 116 139);
+        font-size: 0.92rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        font-weight: 800;
+        cursor: pointer;
+        transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .profile-tab-button:hover {
+        color: var(--umak-blue);
+    }
+
+    .profile-tab-button.active {
+        color: var(--umak-blue);
+        border-bottom-color: var(--umak-blue-bright);
+    }
+
+    .profile-panel {
+        display: none;
+        padding-top: 1.75rem;
+        animation: profileFadeUp 0.24s ease-out;
+    }
+
+    .profile-panel.active {
         display: block;
     }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
+
+    .profile-section-card {
+        border-radius: var(--profile-radius-card);
+        border: 1px solid var(--profile-border);
+        background: var(--profile-surface);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
     }
 
-    /* Activity Log Styles */
-    .activity-item {
-        background: white;
-        padding: 1.25rem;
+    .profile-post-card {
         border-radius: 1.5rem;
-        margin-bottom: 1rem;
-        border: 1px solid #f1f5f9;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        transition: all 0.2s;
+        padding: 0.35rem;
     }
-    .activity-item:hover {
-        border-color: #e2e8f0;
-        transform: translateX(5px);
+
+    .profile-post-card .post-header {
+        padding: 0.25rem 0.35rem 0;
     }
-    .activity-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: flex;
+
+    .profile-post-card .post-content {
+        margin-top: 1.1rem;
+        padding-inline: 0.35rem;
+    }
+
+    .profile-post-card .post-actions {
+        margin-top: 1.25rem;
+        padding: 0.9rem 0.35rem 0;
+    }
+
+    .interaction-feed {
+        display: grid;
+        gap: 1.15rem;
+    }
+
+    .interaction-item {
+        border-radius: 1.25rem;
+        border: 1px solid var(--profile-subtle-border);
+        background: var(--profile-muted-surface);
+        padding: 1.1rem 1.15rem;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .interaction-item:hover {
+        border-color: rgb(203 213 225);
+        transform: translateY(-1px);
+    }
+
+    .interaction-block {
+        border-top: 1px solid var(--profile-subtle-border);
+        padding-top: 1.5rem;
+    }
+
+    .interaction-block:first-child {
+        border-top: none;
+        padding-top: 0;
+    }
+
+    .interaction-meta-icon {
+        display: inline-flex;
+        height: 2rem;
+        width: 2rem;
         align-items: center;
         justify-content: center;
+        border-radius: 9999px;
         flex-shrink: 0;
     }
-    .icon-like { background: #fff1f2; color: #f43f5e; }
-    .icon-comment { background: #eff6ff; color: #3b82f6; }
 
-    /* Form Styles (reused) */
-    .form-section { padding: 2rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
-    .form-label { display: block; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: #64748b; margin-bottom: 0.5rem; }
-    .form-input, .form-select, .form-textarea { width: 100%; padding: 0.75rem 1rem; border-radius: 1rem; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 0.875rem; font-weight: 600; outline: none; }
-    .btn-save { background: #0038a8; color: white; padding: 0.75rem 2rem; border-radius: 1rem; font-weight: 800; font-size: 0.875rem; transition: all 0.2s; }
+    .profile-modal-shell {
+        position: fixed;
+        inset: 0;
+        z-index: 130;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.58);
+        backdrop-filter: blur(6px);
+    }
 
-    @media (max-width: 1024px) {
-        .profile-dashboard {
-            max-width: 900px;
-            padding: 1.5rem 0.75rem;
+    .profile-modal-shell.active {
+        display: flex;
+    }
+
+    .profile-modal-card {
+        width: min(100%, 760px);
+        max-height: min(88vh, 920px);
+        overflow-y: auto;
+        border-radius: var(--profile-radius-card);
+        border: 1px solid var(--profile-border);
+        background: white;
+        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2);
+    }
+
+    .profile-modal-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(10px);
+    }
+
+    .profile-form-control {
+        border-radius: 1rem;
+    }
+
+    .profile-close-icon {
+        width: 1rem;
+        height: 1rem;
+        display: block;
+        filter: brightness(0) saturate(100%) invert(49%) sepia(13%) saturate(530%) hue-rotate(176deg) brightness(91%) contrast(88%);
+        transition: filter 0.2s ease;
+    }
+
+    #closeProfileEditModal:hover .profile-close-icon {
+        filter: brightness(0) saturate(100%) invert(26%) sepia(18%) saturate(687%) hue-rotate(178deg) brightness(95%) contrast(90%);
+    }
+
+    @keyframes profileFadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
         }
-
-        .profile-tabs {
-            justify-content: flex-start;
-            gap: 1rem;
-            overflow-x: auto;
-            white-space: nowrap;
-            padding: 0 1rem;
-        }
-
-        .tab-link {
-            font-size: 0.8rem;
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
 
-    @media (max-width: 768px) {
-        .profile-dashboard {
-            padding: 1rem 0.5rem;
+    @media (min-width: 900px) {
+        .profile-summary-grid {
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .profile-shell {
+            padding: 1rem 0.75rem 2rem;
         }
 
-        .profile-header-card {
-            border-radius: 1.25rem;
-            margin-bottom: 1.25rem;
+        .profile-hero-card {
+            border-radius: 1.5rem;
         }
 
-        .profile-cover {
-            height: 126px;
+        .profile-hero-cover {
+            height: 142px;
         }
 
-        .profile-info-section {
+        .profile-hero-body {
             padding: 0 1rem 1.25rem;
-            margin-top: -50px;
         }
 
-        .profile-avatar-giant {
+        .profile-avatar {
             width: 96px;
             height: 96px;
             border-width: 4px;
         }
 
-        .form-section {
-            padding: 1.25rem 1rem;
+        .profile-avatar-wrap {
+            margin-top: -48px;
         }
 
-        .activity-item {
-            padding: 1rem 0.875rem;
-            align-items: flex-start;
+        .profile-identity-block {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            align-items: start;
         }
 
-        .activity-item:hover {
-            transform: none;
-        }
-    }
-
-    @media (max-width: 640px) {
-        .tab-link {
-            padding: 0.875rem 0.25rem;
-            font-size: 0.74rem;
-            letter-spacing: 0.04em;
+        .profile-stat-grid {
+            grid-template-columns: 1fr;
         }
 
-        .settings-footer-row {
-            padding: 1rem;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.75rem;
-            text-align: center;
-        }
-
-        .settings-footer-row .btn-save {
+        .profile-modal-card {
             width: 100%;
+            max-height: 92vh;
+            border-radius: 1.25rem;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="profile-dashboard">
-    <!-- Profile Header -->
-    <div class="profile-header-card">
-        <div class="profile-cover"></div>
-        <div class="profile-info-section">
-            <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="profile-avatar-giant">
-            <h1 class="text-2xl font-black text-slate-800">{{ user.full_name }}</h1>
-            {% if is_own_profile %}
-            <p class="text-slate-400 font-bold text-sm mb-4">{{ user.email }}</p>
-            {% else %}
-            <p class="text-slate-400 font-bold text-sm mb-4 uppercase tracking-wide">Public Profile</p>
-            {% endif %}
-            
-                <div class="flex justify-center flex-wrap gap-3 mb-6">
-                    {% if user.college %}
-                    <span class="bg-blue-50 text-umak-blue px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                        {{ user.college }}
-                    </span>
-                    {% endif %}
-                    <span class="bg-slate-50 text-slate-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-100">
-                        {{ user.role }}
-                    </span>
-                    
-                    {% if not is_own_profile %}
-                    <button onclick="reportUser('{{ user.id }}')" class="bg-rose-50 text-rose-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-500 hover:text-white transition-all">
-                        Report Account
+{% set profile_handle = user.email.split('@')[0] if user.email else 'heron' %}
+{% set profile_context_bits = [] %}
+{% if user.level %}{% set _ = profile_context_bits.append(user.level) %}{% endif %}
+{% if user.college %}{% set _ = profile_context_bits.append(user.college) %}{% endif %}
+{% if user.course %}{% set _ = profile_context_bits.append(user.course) %}{% endif %}
+{% set stat_block = interactions.stats if interactions and interactions.stats else {'posts_count': posts|length, 'likes_count': 0, 'comments_count': 0} %}
+
+<div class="profile-shell">
+    <section class="profile-hero-card">
+        <div class="profile-hero-cover"></div>
+        <div class="profile-hero-body">
+            <div class="profile-summary-grid">
+                <div class="space-y-6">
+                    <div class="profile-identity-block">
+                    <div class="profile-avatar-wrap">
+                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}"
+                             alt="{{ user.full_name }}"
+                             class="profile-avatar">
+                    </div>
+
+                    <div class="mt-4 space-y-2 profile-copy-stack">
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <h1 class="text-[2.2rem] font-black leading-none tracking-[-0.02em] text-slate-900 md:text-[2.45rem]">{{ user.full_name }}</h1>
+                                <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200">
+                                    {{ user.role }}
+                                </span>
+                            </div>
+                            <p class="profile-supporting-line">
+                                {% if profile_context_bits %}
+                                    {{ profile_context_bits|join(' · ') }}
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        {% if user.email or user.last_seen_label or user.joined_label %}
+                        <div class="profile-meta-row">
+                            {% if user.email %}
+                            <span class="profile-meta-pill">{{ user.email }}</span>
+                            {% endif %}
+                            {% if user.last_seen_label %}
+                            <span class="profile-meta-pill">Last seen {{ user.last_seen_label }}</span>
+                            {% endif %}
+                            {% if user.joined_label %}
+                            <span class="profile-meta-pill">Joined {{ user.joined_label }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        {% if user.bio %}
+                        <p class="max-w-3xl text-[15px] leading-7 text-slate-600">{{ user.bio }}</p>
+                        {% else %}
+                        <p class="max-w-3xl text-[15px] leading-7 text-slate-400">
+                            {{ 'Tell the Heron community something about yourself.' if is_own_profile else 'This Heron has not added a bio yet.' }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    </div>
+                </div>
+
+                <div class="pt-5 lg:pt-7 flex flex-col gap-3">
+                    {% if is_own_profile %}
+                    <button type="button"
+                            id="openProfileEditModal"
+                            class="inline-flex min-h-[3rem] items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-umak-blue shadow-sm transition-all hover:-translate-y-0.5 hover:border-umak-blue hover:bg-blue-50">
+                        <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        <span>Edit Profile</span>
+                    </button>
+                    {% else %}
+                    <button type="button"
+                            onclick="reportUser('{{ user.id }}')"
+                            class="inline-flex min-h-[3rem] items-center gap-2 rounded-full border border-rose-100 bg-rose-50 px-5 py-3 text-sm font-black text-rose-500 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-500 hover:text-white">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span>Report Account</span>
                     </button>
                     {% endif %}
                 </div>
+            </div>
 
-            {% if user.bio %}
-            <p class="max-w-xl mx-auto text-slate-600 text-sm leading-relaxed mb-6 font-medium">
-                {{ user.bio }}
-            </p>
-            {% endif %}
-        </div>
+            <div class="profile-stat-grid">
+                <div class="profile-stat-card">
+                    <p class="text-2xl font-black text-slate-900">{{ stat_block.posts_count }}</p>
+                    <p class="mt-1 text-xs font-black uppercase tracking-[0.18em] text-slate-400">Posts</p>
+                </div>
+                <div class="profile-stat-card">
+                    <p class="text-2xl font-black text-slate-900">{{ stat_block.likes_count }}</p>
+                    <p class="mt-1 text-xs font-black uppercase tracking-[0.18em] text-slate-400">Likes</p>
+                </div>
+                <div class="profile-stat-card">
+                    <p class="text-2xl font-black text-slate-900">{{ stat_block.comments_count }}</p>
+                    <p class="mt-1 text-xs font-black uppercase tracking-[0.18em] text-slate-400">Comments</p>
+                </div>
+            </div>
 
-        <!-- Dashboard Tabs -->
-        <nav class="profile-tabs">
-            <div class="tab-link active" onclick="switchTab('timeline', this)">Timeline</div>
-            {% if is_own_profile %}
-            <div class="tab-link" onclick="switchTab('activity', this)">Activity Log</div>
-            <div class="tab-link" onclick="switchTab('settings', this)">Edit Profile</div>
-            {% endif %}
-        </nav>
-    </div>
-
-    <!-- Tab Contents -->
-    <div class="tab-container">
-        <!-- 1. Timeline Tab -->
-        <section id="timeline" class="tab-content active max-w-2xl mx-auto">
-            <div class="posts-list">
-                {% if posts %}
-                    {% for post in posts %}
-                    <article class="post-card mb-6" data-post-id="{{ post.id }}">
-                        <!-- Reuse Post Card UI -->
-                        <div class="post-header flex justify-between items-start">
-                            <div class="flex">
-                                <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
-                                <div class="post-user-info">
-                                    <h4 class="font-black text-slate-800">{{ user.full_name }}</h4>
-                                    {% set created = post.created_at|datetime_obj %}
-                                    <span class="text-xs text-slate-400 font-bold">{{ created.strftime('%b %d, %Y') }}</span>
-                                </div>
-                            </div>
-                            <div class="flex flex-col items-end gap-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest badge-{{ post.category|lower|replace(' ', '-')|replace('&', 'and') }}">
-                                        {{ post.category }}
-                                    </span>
-
-                                    {% if is_own_profile %}
-                                    <!-- Post Menu -->
-                                    <div class="relative">
-                                        <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                                        </button>
-                                        <div id="post-menu-{{ post.id }}" class="post-menu-dropdown absolute right-0 top-full mt-1 w-32 bg-white border border-slate-100 rounded-xl shadow-xl py-1 hidden z-20">
-                                            <button onclick="showEditForm('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">Edit Post</button>
-                                            <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors">Delete Post</button>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="post-content mt-4" id="post-content-{{ post.id }}">
-                            <p class="text-slate-700 leading-relaxed">{{ post.content }}</p>
-                            {% if post.embed and post.embed.embed_url %}
-                                <div class="post-embed">
-                                    <iframe
-                                        src="{{ post.embed.embed_url }}"
-                                        title="Embedded {{ (post.embed.provider or 'media')|title }} content"
-                                        loading="lazy"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                        allowfullscreen
-                                        referrerpolicy="strict-origin-when-cross-origin"></iframe>
-                                </div>
-                            {% endif %}
-                            {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
-                            {% if post_images %}
-                                <div class="fb-grid mt-3 fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }}">
-                                    {% for url in post_images %}
-                                        {% if loop.index <= 5 %}
-                                            <div class="relative group overflow-hidden cursor-pointer w-full h-full"
-                                                 onclick='{% if post.image_urls or post.image_url %}openImageModal({{ post|tojson|safe }}, {{ loop.index0 }}){% else %}openCommentModal({{ post|tojson|safe }}){% endif %}'>
-                                                <img src="{{ url }}" alt="Post image" class="w-full h-full object-cover rounded-lg">
-                                                {% if loop.index == 5 and post_images|length > 5 %}
-                                                    <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl rounded-lg">
-                                                        +{{ post_images|length - 5 }}
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Post Actions -->
-                        <div class="post-actions border-t border-slate-50 mt-4 pt-2">
-                            <button class="action-item group like-btn {% if post.user_has_liked %}text-red-500{% else %}text-slate-400{% endif %} hover:text-red-500"
-                                    type="button" onclick="toggleLike('{{ post.id }}', this)">
-                                <span class="flex items-center gap-1.5">
-                                    <svg aria-hidden="true" class="action-icon {% if post.user_has_liked %}fill-current{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"></path>
-                                    </svg>
-                                    <span class="likes-count">{{ post.likes_count }}</span>
-                                </span>
-                            </button>
-                            <button class="action-item text-slate-400 hover:text-blue-500" type="button" onclick='openCommentModal({{ post|tojson|safe }})'>
-                                <span class="flex items-center gap-1.5">
-                                    <svg aria-hidden="true" class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 0 1-4.255-.949L3 20l1.395-3.72A7.58 7.58 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"></path>
-                                    </svg>
-                                    <span class="comments-count">{{ post.comments_count }}</span>
-                                </span>
-                            </button>
-                        </div>
-
-                        <!-- Edit Form (Hidden) -->
-
-                        <div id="edit-form-{{ post.id }}" class="hidden mt-4">
-                            <form action="{{ url_for('core.update_post', post_id=post.id) }}" method="POST">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <textarea name="content" class="w-full p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm resize-none mb-3">{{ post.content }}</textarea>
-                                <input type="hidden" name="category" value="{{ post.category }}">
-                                <div class="flex justify-end gap-2">
-                                    <button type="button" onclick="hideEditForm('{{ post.id }}')" class="px-4 py-2 text-xs font-bold text-slate-400">Cancel</button>
-                                    <button type="submit" class="bg-umak-blue text-white px-4 py-2 rounded-xl text-xs font-bold">Save Changes</button>
-                                </div>
-                            </form>
-                        </div>
-                    </article>
-                    {% endfor %}
-                {% else %}
-                    <div class="bg-white p-12 rounded-3xl text-center border border-dashed border-slate-200">
-                        <p class="text-slate-400 font-bold">You haven't posted anything yet.</p>
-                    </div>
+            <div class="profile-tab-nav">
+                <button type="button" class="profile-tab-button active" data-profile-tab-trigger="posts">Posts</button>
+                {% if is_own_profile %}
+                <button type="button" class="profile-tab-button" data-profile-tab-trigger="interactions">Interactions</button>
                 {% endif %}
             </div>
-        </section>
+        </div>
+    </section>
 
-        {% if is_own_profile %}
-        <!-- 2. Activity Tab -->
-        <section id="activity" class="tab-content max-w-2xl mx-auto">
-            {% if activity %}
-                {% for item in activity %}
-                <div class="activity-item">
-                    <div class="activity-icon icon-{{ item.type }}">
-                        {% if item.type == 'like' %}
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                        {% else %}
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+    <section id="profile-tab-posts" class="profile-panel active">
+        <div class="profile-panel-shell">
+            {% if posts %}
+                {% for post in posts %}
+                <article class="post-card profile-post-card mb-5" data-post-id="{{ post.id }}">
+                    <div class="post-header flex justify-between items-start">
+                        <div class="flex">
+                            <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
+                            <div class="post-user-info">
+                                <h4 class="font-black text-slate-800">{{ user.full_name }}</h4>
+                                <span class="text-xs text-slate-400 font-bold">{{ post.relative_created_at }}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest badge-{{ post.category|lower|replace(' ', '-')|replace('&', 'and') }}">
+                                    {{ post.category }}
+                                </span>
+
+                                {% if is_own_profile %}
+                                <div class="relative">
+                                    <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                                    </button>
+                                    <div id="post-menu-{{ post.id }}" class="post-menu-dropdown absolute right-0 top-full mt-1 w-32 bg-white border border-slate-100 rounded-xl shadow-xl py-1 hidden z-20">
+                                        <button onclick="showEditForm('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">Edit Post</button>
+                                        <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors">Delete Post</button>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="post-content mt-4" id="post-content-{{ post.id }}">
+                        <p class="text-slate-700 leading-relaxed">{{ post.content }}</p>
+                        {% if post.embed and post.embed.embed_url %}
+                            <div class="post-embed">
+                                <iframe
+                                    src="{{ post.embed.embed_url }}"
+                                    title="Embedded {{ (post.embed.provider or 'media')|title }} content"
+                                    loading="lazy"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowfullscreen
+                                    referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                            </div>
+                        {% endif %}
+                        {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
+                        {% if post_images %}
+                            <div class="fb-grid mt-3 fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }}">
+                                {% for url in post_images %}
+                                    {% if loop.index <= 5 %}
+                                        <div class="relative group overflow-hidden cursor-pointer w-full h-full"
+                                             onclick='{% if post.image_urls or post.image_url %}openImageModal({{ post|tojson|safe }}, {{ loop.index0 }}){% else %}openCommentModal({{ post|tojson|safe }}){% endif %}'>
+                                            <img src="{{ url }}" alt="Post image" class="w-full h-full object-cover rounded-lg">
+                                            {% if loop.index == 5 and post_images|length > 5 %}
+                                                <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl rounded-lg">
+                                                    +{{ post_images|length - 5 }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
                         {% endif %}
                     </div>
-                    <div class="flex-1">
-                        <p class="text-sm text-slate-600">
-                            <span class="font-black text-slate-800">You</span> 
-                            {{ 'liked' if item.type == 'like' else 'commented on' }} 
-                            a post in <span class="font-bold text-umak-blue">#{{ item.category }}</span>
-                        </p>
-                        <p class="text-xs text-slate-400 mt-1 truncate italic">"{{ item.post_content[:80] }}..."</p>
+
+                    <div class="post-actions border-t border-slate-50 mt-4 pt-2">
+                        <button class="action-item group like-btn {% if post.user_has_liked %}text-red-500{% else %}text-slate-400{% endif %} hover:text-red-500"
+                                type="button" onclick="toggleLike('{{ post.id }}', this)">
+                            <span class="flex items-center gap-1.5">
+                                <svg aria-hidden="true" class="action-icon {% if post.user_has_liked %}fill-current{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"></path>
+                                </svg>
+                                <span class="likes-count">{{ post.likes_count }}</span>
+                            </span>
+                        </button>
+                        <button class="action-item text-slate-400 hover:text-blue-500" type="button" onclick='openCommentModal({{ post|tojson|safe }})'>
+                            <span class="flex items-center gap-1.5">
+                                <svg aria-hidden="true" class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 0 1-4.255-.949L3 20l1.395-3.72A7.58 7.58 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"></path>
+                                </svg>
+                                <span class="comments-count">{{ post.comments_count }}</span>
+                            </span>
+                        </button>
                     </div>
-                    <a href="/dashboard#view-post-{{ item.post_id }}-0" class="text-[10px] font-black uppercase text-umak-blue hover:underline">View</a>
-                </div>
+
+                    <div id="edit-form-{{ post.id }}" class="hidden mt-4">
+                        <form action="{{ url_for('core.update_post', post_id=post.id) }}" method="POST">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <textarea name="content" class="w-full p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm resize-none mb-3">{{ post.content }}</textarea>
+                            <input type="hidden" name="category" value="{{ post.category }}">
+                            <div class="flex justify-end gap-2">
+                                <button type="button" onclick="hideEditForm('{{ post.id }}')" class="px-4 py-2 text-xs font-bold text-slate-400">Cancel</button>
+                                <button type="submit" class="bg-umak-blue text-white px-4 py-2 rounded-xl text-xs font-bold">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </article>
                 {% endfor %}
             {% else %}
-                <div class="bg-white p-12 rounded-3xl text-center border border-dashed border-slate-200">
-                    <p class="text-slate-400 font-bold">No recent activity found.</p>
+                <div class="profile-section-card p-12 text-center border-dashed">
+                    <p class="text-slate-400 font-bold">{{ "You haven't posted anything yet." if is_own_profile else "No posts to show yet." }}</p>
                 </div>
             {% endif %}
-        </section>
-        {% endif %}
+        </div>
+    </section>
 
-        {% if is_own_profile %}
-        <!-- 3. Settings Tab -->
-        <section id="settings" class="tab-content">
-            <form id="settingsForm" action="{{ url_for('core.update_profile') }}" method="POST" class="settings-card shadow-none border border-slate-100">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="form-section">
-                    <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-umak-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        Academic Profile
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {% if is_own_profile %}
+    <section id="profile-tab-interactions" class="profile-panel">
+        <div class="profile-panel-shell profile-section-card p-6 sm:p-7">
+            <div class="border-b border-slate-100 pb-4">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Interactions</p>
+                <h2 class="mt-2 text-xl font-black text-slate-900">Recent likes and comments</h2>
+                <p class="mt-1 text-sm font-medium text-slate-500">A single activity column for your latest reactions and discussion.</p>
+            </div>
+
+            <div class="interaction-feed mt-5">
+                <section class="interaction-block">
+                    <div class="mb-4 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <span class="interaction-meta-icon bg-rose-50 text-rose-500">
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-[0.18em] text-rose-400">Likes</p>
+                                <h3 class="mt-1 text-lg font-black text-slate-900">Recent liked posts</h3>
+                            </div>
+                        </div>
+                        <div class="rounded-full bg-rose-50 px-3 py-1 text-xs font-black text-rose-500">
+                            {{ stat_block.likes_count }}
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        {% if interactions.likes %}
+                            {% for item in interactions.likes %}
+                            <article class="interaction-item">
+                                <div class="flex items-start justify-between gap-3">
+                                    <span class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-rose-500">
+                                        {{ item.category }}
+                                    </span>
+                                    <span class="text-[11px] font-bold text-slate-400">{{ item.relative_created_at }}</span>
+                                </div>
+                                <p class="mt-3 line-clamp-3 text-sm font-medium leading-6 text-slate-600">
+                                    {{ item.post_content }}
+                                </p>
+                                <a href="/dashboard#view-post-{{ item.post_id }}-0" class="mt-4 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-umak-blue hover:underline">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                    <span>View Post</span>
+                                </a>
+                            </article>
+                            {% endfor %}
+                        {% else %}
+                            <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-7 text-center">
+                                <p class="text-sm font-bold text-slate-400">No likes recorded yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="interaction-block">
+                    <div class="mb-4 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <span class="interaction-meta-icon bg-blue-50 text-blue-500">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h5m8 6-3.8-2.1a2 2 0 00-.97-.24H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-.99 1.73z"></path>
+                                </svg>
+                            </span>
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-[0.18em] text-blue-400">Comments</p>
+                                <h3 class="mt-1 text-lg font-black text-slate-900">Recent comments</h3>
+                            </div>
+                        </div>
+                        <div class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-500">
+                            {{ stat_block.comments_count }}
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        {% if interactions.comments %}
+                            {% for item in interactions.comments %}
+                            <article class="interaction-item">
+                                <div class="flex items-start justify-between gap-3">
+                                    <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-500">
+                                        {{ item.category }}
+                                    </span>
+                                    <span class="text-[11px] font-bold text-slate-400">{{ item.relative_created_at }}</span>
+                                </div>
+                                <p class="mt-3 text-sm font-black text-slate-800">Your comment</p>
+                                <p class="mt-1 line-clamp-3 text-sm font-medium leading-6 text-slate-600">{{ item.content }}</p>
+                                <p class="mt-3 text-xs font-black uppercase tracking-widest text-slate-400">On post</p>
+                                <p class="mt-1 line-clamp-2 text-sm font-medium leading-6 text-slate-500">{{ item.post_content }}</p>
+                                <a href="/dashboard#view-post-{{ item.post_id }}-0" class="mt-4 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-umak-blue hover:underline">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                    <span>View Post</span>
+                                </a>
+                            </article>
+                            {% endfor %}
+                        {% else %}
+                            <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-7 text-center">
+                                <p class="text-sm font-bold text-slate-400">No comments recorded yet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+{% if is_own_profile %}
+<div id="profileEditModal" class="profile-modal-shell" aria-hidden="true">
+    <div class="profile-modal-card" role="dialog" aria-modal="true" aria-labelledby="profileEditModalTitle">
+        <div class="profile-modal-sticky border-b border-slate-100 px-6 py-5 sm:px-8 sm:py-6">
+            <div class="flex items-start justify-between gap-4">
+                <div class="pr-2">
+                    <h2 id="profileEditModalTitle" class="text-[2.35rem] font-black leading-none tracking-[-0.02em] text-slate-900 md:text-[2.65rem]">Edit Profile</h2>
+                    <p class="mt-1 text-sm font-medium text-slate-500">Update your academic information, contact visibility, and bio.</p>
+                </div>
+                <button type="button" id="closeProfileEditModal" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:text-slate-700">
+                    <span class="sr-only">Close profile editor</span>
+                    <img src="{{ url_for('static', filename='images/close.png') }}" alt="" class="profile-close-icon" aria-hidden="true">
+                </button>
+            </div>
+        </div>
+
+        <form id="settingsForm" action="{{ url_for('core.update_profile') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="space-y-0">
+                <section class="border-b border-slate-100 px-6 py-6 sm:px-8 sm:py-7">
+                    <h3 class="text-lg font-black text-slate-800 mb-5">Academic Profile</h3>
+                    <div class="grid grid-cols-1 gap-y-5 md:grid-cols-3 md:gap-x-8 md:gap-y-5 lg:gap-x-10">
                         <div>
-                            <label class="form-label" for="college">College / Institute</label>
-                            <select name="college" id="college" class="form-select">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="college">College / Institute</label>
+                            <select name="college" id="college" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white">
                                 <option value="" {% if not user.college %}selected{% endif %}>Select Unit</option>
                                 <optgroup label="Colleges">
                                     {% for item in colleges %}
@@ -416,12 +724,12 @@
                             </select>
                         </div>
                         <div>
-                            <label class="form-label" for="course">Course</label>
-                            <input type="text" name="course" id="course" class="form-input" value="{{ user.course or '' }}" placeholder="e.g., BSIT">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="course">Course</label>
+                            <input type="text" name="course" id="course" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white" value="{{ user.course or '' }}" placeholder="e.g., BSIT">
                         </div>
                         <div>
-                            <label class="form-label" for="level">Year Level</label>
-                            <select name="level" id="level" class="form-select">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="level">Year Level</label>
+                            <select name="level" id="level" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white">
                                 <option value="" {% if not user.level %}selected{% endif %}>Select Level</option>
                                 <option value="1st Year" {% if user.level == '1st Year' %}selected{% endif %}>1st Year</option>
                                 <option value="2nd Year" {% if user.level == '2nd Year' %}selected{% endif %}>2nd Year</option>
@@ -431,50 +739,54 @@
                             </select>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div class="form-section">
-                    <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-umak-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        Contact & Privacy
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <section class="border-b border-slate-100 px-6 py-6 sm:px-8 sm:py-7">
+                    <h3 class="text-lg font-black text-slate-800 mb-5">Contact & Privacy</h3>
+                    <div class="grid grid-cols-1 gap-y-5 md:grid-cols-2 md:gap-x-8 md:gap-y-5 lg:gap-x-10">
                         <div>
-                            <label class="form-label" for="contact_number">Contact Number</label>
-                            <input type="text" name="contact_number" id="contact_number" class="form-input" value="{{ user.contact_number or '' }}" placeholder="09XXXXXXXXX">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="contact_number">Contact Number</label>
+                            <input type="text" name="contact_number" id="contact_number" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white" value="{{ user.contact_number or '' }}" placeholder="09XXXXXXXXX">
                         </div>
                         <div>
-                            <label class="form-label" for="contact_privacy">Contact Visibility</label>
-                            <select name="contact_privacy" id="contact_privacy" class="form-select">
+                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="contact_privacy">Contact Visibility</label>
+                            <select name="contact_privacy" id="contact_privacy" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white">
                                 <option value="public" {% if user.contact_privacy == 'public' %}selected{% endif %}>Public (Everyone can see)</option>
                                 <option value="only_me" {% if user.contact_privacy == 'only_me' %}selected{% endif %}>Only Me (Private)</option>
                             </select>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div class="form-section">
-                    <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-umak-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                        Bio / About Me
-                    </h3>
-                    <textarea name="bio" rows="4" class="form-textarea" placeholder="Tell the Heron community something about yourself...">{{ user.bio or '' }}</textarea>
-                </div>
+                <section class="px-6 py-6 sm:px-8 sm:py-7">
+                    <h3 class="text-lg font-black text-slate-800 mb-5">Bio / About Me</h3>
+                    <textarea name="bio" rows="5" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white" placeholder="Tell the Heron community something about yourself...">{{ user.bio or '' }}</textarea>
+                </section>
+            </div>
 
-                <div class="settings-footer-row p-8 bg-slate-50 flex justify-end items-center gap-4">
-                    <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Last updated: {{ user.updated_at[:10] }}</p>
-                    <button type="submit" id="saveBtn" class="btn-save opacity-50 cursor-not-allowed" disabled>Save Changes</button>
+            <div class="profile-modal-sticky border-t border-slate-100 bg-slate-50 px-6 py-5 sm:px-8 sm:py-6">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                        Last updated: {{ user.updated_at[:10] if user.updated_at else 'N/A' }}
+                    </p>
+                    <div class="flex flex-col-reverse gap-2 sm:flex-row">
+                        <button type="button" id="dismissProfileEditModal" class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-500 transition-colors hover:bg-slate-100">
+                            Cancel
+                        </button>
+                        <button type="submit" id="saveBtn" class="rounded-2xl bg-umak-blue px-5 py-3 text-sm font-black text-white opacity-50 cursor-not-allowed transition-all hover:bg-[#0d4e8b]" disabled>
+                            Save Changes
+                        </button>
+                    </div>
                 </div>
-            </form>
-        </section>
-        {% endif %}
+            </div>
+        </form>
     </div>
 </div>
+{% endif %}
 
 {% include 'includes/modal.html' %}
 
 <script>
-    // Global user data for interactions
     window.currentUser = { id: '{{ user.id }}', full_name: '{{ user.full_name }}' };
     window.allPosts = {{ posts|tojson|safe }};
 </script>
@@ -520,72 +832,120 @@ async function reportUser(targetId) {
     }
 }
 
-function switchTab(tabId, el) {
-    // Update active tab link
-    document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
-    el.classList.add('active');
-    
-    // Update active content
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
+function setActiveProfileTab(tabName) {
+    document.querySelectorAll('[data-profile-tab-trigger]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.profileTabTrigger === tabName);
+    });
+
+    document.querySelectorAll('.profile-panel').forEach((panel) => {
+        panel.classList.toggle('active', panel.id === `profile-tab-${tabName}`);
+    });
 }
 
-// Reuse dashboard helpers
 function togglePostMenu(postId, event) {
     if (event) event.stopPropagation();
     const menu = document.getElementById(`post-menu-${postId}`);
     const allMenus = document.querySelectorAll('.post-menu-dropdown');
-    allMenus.forEach(m => { if (m.id !== `post-menu-${postId}`) m.classList.add('hidden'); });
-    menu.classList.toggle('hidden');
+    allMenus.forEach((item) => {
+        if (item.id !== `post-menu-${postId}`) item.classList.add('hidden');
+    });
+    if (menu) menu.classList.toggle('hidden');
 }
 
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.post-menu-dropdown')) {
-        document.querySelectorAll('.post-menu-dropdown').forEach(m => m.classList.add('hidden'));
-    }
-});
-
 function showEditForm(postId) {
-    document.getElementById(`post-content-${postId}`).classList.add('hidden');
-    document.getElementById(`edit-form-${postId}`).classList.remove('hidden');
+    document.getElementById(`post-content-${postId}`)?.classList.add('hidden');
+    document.getElementById(`edit-form-${postId}`)?.classList.remove('hidden');
 }
 
 function hideEditForm(postId) {
-    document.getElementById(`post-content-${postId}`).classList.remove('hidden');
-    document.getElementById(`edit-form-${postId}`).classList.add('hidden');
+    document.getElementById(`post-content-${postId}`)?.classList.remove('hidden');
+    document.getElementById(`edit-form-${postId}`)?.classList.add('hidden');
 }
 
 async function confirmDeletePost(postId) {
     showConfirmModal('Delete Post?', 'Are you sure you want to delete this post?', async () => {
-        const response = await fetch(`/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
+        const response = await fetch(`/posts/${postId}/delete`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        });
         const data = await response.json();
         if (data.status === 'deleted') window.location.reload();
     });
 }
 
-// Form Change Tracking
+document.addEventListener('click', (event) => {
+    if (!event.target.closest('.post-menu-dropdown') && !event.target.closest('[onclick*="togglePostMenu"]')) {
+        document.querySelectorAll('.post-menu-dropdown').forEach((menu) => menu.classList.add('hidden'));
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-profile-tab-trigger]').forEach((button) => {
+        button.addEventListener('click', () => setActiveProfileTab(button.dataset.profileTabTrigger));
+    });
+
+    const modal = document.getElementById('profileEditModal');
+    const openModalButton = document.getElementById('openProfileEditModal');
+    const closeButtons = [
+        document.getElementById('closeProfileEditModal'),
+        document.getElementById('dismissProfileEditModal'),
+    ].filter(Boolean);
     const form = document.getElementById('settingsForm');
     const saveBtn = document.getElementById('saveBtn');
+
+    const openModal = () => {
+        if (!modal) return;
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+    };
+
+    const closeModal = () => {
+        if (!modal) return;
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    openModalButton?.addEventListener('click', openModal);
+    closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+
+    modal?.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modal?.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
     if (form && saveBtn) {
         const initialState = new FormData(form);
         const initialValues = {};
-        for (let [key, value] of initialState.entries()) { initialValues[key] = value; }
+        for (const [key, value] of initialState.entries()) {
+            initialValues[key] = value;
+        }
 
         const checkChanges = () => {
             const currentData = new FormData(form);
             let hasChanges = false;
-            for (let [key, value] of currentData.entries()) {
-                if (value !== initialValues[key]) { hasChanges = true; break; }
+
+            for (const [key, value] of currentData.entries()) {
+                if (value !== initialValues[key]) {
+                    hasChanges = true;
+                    break;
+                }
             }
+
             saveBtn.disabled = !hasChanges;
             saveBtn.classList.toggle('opacity-50', !hasChanges);
             saveBtn.classList.toggle('cursor-not-allowed', !hasChanges);
         };
 
-        form.querySelectorAll('input, select, textarea').forEach(el => {
-            el.addEventListener('input', checkChanges);
-            el.addEventListener('change', checkChanges);
+        form.querySelectorAll('input, select, textarea').forEach((field) => {
+            field.addEventListener('input', checkChanges);
+            field.addEventListener('change', checkChanges);
         });
     }
 });
