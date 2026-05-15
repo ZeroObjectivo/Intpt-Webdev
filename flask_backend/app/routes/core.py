@@ -1,3 +1,4 @@
+import logging
 from flask import Blueprint, render_template, session, request, redirect, url_for, flash, jsonify, make_response
 from .auth import (
     is_jwt_error,
@@ -9,6 +10,8 @@ import datetime
 import time
 import os
 import re
+
+logger = logging.getLogger(__name__)
 from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
 
@@ -80,7 +83,7 @@ def load_forbidden_terms():
             if word:
                 terms.add(word)
     except Exception as e:
-        print(f"Warning: failed loading forbidden words from DB, using defaults ({e})")
+        logger.warning("Failed loading forbidden words from DB, using defaults: %s", e)
 
     normalized_terms = sorted({normalize_text_for_moderation(term) for term in terms if term})
     _PROFANITY_TERM_CACHE["fetched_at"] = now_ts
@@ -115,7 +118,7 @@ def _upsert_policy_warning_notification(client, user_id, title, message, warn_re
             "type": "warning"
         }).execute()
     except Exception as e:
-        print(f"Failed to create policy notification: {e}")
+        logger.error("Failed to create policy notification: %s", e)
 
     if not warn_reason:
         return
@@ -127,7 +130,7 @@ def _upsert_policy_warning_notification(client, user_id, title, message, warn_re
             "reason": warn_reason
         }).execute()
     except Exception as e:
-        print(f"Failed to create automated warning row: {e}")
+        logger.error("Failed to create automated warning row: %s", e)
 
 def evaluate_submission_policy(user_id, content, submission_type):
     now = datetime.datetime.now(datetime.timezone.utc)
@@ -511,7 +514,8 @@ def build_comment_count_map(client, post_ids):
 
     comments_res = client.table('comments')\
         .select("post_id")\
-        .in_("post_id", unique_post_ids).execute()
+        .in_("post_id", unique_post_ids)\
+        .is_("parent_id", "null").execute()
 
     for row in (comments_res.data or []):
         post_id = row.get('post_id')
@@ -573,7 +577,7 @@ def scholarship():
             flash("Your login session expired. Please sign in again.", "error")
             return redirect(url_for('core.login'))
         else:
-            print(f"Error loading scholarship catalog: {e}")
+            logger.error("Error loading scholarship catalog: %s", e)
             profile = user_session or {}
             cards = []
 
@@ -603,7 +607,7 @@ def umak_coop():
             flash("Your login session expired. Please sign in again.", "error")
             return redirect(url_for('core.login'))
         else:
-            print(f"Error loading UMak Coop catalog: {e}")
+            logger.error("Error loading UMak Coop catalog: %s", e)
             profile = user_session or {}
             cards = []
 
@@ -644,7 +648,7 @@ def view_profile(target_user_id):
             session.clear()
             flash("Your session expired. Please sign in again.", "error")
             return redirect(url_for('core.login'))
-        print(f"Error loading profile: {e}")
+        logger.error("Error loading profile: %s", e)
         flash("Profile not found.", "error")
         return redirect(url_for('core.dashboard'))
 
@@ -714,6 +718,11 @@ def load_profile_data(user_id, viewer_id=None):
 
     profile_response = client.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
+
+    # Enforce contact privacy: hide contact_number from non-owners
+    if profile and str(viewer_id) != str(user_id):
+        if profile.get('contact_privacy') == 'only_me':
+            profile['contact_number'] = None
 
     posts_response = client.table('posts')\
         .select("*, profiles(full_name, avatar_url)")\
@@ -897,7 +906,7 @@ def load_dashboard_data(user_id, category=None):
             attach_embed_metadata(event)
             upcoming_events.append(event)
         except Exception as e:
-            print(f"Error formatting event: {e}")
+            logger.error("Error formatting event: %s", e)
 
     return profile, posts, trending, upcoming_events[:3]
 
@@ -1037,7 +1046,7 @@ def build_admin_activity_payload(client):
             "latest_dispute_id": dispute_row.get('id'),
         }
     except Exception as e:
-        print(f"Error building admin activity payload: {e}")
+        logger.error("Error building admin activity payload: %s", e)
         return {"version": ""}
 
 @core.route('/sync/dashboard/load', methods=['GET'])
@@ -1132,7 +1141,7 @@ def toggle_like(post_id):
                 return {"status": "liked", "post_id": post_id}
 
     except Exception as e:
-        print(f"Error toggling like: {e}")
+        logger.error("Error toggling like: %s", e)
         return {"error": "Failed to toggle like."}, 500
 
 @core.route('/posts/<post_id>/comments', methods=['GET'])
@@ -1147,7 +1156,7 @@ def get_comments(post_id):
             .execute()
         return {"comments": comments_response.data}
     except Exception as e:
-        print(f"Error fetching comments: {e}")
+        logger.error("Error fetching comments: %s", e)
         return {"error": "Failed to load comments."}, 500
 
 @core.route('/posts/<post_id>/comments', methods=['POST'])
@@ -1165,7 +1174,7 @@ def add_comment(post_id):
     try:
         moderation = evaluate_submission_policy(user_id, content, "comment")
     except Exception as e:
-        print(f"Moderation policy check failed for comment: {e}")
+        logger.error("Moderation policy check failed for comment: %s", e)
         return {"error": "Unable to validate content policy right now."}, 500
 
     if not moderation.get("allowed"):
@@ -1194,7 +1203,7 @@ def add_comment(post_id):
 
         return {"comment": new_comment.data}
     except Exception as e:
-        print(f"Error adding comment: {e}")
+        logger.error("Error adding comment: %s", e)
         return {"error": "Failed to add comment."}, 500
 
 @core.route('/posts/<post_id>/update', methods=['POST'])
@@ -1211,6 +1220,22 @@ def update_post(post_id):
     status = request.form.get('status')
     event_date = request.form.get('event_date')
     event_end_date = request.form.get('event_end_date')
+
+    # Profanity / moderation check on updated content
+    if content:
+        try:
+            moderation = evaluate_submission_policy(user_id, content, "post")
+        except Exception as e:
+            logger.error("Moderation policy check failed for post update: %s", e)
+            flash("Unable to validate content policy right now. Please try again.", "error")
+            return redirect(url_for('core.dashboard'))
+
+        if not moderation.get("allowed"):
+            policy_message = moderation.get("message") or "Your update violates content policy."
+            if not policy_message.startswith("\u26a0"):
+                policy_message = f"\u26a0 {policy_message}"
+            flash(policy_message, "warning")
+            return redirect(url_for('core.dashboard'))
 
     client = get_user_client()
 
@@ -1235,7 +1260,7 @@ def update_post(post_id):
         flash("Post updated successfully!", "success")
         return redirect(url_for('core.dashboard'))
     except Exception as e:
-        print(f"Error updating post: {e}")
+        logger.error("Error updating post: %s", e)
         flash("Error updating post. Please try again.", "error")
         return redirect(url_for('core.dashboard'))
 
@@ -1255,7 +1280,7 @@ def delete_post(post_id):
         flash("Post deleted successfully!", "success")
         return {"status": "deleted"}
     except Exception as e:
-        print(f"Error deleting post: {e}")
+        logger.error("Error deleting post: %s", e)
         return {"error": "Failed to delete post."}, 500
 
 @core.route('/posts/<post_id>/report', methods=['POST'])
@@ -1298,7 +1323,7 @@ def report_post(post_id):
 
         return {"status": "reported"}
     except Exception as e:
-        print(f"Error reporting post: {e}")
+        logger.error("Error reporting post: %s", e)
         return {"error": "Failed to report post."}, 500
 
 @core.route('/comments/<comment_id>/update', methods=['POST'])
@@ -1315,7 +1340,7 @@ def update_comment(comment_id):
     try:
         moderation = evaluate_submission_policy(user_id, content, "comment")
     except Exception as e:
-        print(f"Moderation policy check failed for comment update: {e}")
+        logger.error("Moderation policy check failed for comment update: %s", e)
         return {"error": "Unable to validate content policy right now."}, 500
 
     if not moderation.get("allowed"):
@@ -1336,7 +1361,7 @@ def update_comment(comment_id):
 
         return {"comment": result.data[0]}
     except Exception as e:
-        print(f"Error updating comment: {e}")
+        logger.error("Error updating comment: %s", e)
         return {"error": "Failed to update comment."}, 500
 
 @core.route('/comments/<comment_id>/delete', methods=['POST'])
@@ -1358,7 +1383,7 @@ def delete_comment(comment_id):
 
         return {"status": "deleted", "post_id": post_id}
     except Exception as e:
-        print(f"Error deleting comment: {e}")
+        logger.error("Error deleting comment: %s", e)
         return {"error": "Failed to delete comment."}, 500
 
 @core.route('/posts/create', methods=['POST'])
@@ -1408,7 +1433,7 @@ def create_post():
     try:
         moderation = evaluate_submission_policy(user_id, content or "", "post")
     except Exception as e:
-        print(f"Moderation policy check failed for post: {e}")
+        logger.error("Moderation policy check failed for post: %s", e)
         flash("Unable to validate content policy right now. Please try again.", "error")
         return redirect(url_for('core.dashboard'))
 
@@ -1434,7 +1459,7 @@ def create_post():
                     if img_url:
                         image_urls.append(img_url)
                 except Exception as e:
-                    print(f"Error uploading image {img_file.filename}: {e}")
+                    logger.error("Error uploading image %s: %s", img_file.filename, e)
                     flash(f"Failed to upload image {img_file.filename}.", "warning")
 
     try:
@@ -1457,15 +1482,23 @@ def create_post():
 
         flash("Post created successfully!", "success")
     except Exception as e:
-        print(f"CRITICAL: Post insertion failed: {str(e)}")
+        logger.critical("Post insertion failed: %s", e)
         flash("Something went wrong. Please try again.", "error")
 
     return redirect(url_for('core.dashboard'))
 
+ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+
 def upload_single_image(client, file, user_id):
     import uuid
 
-    file_ext = file.filename.split('.')[-1]
+    if not file.filename or '.' not in file.filename:
+        raise ValueError("File must have a valid extension.")
+
+    file_ext = file.filename.rsplit('.', 1)[1].lower()
+    if file_ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError(f"File type '.{file_ext}' not allowed. Accepted: {', '.join(sorted(ALLOWED_IMAGE_EXTENSIONS))}")
+
     timestamp = int(time.time())
     filename = f"{user_id}/{timestamp}_{uuid.uuid4().hex}.{file_ext}"
     bucket_name = 'post-images'

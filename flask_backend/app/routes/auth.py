@@ -1,9 +1,12 @@
+import logging
 import os
 from flask import Blueprint, request, redirect, session, url_for, jsonify, render_template
 from services.supabase_client import supabase, engine, get_user_client
 from sqlalchemy import text
 from functools import wraps
 from postgrest.exceptions import APIError
+
+logger = logging.getLogger(__name__)
 
 auth = Blueprint('auth', __name__)
 
@@ -76,7 +79,7 @@ def refresh_supabase_auth():
         session['refresh_token'] = new_refresh_token
         return True
     except Exception as e:
-        print(f"Supabase session refresh error: {e}")
+        logger.error("Supabase session refresh error: %s", e)
         return False
 
 @auth.route('/auth/login')
@@ -104,7 +107,7 @@ def login():
         # This will be the Google Auth URL
         return redirect(response.url)
     except Exception as e:
-        print(f"OAuth login error: {e}")
+        logger.error("OAuth login error: %s", e)
         return jsonify({"error": "Login failed. Please try again."}), 500
 
 @auth.route('/auth/callback')
@@ -262,7 +265,7 @@ def set_session():
                         })
                         conn.commit()
             except Exception as dispute_error:
-                print(f"Failed to record dispute via SQL: {dispute_error}")
+                logger.error("Failed to record dispute via SQL: %s", dispute_error)
 
             supabase.auth.sign_out()
             return render_template('unauthorized.html', email=email)
@@ -323,7 +326,7 @@ def set_session():
         return redirect(url_for('auth.post_login_transition'))
         
     except Exception as e:
-        print(f"Session Error: {e}")
+        logger.error("Session error: %s", e)
         return "Authentication failed. Please try again.", 500
 
 
@@ -380,7 +383,7 @@ def complete_onboarding():
 
         return redirect(url_for('auth.post_login_transition'))
     except Exception as e:
-        print(f"Onboarding completion error: {e}")
+        logger.error("Onboarding completion error: %s", e)
         return "Failed to complete onboarding", 500
 
 @auth.route('/unauthorized')
