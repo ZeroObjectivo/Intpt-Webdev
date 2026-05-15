@@ -248,29 +248,38 @@
                             <div class="flex">
                                 <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
                                 <div class="post-user-info">
-                                    <h4 class="font-black text-slate-800">{{ user.full_name }}</h4>
-                                    {% set post_dt = post.created_at|datetime_obj %}
-                                    {% set post_local = post_dt.astimezone(DISPLAY_TIMEZONE) %}
-                                    <span class="text-xs text-slate-400 font-bold" title="{{ post_local.strftime('%A, %B %d, %Y at %I:%M:%S %p') }}">
-                                        Posted {{ post.relative_created_at }}
-                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="font-black text-slate-800">{{ user.full_name }}</h4>
+                                        {% if user.college %}
+                                            <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
+                                            {% set coll_code = user.college.split(' ')[0]|lower %}
+                                            <span class="badge college-{{ coll_code }} shrink-0">{{ user.college.split(' ')[0] }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        {% set post_dt = post.created_at|datetime_obj %}
+                                        {% set post_local = post_dt.astimezone(DISPLAY_TIMEZONE) %}
+                                        <span class="text-xs text-slate-400 font-bold" title="{{ post_local.strftime('%A, %B %d, %Y at %I:%M:%S %p') }}">
+                                            Posted {{ post.relative_created_at }}
+                                        </span>
+                                        <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
+                                        {% set post_category = post.category or 'General' %}
+                                        {% if post_category == 'Lost & Found' %}
+                                            <span class="badge badge-lost-found">Lost & Found</span>
+                                        {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
+                                            <span class="badge badge-heron-business">Heron Business</span>
+                                        {% elif post_category == 'Question' %}
+                                            <span class="badge badge-question">Question</span>
+                                        {% elif post_category == 'Events' %}
+                                            <span class="badge badge-events">Events</span>
+                                        {% else %}
+                                            <span class="badge badge-general">General</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-2">
                                 <div class="flex items-center gap-2">
-                                    {% set post_category = post.category or 'General' %}
-                                    {% if post_category == 'Lost & Found' %}
-                                        <span class="badge-lost-found shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Lost & Found</span>
-                                    {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
-                                        <span class="badge-heron-business shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Heron Business</span>
-                                    {% elif post_category == 'Question' %}
-                                        <span class="badge-question shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Question</span>
-                                    {% elif post_category == 'Events' %}
-                                        <span class="badge-events shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Events</span>
-                                    {% else %}
-                                        <span class="badge-general shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">General</span>
-                                    {% endif %}
-
                                     {% if is_own_profile %}
                                     <!-- Post Menu -->
                                     <div class="relative">

@@ -160,34 +160,38 @@
                                 <div class="flex items-start min-w-0">
                                     <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
                                     <div class="post-user-info">
-                                        <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="post-author-name capitalize hover:underline decoration-slate-300 underline-offset-2">{{ post.profiles.full_name | title }}</a>
-                                        {% if post.profiles.course or post.profiles.college %}
-                                        <span class="post-meta">
-                                            {{ post.profiles.course if post.profiles.course else post.profiles.college }}
-                                            {% if post.profiles.course and post.profiles.college %} • {{ post.profiles.college }}{% endif %}
-                                        </span>
-                                        {% endif %}
-                                        {% set post_dt = post.created_at|datetime_obj %}
-                                        {% set post_local = post_dt.astimezone(DISPLAY_TIMEZONE) %}
-                                        <span class="post-meta" title="{{ post_local.strftime('%A, %B %d, %Y at %I:%M:%S %p') }}">
-                                            Posted {{ post.relative_created_at }}
-                                        </span>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="post-author-name capitalize hover:underline decoration-slate-300 underline-offset-2">{{ post.profiles.full_name | title }}</a>
+                                            {% if post.profiles.college %}
+                                                <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
+                                                {% set coll_code = post.profiles.college.split(' ')[0]|lower %}
+                                                <span class="badge college-{{ coll_code }} shrink-0">{{ post.profiles.college.split(' ')[0] }}</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="flex items-center gap-2 mt-1">
+                                            {% set post_dt = post.created_at|datetime_obj %}
+                                            {% set post_local = post_dt.astimezone(DISPLAY_TIMEZONE) %}
+                                            <span class="post-meta" title="{{ post_local.strftime('%A, %B %d, %Y at %I:%M:%S %p') }}">
+                                                Posted {{ post.relative_created_at }}
+                                            </span>
+                                            <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
+                                            {% if post_category == 'Lost & Found' %}
+                                                <span class="badge badge-lost-found">Lost & Found</span>
+                                            {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
+                                                <span class="badge badge-heron-business">Heron Business</span>
+                                            {% elif post_category == 'Question' %}
+                                                <span class="badge badge-question">Question</span>
+                                            {% elif post_category == 'Events' %}
+                                                <span class="badge badge-events">Events</span>
+                                            {% else %}
+                                                <span class="badge badge-general">General</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex flex-col items-end gap-2">
                                     <div class="flex items-center gap-2">
-                                        {% if post_category == 'Lost & Found' %}
-                                            <span class="badge-lost-found shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">Lost & Found</span>
-                                        {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
-                                            <span class="badge-heron-business shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">Heron Business</span>
-                                        {% elif post_category == 'Question' %}
-                                            <span class="badge-question shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">Question</span>
-                                        {% elif post_category == 'Events' %}
-                                            <span class="badge-events shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">Events</span>
-                                        {% else %}
-                                            <span class="badge-general shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">General</span>
-                                        {% endif %}
-
                                         <div class="relative">
                                             <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
