@@ -99,12 +99,6 @@ def refresh_supabase_auth():
         if not access_token:
             return False
 
-        if getattr(supabase, "postgrest", None):
-            try:
-                supabase.postgrest.auth(access_token)
-            except Exception as bind_error:
-                logger.debug("Skipping explicit postgrest auth bind after refresh: %s", bind_error)
-
         session['access_token'] = access_token
         session['refresh_token'] = new_refresh_token
         expires_at = getattr(auth_session, "expires_at", None)
