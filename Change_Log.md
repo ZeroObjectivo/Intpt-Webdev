@@ -67,9 +67,8 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Single Image Post Sizing:** Optimized the display for single-image posts to prevent cropping while capping the height at 550px. Images are now contained within a soft-slate background, matching Facebook's behavioral patterns for mixed aspect ratios.
 - **Image Interaction Polish:** Removed the unwanted zoom effect when hovering over post images in the feed for a cleaner, more professional look.
 - **Modal Trigger Logic:** Fixed a bug where clicking on single-image posts failed to open the image gallery modal due to an incorrect conditional check in the template.
-- **Facebook-style Image Grid:** Implemented a robust multi-image grid system for post cards (1-5+ images) with optimized layouts, aspect ratios, and modern aesthetic in `dashboard.css`.
-- **Improved Image Sizing:** Fixed improper image stacking and sizing by using a CSS grid-based approach with `object-fit: cover` and variable heights for single images.
-- **Template Cleanup:** Refactored `dashboard.html` and `profile_settings.html` to remove redundant image rounding and ensure compatibility with the new grid system.
+- **Facebook-style Image Grid:** Implemented a robust multi-image grid system for post cards (1-5+ images) with optimized static layouts and a modern aesthetic in `dashboard.css`.
+- **Improved Image Sizing:** Fixed improper image stacking and sizing by using a CSS grid-based approach with `object-fit: cover` and variable heights for single images. Removed all hover animations for a cleaner, more professional look.
 - **Post View Background Blur:** Adjusted the post modal background to be blurred instead of black when viewing a post without images, improving visual continuity with the dashboard.
 - **Unified Modal UI:** Relocated the post view close button to the top-right corner of the side panel, adopting the same circular, light-gray style as the "Create Post" modal for a more consistent user experience.
 - **Reliable Counter Synchronization:** Fixed a bug where comment and like counters on the dashboard feed were not reliably updating when modified within the modal.

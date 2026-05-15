@@ -692,12 +692,6 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), filter 0.3s ease;
-}
-
-.fb-grid .group:hover img {
-    transform: scale(1.04);
-    filter: brightness(0.9);
 }
 
 /* 1 Image: Variable height with cap, no background/border on container */
