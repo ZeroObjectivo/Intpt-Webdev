@@ -8,13 +8,13 @@
 {% endblock %}
 
 {% block admin_content %}
-<div class="mb-6 flex justify-between items-center">
+<div class="mb-6 flex flex-col gap-3 lg:flex-row lg:justify-between lg:items-center">
     <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         Back to Dashboard
     </a>
     
-    <div class="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+    <div class="w-full lg:w-auto flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
         {% for cat in ['All', 'General', 'Buy & Sell', 'Lost & Found', 'Question', 'Events'] %}
         <a href="{{ url_for('admin.content_management', category=cat) }}" 
            class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all
@@ -29,7 +29,7 @@
     {% if posts %}
         {% for p in posts %}
         <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 hover:border-umak-blue/30 transition-all group">
-            <div class="flex justify-between items-start mb-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-4">
                 <div class="flex items-center gap-3">
                     <img src="{{ p.profiles.avatar_url if p.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" 
                          class="w-10 h-10 rounded-xl object-cover border-2 border-slate-50 shadow-sm">
@@ -42,7 +42,7 @@
                     </div>
                 </div>
                 
-                <div class="flex gap-2">
+                <div class="flex gap-2 justify-end">
                     <button onclick="openAdminPostView('{{ p.id }}')" 
                             title="View Full Post"
                             class="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-umak-blue hover:text-white transition-all shadow-sm">
@@ -69,7 +69,7 @@
             </div>
             {% endif %}
 
-            <div class="flex justify-between items-center pt-4 border-t border-slate-50">
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center pt-4 border-t border-slate-50">
                 <div class="flex gap-6">
                     <div class="flex items-center gap-2 text-slate-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
@@ -81,13 +81,13 @@
                     </div>
                 </div>
                 
-                <div class="flex gap-2">
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button onclick="warnUserModal('{{ p.user_id }}', '{{ p.id }}')" 
-                            class="px-5 py-2.5 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all">
+                            class="px-5 py-2.5 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all w-full sm:w-auto">
                         Warn Author
                     </button>
                     <button onclick="confirmRemovePost('{{ p.id }}')" 
-                            class="px-5 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all">
+                            class="px-5 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all w-full sm:w-auto">
                         Remove
                     </button>
                 </div>

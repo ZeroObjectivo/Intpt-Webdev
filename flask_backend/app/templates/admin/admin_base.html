@@ -46,6 +46,22 @@
             flex-direction: column;
         }
 
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.58);
+            backdrop-filter: blur(2px);
+            z-index: 45;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .sidebar-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         .sidebar-header {
             padding: 2rem 1.5rem;
             display: flex;
@@ -64,6 +80,24 @@
             letter-spacing: 0.05em;
             font-size: 1.125rem;
             text-transform: uppercase;
+        }
+
+        .sidebar-close-btn {
+            margin-left: auto;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-close-btn:hover {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .sidebar-nav {
@@ -144,6 +178,33 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .admin-top-left {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            min-width: 0;
+        }
+
+        .admin-top-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-sidebar-toggle {
+            display: none;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.9rem;
+            border: 1px solid #dbe2f0;
+            background: #ffffff;
+            color: #334155;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
         }
 
         .admin-search {
@@ -242,6 +303,118 @@
             font-size: 0.8125rem;
             color: #1e293b;
         }
+
+        #flash-container {
+            right: 1rem;
+            left: auto;
+            top: 1rem;
+        }
+
+        @media (max-width: 1279px) {
+            .fav-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 1023px) {
+            :root {
+                --sidebar-width: min(84vw, 320px);
+            }
+
+            body.admin-sidebar-open {
+                overflow: hidden;
+            }
+
+            .sidebar {
+                transform: translateX(calc(-1 * var(--sidebar-width)));
+                box-shadow: 0 24px 48px rgba(2, 6, 23, 0.38);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-header {
+                padding: 1.2rem 1rem;
+            }
+
+            .sidebar-close-btn {
+                display: inline-flex;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .admin-top-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .admin-top-left {
+                width: 100%;
+            }
+
+            .admin-sidebar-toggle {
+                display: inline-flex;
+                flex-shrink: 0;
+            }
+
+            .admin-top-actions {
+                width: 100%;
+                justify-content: space-between;
+                gap: 0.75rem;
+            }
+
+            .admin-search {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .stat-card.expanded {
+                grid-column: auto;
+                grid-row: auto;
+            }
+
+            #notification-menu {
+                width: min(28rem, calc(100vw - 2rem));
+                right: 0;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .fav-bar {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .fav-item {
+                padding: 0.85rem;
+            }
+
+            .main-content {
+                padding: 0.85rem;
+            }
+
+            .admin-top-bar {
+                margin-bottom: 1rem;
+            }
+
+            .admin-top-actions {
+                flex-wrap: wrap;
+            }
+
+            .admin-top-actions > .relative {
+                margin-left: auto;
+            }
+
+            #flash-container {
+                left: 0.75rem;
+                right: 0.75rem;
+                top: 0.75rem;
+            }
+        }
     </style>
     {% block admin_styles %}{% endblock %}
 </head>
@@ -250,11 +423,16 @@
     {% set can_access_accounts = (permissions.can_access_accounts if permissions is defined else role_value in ['super_admin', 'superadmin', 'admin', 'account_manager']) %}
     {% set can_access_content = (permissions.can_access_content if permissions is defined else role_value in ['super_admin', 'superadmin', 'admin', 'content_moderator']) %}
 
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <img src="{{ url_for('static', filename='images/Logo.png') }}" class="sidebar-logo" alt="">
             <span class="sidebar-title">Admin Hub</span>
+            <button id="sidebarCloseBtn" type="button" class="sidebar-close-btn" aria-label="Close sidebar">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
 
         <nav class="sidebar-nav">
@@ -323,11 +501,16 @@
     <!-- Main Content -->
     <main class="main-content">
         <header class="admin-top-bar">
-            <div>
+            <div class="admin-top-left">
+                <button id="adminSidebarToggle" type="button" class="admin-sidebar-toggle" aria-label="Open sidebar" aria-expanded="false">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 7h16M4 12h16M4 17h16"></path></svg>
+                </button>
+                <div>
                 <h2 class="text-2xl font-black text-slate-800 tracking-tight">{% block header_title %}Dashboard Overview{% endblock %}</h2>
                 <p class="text-sm text-slate-400 font-bold">Welcome back, Admin!</p>
+                </div>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="admin-top-actions">
                 <div class="admin-search">
                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     <input type="text" placeholder="Search profiles, posts, reports...">
@@ -482,6 +665,58 @@
                     }
                 } catch (e) { console.error('Error marking as read:', e); }
             };
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.querySelector('.sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            const openBtn = document.getElementById('adminSidebarToggle');
+            const closeBtn = document.getElementById('sidebarCloseBtn');
+            const breakpoint = window.matchMedia('(max-width: 1023px)');
+
+            if (!sidebar || !backdrop || !openBtn || !closeBtn) return;
+
+            const closeSidebar = () => {
+                sidebar.classList.remove('open');
+                backdrop.classList.remove('show');
+                document.body.classList.remove('admin-sidebar-open');
+                openBtn.setAttribute('aria-expanded', 'false');
+            };
+
+            const openSidebar = () => {
+                sidebar.classList.add('open');
+                backdrop.classList.add('show');
+                document.body.classList.add('admin-sidebar-open');
+                openBtn.setAttribute('aria-expanded', 'true');
+            };
+
+            openBtn.addEventListener('click', () => {
+                if (sidebar.classList.contains('open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+
+            closeBtn.addEventListener('click', closeSidebar);
+            backdrop.addEventListener('click', closeSidebar);
+            sidebar.querySelectorAll('a').forEach((link) => {
+                link.addEventListener('click', () => {
+                    if (breakpoint.matches) closeSidebar();
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') closeSidebar();
+            });
+
+            const applyLayoutState = () => {
+                if (!breakpoint.matches) {
+                    closeSidebar();
+                }
+            };
+            breakpoint.addEventListener('change', applyLayoutState);
+            applyLayoutState();
         });
     </script>
     {% block admin_scripts %}{% endblock %}

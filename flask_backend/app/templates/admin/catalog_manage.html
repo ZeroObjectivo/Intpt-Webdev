@@ -161,6 +161,28 @@
             grid-template-columns: 1fr;
         }
     }
+
+    @media (max-width: 767px) {
+        .catalog-switch {
+            flex-wrap: wrap;
+        }
+
+        .catalog-switch-link {
+            flex: 1 1 140px;
+            text-align: center;
+        }
+
+        .catalog-actions {
+            flex-direction: column;
+        }
+
+        .btn-primary,
+        .btn-danger,
+        .btn-muted {
+            width: 100%;
+            text-align: center;
+        }
+    }
 </style>
 {% endblock %}
 

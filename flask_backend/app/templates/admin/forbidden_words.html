@@ -14,17 +14,17 @@
     </div>
 
     <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-        <div class="flex justify-between items-center mb-8">
+        <div class="flex flex-col gap-3 md:flex-row md:justify-between md:items-center mb-8">
             <div>
                 <h3 class="text-lg font-black text-slate-800">Forbidden Words</h3>
                 <p class="text-sm text-slate-400 font-bold">Manage the list of words automatically filtered from posts and comments.</p>
             </div>
-            <button @click="showAddModal = true" class="bg-umak-blue text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">
+            <button @click="showAddModal = true" class="bg-umak-blue text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all w-full md:w-auto">
                 Add New Word
             </button>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {% if words %}
                 {% for word in words %}
                 <div class="group bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center hover:border-umak-blue transition-all">
