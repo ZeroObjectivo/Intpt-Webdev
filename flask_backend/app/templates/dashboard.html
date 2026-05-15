@@ -121,7 +121,8 @@
                     <a href="{{ url_for('core.dashboard', category='Events') }}" class="pill badge-events rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Events' %}active{% endif %}" role="button">Events</a>
                 </div>
 
-                <div id="feedSkeleton" class="feed-skeleton hidden" aria-hidden="true">
+                <div id="feedSkeleton" class="feed-skeleton" aria-hidden="true">
+                    {% for i in range(3) %}
                     <div class="skeleton-card">
                         <div class="skeleton-header">
                             <div class="skeleton-avatar"></div>
@@ -129,28 +130,21 @@
                                 <div class="skeleton-line skeleton-line-md"></div>
                                 <div class="skeleton-line skeleton-line-sm"></div>
                             </div>
-                            <div class="skeleton-pill"></div>
                         </div>
-                        <div class="skeleton-line skeleton-line-lg"></div>
-                        <div class="skeleton-line skeleton-line-full"></div>
-                        <div class="skeleton-line skeleton-line-wide"></div>
-                    </div>
-                    <div class="skeleton-card">
-                        <div class="skeleton-header">
-                            <div class="skeleton-avatar"></div>
-                            <div class="skeleton-text-group">
-                                <div class="skeleton-line skeleton-line-md"></div>
-                                <div class="skeleton-line skeleton-line-sm"></div>
-                            </div>
-                            <div class="skeleton-pill"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line skeleton-line-full"></div>
+                            <div class="skeleton-line skeleton-line-full"></div>
+                            <div class="skeleton-line skeleton-line-lg"></div>
                         </div>
-                        <div class="skeleton-line skeleton-line-lg"></div>
-                        <div class="skeleton-line skeleton-line-full"></div>
-                        <div class="skeleton-line skeleton-line-wide"></div>
+                        <div class="skeleton-actions">
+                            <div class="skeleton-action-item"></div>
+                            <div class="skeleton-action-item"></div>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
 
-                <div id="feedContent" class="posts-list" aria-busy="false">
+                <div id="feedContent" class="posts-list hidden" aria-busy="true">
                     {% if posts %}
                         {% for post in posts %}
                         {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}

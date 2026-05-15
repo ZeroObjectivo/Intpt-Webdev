@@ -11,7 +11,7 @@
     const notificationSyncIntervalMs = 15000;
     const realtimeApplyDelayMs = 300;
     const skeletonRevealDelayMs = 420;
-    const skeletonMinVisibleMs = 320;
+    const skeletonMinVisibleMs = 800; // Increased for a more deliberate feel
     const feedSkeleton = document.getElementById('feedSkeleton');
     const feedContent = document.getElementById('feedContent');
     let baselineStateVersion = null;
@@ -25,13 +25,14 @@
     let interactionsChannel = null;
     let syncLoadCount = 0;
     let skeletonRevealTimer = null;
-    let skeletonVisibleAt = 0;
+    let skeletonVisibleAt = Date.now(); // Start counting immediately on load
 
     function showFeedSkeleton() {
         if (!feedSkeleton || !feedContent) return;
         if (!feedSkeleton.classList.contains('hidden')) return;
         feedSkeleton.classList.remove('hidden');
         feedContent.classList.add('hidden');
+        feedContent.classList.remove('opacity-100');
         feedContent.setAttribute('aria-busy', 'true');
         skeletonVisibleAt = Date.now();
     }
@@ -47,6 +48,10 @@
             if (syncLoadCount > 0 && !force) return;
             feedSkeleton.classList.add('hidden');
             feedContent.classList.remove('hidden');
+            // Small timeout to trigger CSS transition
+            requestAnimationFrame(() => {
+                feedContent.classList.add('opacity-100');
+            });
             feedContent.setAttribute('aria-busy', 'false');
         }, remaining);
     }
