@@ -4,6 +4,7 @@ from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, timezone
 from werkzeug.middleware.proxy_fix import ProxyFix
 import os
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
@@ -27,16 +28,20 @@ def create_app():
     # CSRF protection for all POST forms
     csrf.init_app(app)
 
-    # Custom Jinja filters
     @app.template_filter('datetime_obj')
     def datetime_obj(value):
+        if not value:
+            return None
         # Clean ISO string
         ts = value.replace('Z', '').split('.')[0]
         try:
-            return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
+            dt = datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
         except ValueError:
             # Fallback for full format
-            return datetime.strptime(value.replace('Z', ''), '%Y-%m-%dT%H:%M:%S.%f')
+            dt = datetime.strptime(value.replace('Z', ''), '%Y-%m-%dT%H:%M:%S.%f')
+        
+        # Ensure it's UTC aware
+        return dt.replace(tzinfo=timezone.utc)
 
     @app.context_processor
     def inject_notifications():
@@ -70,6 +75,11 @@ def create_app():
     @app.context_processor
     def inject_now():
         return {'now': datetime.now(timezone.utc)}
+
+    @app.context_processor
+    def inject_timezone():
+        from .routes.core import DISPLAY_TIMEZONE
+        return {'DISPLAY_TIMEZONE': DISPLAY_TIMEZONE}
 
     @app.context_processor
     def inject_supabase_keys():

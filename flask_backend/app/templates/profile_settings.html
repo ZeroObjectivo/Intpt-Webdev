@@ -249,8 +249,11 @@
                                 <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
                                 <div class="post-user-info">
                                     <h4 class="font-black text-slate-800">{{ user.full_name }}</h4>
-                                    {% set created = post.created_at|datetime_obj %}
-                                    <span class="text-xs text-slate-400 font-bold">{{ created.strftime('%b %d, %Y') }}</span>
+                                    {% set post_dt = post.created_at|datetime_obj %}
+                                    {% set post_local = post_dt.astimezone(DISPLAY_TIMEZONE) %}
+                                    <span class="text-xs text-slate-400 font-bold" title="{{ post_local.strftime('%A, %B %d, %Y at %I:%M:%S %p') }}">
+                                        Posted {{ post.relative_created_at }}
+                                    </span>
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-2">

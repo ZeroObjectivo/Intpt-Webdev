@@ -156,7 +156,11 @@
                                 <div class="min-w-0">
                                     <span class="catalog-meta-tag">{{ card.scholarship_type or 'General Scholarship' }}</span>
                                     <h2 class="post-author-name text-[1.3rem] mt-2">{{ card.name }}</h2>
-                                    <span class="post-meta">Posted {{ card.relative_created_at }}</span>
+                                    {% set card_dt = card.created_at|datetime_obj %}
+                                    {% set card_local = card_dt.astimezone(DISPLAY_TIMEZONE) %}
+                                    <span class="post-meta" title="{{ card_local.strftime('%A, %B %d, %Y at %I:%M:%S %p') }}">
+                                        Posted {{ card.relative_created_at }}
+                                    </span>
                                 </div>
                                 <button type="button" class="toggle-btn" data-toggle-target="scholarship-expanded-{{ card.id }}">View Details</button>
                             </div>

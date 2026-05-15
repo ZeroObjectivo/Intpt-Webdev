@@ -464,26 +464,22 @@ def format_relative_time(created_at, now=None):
     delta = now - created_at
     seconds = max(int(delta.total_seconds()), 0)
 
-    if seconds < 60:
-        return "Just now"
-    if seconds < 3600:
-        minutes = seconds // 60
-        unit = "min" if minutes == 1 else "mins"
-        return f"{minutes} {unit} ago"
+    # Within 24 hours: Use relative time (mins/hrs)
     if seconds < 86400:
+        if seconds < 60:
+            return "Just now"
+        if seconds < 3600:
+            minutes = seconds // 60
+            unit = "min" if minutes == 1 else "mins"
+            return f"{minutes} {unit} ago"
+        
         hours = seconds // 3600
         unit = "hr" if hours == 1 else "hrs"
         return f"{hours} {unit} ago"
 
+    # Past 24 hours: Use full descriptive date with year and time
     created_local = created_at.astimezone(DISPLAY_TIMEZONE)
-    now_local = now.astimezone(DISPLAY_TIMEZONE)
-    if created_local.date() == now_local.date() - datetime.timedelta(days=1):
-        return f"Yesterday at {created_local.strftime('%I:%M %p').lstrip('0')}"
-
-    if created_local.year == now_local.year:
-        return created_local.strftime("%b %d").replace(" 0", " ")
-
-    return created_local.strftime("%b %d, %Y").replace(" 0", " ")
+    return created_local.strftime("%B %d, %Y at %I:%M %p").replace(" 0", " ")
 
 def parse_catalog_multiline(value):
     if not value:
