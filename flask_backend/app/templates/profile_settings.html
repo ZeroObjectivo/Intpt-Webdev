@@ -255,9 +255,18 @@
                             </div>
                             <div class="flex flex-col items-end gap-2">
                                 <div class="flex items-center gap-2">
-                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest badge-{{ post.category|lower|replace(' ', '-')|replace('&', 'and') }}">
-                                        {{ post.category }}
-                                    </span>
+                                    {% set post_category = post.category or 'General' %}
+                                    {% if post_category == 'Lost & Found' %}
+                                        <span class="badge-lost-found shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Lost & Found</span>
+                                    {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
+                                        <span class="badge-heron-business shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Heron Business</span>
+                                    {% elif post_category == 'Question' %}
+                                        <span class="badge-question shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Question</span>
+                                    {% elif post_category == 'Events' %}
+                                        <span class="badge-events shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Events</span>
+                                    {% else %}
+                                        <span class="badge-general shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">General</span>
+                                    {% endif %}
 
                                     {% if is_own_profile %}
                                     <!-- Post Menu -->

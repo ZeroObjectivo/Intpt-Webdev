@@ -113,12 +113,12 @@
                     </select>
                 </div>
                 <div class="category-pills category-pills-desktop" aria-label="Post categories" role="group">
-                    <a href="{{ url_for('core.dashboard') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if not active_category %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">All Post</a>
-                    <a href="{{ url_for('core.dashboard', category='General') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'General' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">General</a>
-                    <a href="{{ url_for('core.dashboard', category='Lost & Found') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Lost & Found' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Lost & Found</a>
-                    <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Heron Business' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Heron Business</a>
-                    <a href="{{ url_for('core.dashboard', category='Question') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Question' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Question</a>
-                    <a href="{{ url_for('core.dashboard', category='Events') }}" class="pill rounded-full px-3 py-1 text-sm font-bold my-[5px] {% if active_category == 'Events' %}bg-[#111942] text-[#C7CDE6] active{% else %}bg-[#C7CDE6] text-[#111942]{% endif %}" role="button">Events</a>
+                    <a href="{{ url_for('core.dashboard') }}" class="pill badge-all rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if not active_category %}active{% endif %}" role="button">All Posts</a>
+                    <a href="{{ url_for('core.dashboard', category='General') }}" class="pill badge-general rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'General' %}active{% endif %}" role="button">General</a>
+                    <a href="{{ url_for('core.dashboard', category='Lost & Found') }}" class="pill badge-lost-found rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Lost & Found' %}active{% endif %}" role="button">Lost & Found</a>
+                    <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="pill badge-heron-business rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Heron Business' %}active{% endif %}" role="button">Heron Business</a>
+                    <a href="{{ url_for('core.dashboard', category='Question') }}" class="pill badge-question rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Question' %}active{% endif %}" role="button">Question</a>
+                    <a href="{{ url_for('core.dashboard', category='Events') }}" class="pill badge-events rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Events' %}active{% endif %}" role="button">Events</a>
                 </div>
 
                 <div class="posts-list">
@@ -144,15 +144,15 @@
                                 <div class="flex flex-col items-end gap-2">
                                     <div class="flex items-center gap-2">
                                         {% if post_category == 'Lost & Found' %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Lost & Found</span>
+                                            <span class="badge-lost-found shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">Lost & Found</span>
                                         {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Heron Business</span>
+                                            <span class="badge-heron-business shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">Heron Business</span>
                                         {% elif post_category == 'Question' %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Question</span>
+                                            <span class="badge-question shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">Question</span>
                                         {% elif post_category == 'Events' %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">Events</span>
+                                            <span class="badge-events shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">Events</span>
                                         {% else %}
-                                            <span class="post-category-tag shrink-0 rounded-full px-2 py-0.5 bg-[#C7CDE6] text-[#111942] text-xs font-bold my-[5px]">General</span>
+                                            <span class="badge-general shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest my-[5px]">General</span>
                                         {% endif %}
 
                                         <div class="relative">

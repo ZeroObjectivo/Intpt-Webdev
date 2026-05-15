@@ -554,30 +554,51 @@
     font-weight: 700;
 }
 
+/* --- Category Badges & Pills (Color Coded) --- */
+.badge-all,
 .badge-general {
-    background: #D9D9D9;
+    background: #F1F5F9;
     color: #475569;
 }
 
 .badge-lost-found {
-    background: #FFECA7;
-    color: #6E3E1E;
+    background: #FFF7ED;
+    color: #9A3412;
 }
 
 .badge-buy-sell,
 .badge-heron-business {
-    background: #BFFFDE;
-    color: #145C50;
+    background: #ECFDF5;
+    color: #047857;
 }
 
 .badge-question {
-    background: #C5DDFF;
-    color: #1A3C8D;
+    background: #EFF6FF;
+    color: #1D4ED8;
 }
 
 .badge-events {
-    background: #533074;
-    color: #EDF1FF;
+    background: #FAF5FF;
+    color: #7E22CE;
+}
+
+/* Specific styling for filter pills */
+.pill {
+    opacity: 0.75;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1.5px solid transparent !important;
+}
+
+.pill:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.pill.active {
+    opacity: 1;
+    border-color: currentColor !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transform: scale(1.02);
 }
 
 @media (max-width: 1320px) {

@@ -286,7 +286,7 @@ function updateModalContent() {
 
     const badge = document.getElementById('modalCategoryBadge');
     badge.innerText = currentPost.category;
-    badge.className = "inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-3 ";
+    badge.className = "inline-block px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest mb-4 transition-all ";
     
     const cat = currentPost.category;
     if (cat === 'General') badge.classList.add('badge-general');
