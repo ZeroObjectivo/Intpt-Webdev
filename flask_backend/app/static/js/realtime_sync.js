@@ -9,6 +9,7 @@
     const activeCategory = syncConfig.activeCategory || '';
     const pollIntervalMs = 7000;
     const notificationSyncIntervalMs = 15000;
+    const realtimeApplyDelayMs = 300;
     let baselineStateVersion = null;
     let latestAdminVersion = null;
     let pollInProgress = false;
@@ -101,7 +102,27 @@
         }
         const items = Array.isArray(notificationsPayload.items) ? notificationsPayload.items : [];
         const unreadCount = Number(notificationsPayload.unread_count || 0);
-        window.renderNotificationMenu(items, unreadCount);
+        window.setTimeout(() => {
+            window.renderNotificationMenu(items, unreadCount);
+        }, realtimeApplyDelayMs);
+    }
+
+    function removePostCardRealtime(postId) {
+        if (!postId) return;
+        const selector = `.post-card[data-post-id="${postId}"], .trending-item[data-post-id="${postId}"]`;
+        document.querySelectorAll(selector).forEach((el) => el.remove());
+
+        if (Array.isArray(window.allPosts)) {
+            window.allPosts = window.allPosts.filter((post) => post.id !== postId);
+        }
+
+        if (window.currentPost && window.currentPost.id === postId && typeof window.closeImageModal === 'function') {
+            window.closeImageModal();
+        }
+
+        if (typeof window.createToast === 'function') {
+            window.createToast('A post was removed by moderation.', 'info');
+        }
     }
 
     function scheduleReload(message) {
@@ -250,6 +271,14 @@
                                 eventType: payload ? payload.eventType : null
                             }
                         }));
+                    }
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, (payload) => {
+                    const row = payload ? payload.old : null;
+                    if (row && row.id) {
+                        window.setTimeout(() => {
+                            removePostCardRealtime(row.id);
+                        }, realtimeApplyDelayMs);
                     }
                 })
                 .subscribe((status) => {

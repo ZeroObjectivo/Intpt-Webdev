@@ -16,6 +16,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
         :root {
@@ -522,7 +523,9 @@
                             id="notification-dropdown-trigger">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                         {% if unread_notifications_count > 0 %}
-                            <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                            <span id="admin-notification-unread-dot" class="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                        {% else %}
+                            <span id="admin-notification-unread-dot" class="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white hidden"></span>
                         {% endif %}
                     </button>
 
@@ -530,14 +533,18 @@
                         <div class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
                             <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
                             {% if unread_notifications_count > 0 %}
-                                <span class="px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black">{{ unread_notifications_count }} New</span>
+                                <span id="admin-notification-unread-count" class="px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black">{{ unread_notifications_count }} New</span>
+                            {% else %}
+                                <span id="admin-notification-unread-count" class="px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black hidden">0 New</span>
                             {% endif %}
                         </div>
 
-                        <div class="max-h-[32rem] overflow-y-auto custom-scrollbar">
+                        <div class="max-h-[32rem] overflow-y-auto custom-scrollbar" id="admin-notification-list-container">
+                            <div id="admin-notification-items-container">
                             {% if notifications %}
                                 {% for n in notifications %}
-                                    <div class="px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                    <div class="admin-notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                         data-notification-id="{{ n.id }}"
                                          onclick="markAsRead('{{ n.id }}', this)">
                                         <div class="flex justify-between items-start mb-2">
                                             <h4 class="text-[15px] font-black {% if not n.is_read %}text-umak-blue{% else %}text-slate-600{% endif %}">{{ n.title }}</h4>
@@ -546,11 +553,15 @@
                                         <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">{{ n.message }}</p>
                                     </div>
                                 {% endfor %}
+                                <div id="admin-notification-empty-state" class="px-8 py-12 text-center hidden">
+                                    <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
+                                </div>
                             {% else %}
-                                <div class="px-8 py-12 text-center">
+                                <div id="admin-notification-empty-state" class="px-8 py-12 text-center">
                                     <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
                                 </div>
                             {% endif %}
+                            </div>
                         </div>
                     </div>                </div>
             </div>
@@ -580,6 +591,75 @@
         function getCSRFToken() {
             const meta = document.querySelector('meta[name="csrf-token"]');
             return meta ? meta.getAttribute('content') : '';
+        }
+
+        function escapeNotifHtml(value) {
+            const text = String(value ?? '');
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function updateAdminNotificationBadge(unreadCount) {
+            const dot = document.getElementById('admin-notification-unread-dot');
+            const count = document.getElementById('admin-notification-unread-count');
+            const hasUnread = unreadCount > 0;
+            if (dot) dot.classList.toggle('hidden', !hasUnread);
+            if (count) {
+                count.classList.toggle('hidden', !hasUnread);
+                count.textContent = `${unreadCount} New`;
+            }
+        }
+
+        function renderAdminNotificationMenu(notifications, unreadCount) {
+            const list = document.getElementById('admin-notification-items-container');
+            const empty = document.getElementById('admin-notification-empty-state');
+            if (!list || !empty) return;
+
+            const items = Array.isArray(notifications) ? notifications : [];
+            if (items.length === 0) {
+                list.querySelectorAll('.admin-notification-item').forEach((el) => el.remove());
+                empty.classList.remove('hidden');
+                updateAdminNotificationBadge(0);
+                return;
+            }
+
+            list.querySelectorAll('.admin-notification-item').forEach((el) => el.remove());
+            const html = items.map((n) => {
+                const titleClass = n.is_read ? 'text-slate-600' : 'text-umak-blue';
+                const createdAt = (n.created_at || '').slice(0, 10);
+                return `
+                    <div class="admin-notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                         data-notification-id="${escapeNotifHtml(n.id)}"
+                         onclick="markAsRead('${escapeNotifHtml(n.id)}', this)">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="text-[15px] font-black ${titleClass}">${escapeNotifHtml(n.title || 'Notification')}</h4>
+                            <span class="text-[11px] font-bold text-slate-300 uppercase">${escapeNotifHtml(createdAt)}</span>
+                        </div>
+                        <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">${escapeNotifHtml(n.message || '')}</p>
+                    </div>
+                `;
+            }).join('');
+
+            list.insertAdjacentHTML('afterbegin', html);
+            empty.classList.add('hidden');
+            updateAdminNotificationBadge(unreadCount);
+        }
+
+        function removeAdminPostCardRealtime(postId) {
+            if (!postId) return;
+            const selectors = [
+                `[data-admin-post-id="${postId}"]`,
+                `.post-card[data-post-id="${postId}"]`,
+                `.trending-item[data-post-id="${postId}"]`
+            ];
+            document.querySelectorAll(selectors.join(',')).forEach((el) => el.remove());
+            if (window.createToast) {
+                window.createToast('Post removal synced in real time.', 'info');
+            }
         }
 
         function createToast(message, type = 'success') {
@@ -661,10 +741,79 @@
                         if (title) {
                             title.classList.remove('text-umak-blue');
                             title.classList.add('text-slate-600');
+                            const badge = document.getElementById('admin-notification-unread-count');
+                            const current = badge && badge.textContent ? parseInt(badge.textContent, 10) || 0 : 0;
+                            updateAdminNotificationBadge(Math.max(0, current - 1));
                         }
                     }
                 } catch (e) { console.error('Error marking as read:', e); }
             };
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const supabaseUrl = '{{ SUPABASE_URL }}';
+            const supabaseAnonKey = '{{ SUPABASE_ANON_KEY }}';
+            const userId = '{{ user.id if user else "" }}';
+            const accessToken = {{ session.get('access_token')|tojson }};
+            const realtimeDelayMs = 300;
+
+            if (!supabaseUrl || !supabaseAnonKey || !window.supabase || !userId) return;
+
+            const { createClient } = window.supabase;
+            const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+            if (accessToken) {
+                try {
+                    supabaseClient.realtime.setAuth(accessToken);
+                } catch (e) {
+                    console.warn('Admin realtime auth token not set:', e);
+                }
+            }
+
+            const notificationChannel = supabaseClient
+                .channel(`admin-realtime-notifications-${userId}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${userId}`
+                }, (payload) => {
+                    setTimeout(async () => {
+                        try {
+                            const res = await fetch('/sync/realtime', { headers: { 'Accept': 'application/json' } });
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            if (data && data.notifications) {
+                                renderAdminNotificationMenu(data.notifications.items || [], Number(data.notifications.unread_count || 0));
+                            }
+                        } catch (e) {
+                            console.error('Admin notification realtime sync failed:', e);
+                        }
+                    }, realtimeDelayMs);
+                })
+                .subscribe();
+
+            const moderationChannel = supabaseClient
+                .channel(`admin-realtime-post-removals-${userId}`)
+                .on('postgres_changes', {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'posts'
+                }, (payload) => {
+                    const row = payload ? payload.old : null;
+                    if (!row || !row.id) return;
+                    setTimeout(() => {
+                        removeAdminPostCardRealtime(row.id);
+                    }, realtimeDelayMs);
+                })
+                .subscribe();
+
+            window.addEventListener('beforeunload', () => {
+                try {
+                    supabaseClient.removeChannel(notificationChannel);
+                    supabaseClient.removeChannel(moderationChannel);
+                } catch (_e) {}
+            });
         });
 
         document.addEventListener('DOMContentLoaded', () => {

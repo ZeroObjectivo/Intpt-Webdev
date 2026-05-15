@@ -919,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 
             (payload) => {
                 console.log('New notification received:', payload.new);
-                handleNewNotification(payload.new);
+                setTimeout(() => handleNewNotification(payload.new), 300);
             }
         )
         .subscribe((status, err) => {

@@ -28,7 +28,7 @@
 <div class="space-y-6 max-w-3xl mx-auto">
     {% if posts %}
         {% for p in posts %}
-        <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 hover:border-umak-blue/30 transition-all group">
+        <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 hover:border-umak-blue/30 transition-all group" data-admin-post-id="{{ p.id }}">
             <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-4">
                 <div class="flex items-center gap-3">
                     <img src="{{ p.profiles.avatar_url if p.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" 
@@ -388,7 +388,11 @@
                         const data = await res.json();
                         if (data.status === 'deleted') {
                             showToast(data.message || 'Post removed successfully', 'success');
-                            location.reload();
+                            setTimeout(() => {
+                                if (typeof removeAdminPostCardRealtime === 'function') {
+                                    removeAdminPostCardRealtime(postId);
+                                }
+                            }, 300);
                         } else {
                             showToast(data.message || 'Error removing post', 'error');
                         }
@@ -413,7 +417,11 @@
                         } catch (_) {}
                         throw new Error(errorMessage);
                     }
-                    location.reload();
+                    setTimeout(() => {
+                        if (typeof removeAdminPostCardRealtime === 'function') {
+                            removeAdminPostCardRealtime(postId);
+                        }
+                    }, 300);
                 })
                 .catch((e) => showToast(e.message || 'Failed to remove post', 'error'));
         }

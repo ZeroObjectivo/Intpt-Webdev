@@ -185,7 +185,7 @@
             {% if posts %}
                 <div class="space-y-4">
                     {% for p in posts %}
-                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 group">
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 group" data-admin-post-id="{{ p.id }}">
                         <div class="flex justify-between items-start mb-2">
                             <span class="px-2 py-0.5 bg-white text-[9px] font-black uppercase text-umak-blue rounded border border-slate-100">#{{ p.category }}</span>
                             <span class="text-[9px] text-slate-400 font-bold uppercase">{{ p.created_at[:10] }}</span>
@@ -245,7 +245,11 @@
                         throw new Error((data && data.message) || 'Failed to remove post.');
                     }
                     if (window.createToast) window.createToast(data.message || 'Post removed.', 'success');
-                    window.location.reload();
+                    setTimeout(() => {
+                        if (typeof removeAdminPostCardRealtime === 'function') {
+                            removeAdminPostCardRealtime(postId);
+                        }
+                    }, 300);
                 } catch (e) {
                     if (window.createToast) window.createToast(e.message || 'Failed to remove post.', 'error');
                 }
