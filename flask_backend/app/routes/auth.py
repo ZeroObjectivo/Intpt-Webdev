@@ -307,7 +307,7 @@ def set_session():
         # Admin domain gate: only admin-portal roles can log in on dev.heronshub.social
         if is_admin_host:
             user_role = (profile_res.data.get('role', '') if profile_res.data else '').strip().lower()
-            if user_role not in ('admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'):
+            if user_role not in ('admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator', 'content_manager'):
                 session.clear()
                 supabase.auth.sign_out()
                 return render_template('unauthorized.html',
@@ -372,7 +372,7 @@ def complete_onboarding():
         if is_admin_domain_request():
             profile_res = user_client.table('profiles').select("role").eq("id", user['id']).single().execute()
             role = (profile_res.data.get('role', '') if profile_res.data else '').strip().lower()
-            if role in ('admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'):
+            if role in ('admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator', 'content_manager'):
                 return redirect(url_for('admin.dashboard'))
 
             session.clear()

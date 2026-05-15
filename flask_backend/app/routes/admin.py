@@ -39,6 +39,16 @@ def get_service_client():
         )
     return supabase_service
 
+
+def get_admin_read_client():
+    """
+    Read-only admin pages should not hard-crash when service key is absent.
+    Fallback to per-user client for graceful behavior.
+    """
+    if supabase_service:
+        return supabase_service
+    return get_user_client()
+
 def normalize_role(role):
     value = (role or '').strip().lower()
     return ROLE_ALIASES.get(value, value)
@@ -198,7 +208,7 @@ def build_admin_permissions(role):
 @login_required
 @admin_required
 def dashboard():
-    client = get_service_client()
+    client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     
@@ -256,7 +266,7 @@ def dashboard():
 @login_required
 @account_access_required
 def manage_users():
-    client = get_service_client()
+    client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     search = request.args.get('search', '')
@@ -270,7 +280,7 @@ def manage_users():
 @login_required
 @account_access_required
 def user_management(user_id):
-    client = get_service_client()
+    client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
@@ -403,7 +413,7 @@ def lift_user_suspension(user_id):
 @login_required
 @content_access_required
 def content_management(category):
-    client = get_service_client()
+    client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     query = client.table('posts').select("*, profiles(full_name, avatar_url)")
@@ -416,7 +426,7 @@ def content_management(category):
 @login_required
 @content_access_required
 def get_post_likers(post_id):
-    client = get_service_client()
+    client = get_admin_read_client()
     res = client.table('likes').select("profiles(id, full_name, avatar_url)").eq('post_id', post_id).execute()
     likers = [item['profiles'] for item in res.data if item.get('profiles')]
     return jsonify({"likers": likers})
@@ -425,7 +435,7 @@ def get_post_likers(post_id):
 @login_required
 @content_access_required
 def flag_post(post_id):
-    client = get_service_client()
+    client = get_admin_read_client()
     try:
         client.table('posts').update({"is_flagged": True}).eq("id", post_id).execute()
         return jsonify({"status": "success", "message": "Post flagged."})
@@ -436,7 +446,7 @@ def flag_post(post_id):
 @login_required
 @content_access_required
 def flag_comment(comment_id):
-    client = get_service_client()
+    client = get_admin_read_client()
     try:
         client.table('comments').update({"is_flagged": True}).eq("id", comment_id).execute()
         return jsonify({"status": "success", "message": "Comment flagged."})
@@ -496,7 +506,7 @@ def warn_user():
 @login_required
 @account_access_required
 def manage_disputes():
-    client = get_service_client()
+    client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     res = client.table('verification_disputes').select("*").order('created_at', desc=True).execute()
@@ -691,7 +701,7 @@ def delete_warning(warning_id):
 @login_required
 @content_access_required
 def manage_forbidden_words():
-    client = get_service_client()
+    client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     res = client.table('forbidden_words').select("*").order('word').execute()
@@ -701,7 +711,7 @@ def manage_forbidden_words():
 @login_required
 @content_access_required
 def add_forbidden_word():
-    client = get_service_client()
+    client = get_admin_read_client()
     word = request.form.get('word', '').strip().lower()
     if not word:
         flash("Word cannot be empty.", "error")
@@ -719,7 +729,7 @@ def add_forbidden_word():
 @login_required
 @content_access_required
 def delete_forbidden_word(word):
-    client = get_service_client()
+    client = get_admin_read_client()
     try:
         client.table('forbidden_words').delete().eq('word', word).execute()
         flash(f"Removed '{word}' from forbidden words.", "success")
@@ -773,7 +783,7 @@ def _upload_catalog_image(image_file, uploader_id):
 @login_required
 @content_access_required
 def manage_scholarship_catalog():
-    client = get_service_client()
+    client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     res = client.table('scholarship_catalog')\
@@ -863,7 +873,7 @@ def delete_scholarship_catalog_item(item_id):
 @login_required
 @content_access_required
 def manage_umak_coop_catalog():
-    client = get_service_client()
+    client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     res = client.table('umak_coop_items')\

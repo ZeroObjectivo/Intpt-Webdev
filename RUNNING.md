@@ -94,6 +94,7 @@ FLASK_ENV=development
 FLASK_DEBUG=True
 SUPABASE_URL=your-supabase-url
 SUPABASE_KEY=your-supabase-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
 
 **Get your Supabase credentials:**
@@ -101,6 +102,7 @@ SUPABASE_KEY=your-supabase-key
 2. Select your project
 3. Navigate to **Settings** → **API**
 4. Copy the `URL` and `anon` public key
+5. Copy the `service_role` key for admin operations (keep this server-side only)
 
 ### Step 5: Install Node.js Dependencies
 

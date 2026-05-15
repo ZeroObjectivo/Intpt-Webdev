@@ -113,7 +113,7 @@ def create_app():
         path = request.path
         user = session.get('user') or {}
         role = (user.get('role') or '').strip().lower()
-        admin_portal_roles = {'admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'}
+        admin_portal_roles = {'admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator', 'content_manager'}
         is_admin_host = bool(admin_domain and host == admin_domain)
         if not is_admin_host and host.startswith('dev.'):
             is_admin_host = True
