@@ -1,10 +1,12 @@
 import datetime
 import logging
+import time
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
 ARCHIVE_RETENTION_DAYS = 90
+_LAST_PURGE_TS = 0.0
 
 
 def _iso_utc_now() -> str:
@@ -47,6 +49,19 @@ def purge_expired_archived_posts(client, limit: int = 200) -> int:
     except Exception as e:
         logger.warning("Archive cleanup skipped: %s", e)
         return 0
+
+
+def maybe_purge_expired_archived_posts(client, interval_seconds: int = 3600, limit: int = 200) -> int:
+    """
+    Throttled purge helper for request paths.
+    Executes at most once per interval in the running process.
+    """
+    global _LAST_PURGE_TS
+    now_ts = time.time()
+    if _LAST_PURGE_TS and (now_ts - _LAST_PURGE_TS) < max(60, int(interval_seconds)):
+        return 0
+    _LAST_PURGE_TS = now_ts
+    return purge_expired_archived_posts(client, limit=limit)
 
 
 def archive_post_snapshot(

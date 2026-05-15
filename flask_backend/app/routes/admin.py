@@ -3,7 +3,7 @@ import os
 from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify, request
 from app.routes.auth import login_required
 from services.supabase_client import supabase, supabase_service, get_user_client
-from app.utils.post_archive import archive_post_snapshot, purge_expired_archived_posts
+from app.utils.post_archive import archive_post_snapshot, maybe_purge_expired_archived_posts, purge_expired_archived_posts
 from functools import wraps
 import datetime
 import uuid
@@ -231,6 +231,12 @@ def dashboard():
     client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
+
+    if supabase_service:
+        try:
+            maybe_purge_expired_archived_posts(supabase_service)
+        except Exception as cleanup_e:
+            logger.warning("Admin dashboard archive cleanup skipped: %s", cleanup_e)
     
     stats = {
         "total_users": 0,

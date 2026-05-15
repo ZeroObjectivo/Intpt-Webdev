@@ -6,7 +6,7 @@ from .auth import (
     refresh_supabase_auth,
 )
 from services.supabase_client import get_user_client, supabase_service
-from app.utils.post_archive import archive_post_snapshot, purge_expired_archived_posts
+from app.utils.post_archive import archive_post_snapshot, maybe_purge_expired_archived_posts, purge_expired_archived_posts
 import datetime
 import time
 import os
@@ -552,6 +552,12 @@ def dashboard():
     user_session = session.get('user')
     user_id = user_session.get('id')
     category = normalize_dashboard_category(request.args.get('category'))
+
+    if supabase_service:
+        try:
+            maybe_purge_expired_archived_posts(supabase_service)
+        except Exception as cleanup_e:
+            logger.warning("Dashboard archive cleanup skipped: %s", cleanup_e)
 
     try:
         profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category)
