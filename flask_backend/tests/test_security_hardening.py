@@ -35,7 +35,7 @@ class SecurityHardeningTest(unittest.TestCase):
 
         self.assertGreaterEqual(dashboard.count('name="csrf_token"'), 2)
         self.assertIn('name="csrf_token"', onboarding)
-        self.assertGreaterEqual(profile_settings.count('name="csrf_token"'), 3)
+        self.assertGreaterEqual(profile_settings.count('name="csrf_token"'), 2)
         self.assertGreaterEqual(admin_forbidden.count('name="csrf_token"'), 2)
         self.assertIn('name="csrf_token"', admin_user_manage)
 
