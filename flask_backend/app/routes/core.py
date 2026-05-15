@@ -212,23 +212,41 @@ def format_relative_time(created_at, now=None):
 
     return created_local.strftime("%b %d, %Y").replace(" 0", " ")
 
-def load_catalog_page_data(user_id, category):
+def parse_catalog_multiline(value):
+    if not value:
+        return []
+    lines = [line.strip(" \t-•") for line in str(value).splitlines()]
+    return [line for line in lines if line]
+
+def load_catalog_page_data(user_id, catalog_kind):
     client = get_user_client()
     profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_res.data
 
-    cards_res = client.table('posts')\
-        .select("id, content, category, event_title, price, location, status, created_at, profiles(full_name, avatar_url)")\
-        .eq("category", category)\
-        .order("created_at", desc=True)\
-        .limit(12).execute()
-    cards = cards_res.data or []
+    if catalog_kind == 'scholarship':
+        cards_res = client.table('scholarship_catalog')\
+            .select("id, scholarship_type, name, details, qualifications, requirements, created_at")\
+            .order("created_at", desc=True)\
+            .limit(60).execute()
+        cards = cards_res.data or []
+        for card in cards:
+            card['relative_created_at'] = format_relative_time(card.get('created_at'))
+            card['qualification_items'] = parse_catalog_multiline(card.get('qualifications'))
+            card['requirement_items'] = parse_catalog_multiline(card.get('requirements'))
+        return profile, cards
 
+    cards_res = client.table('umak_coop_items')\
+        .select("id, name, details, price, availability, image_url, created_at")\
+        .order("created_at", desc=True)\
+        .limit(60).execute()
+    cards = cards_res.data or []
     for card in cards:
         card['relative_created_at'] = format_relative_time(card.get('created_at'))
-        card['title'] = (card.get('event_title') or card.get('content') or 'Untitled').strip()[:70]
-        attach_embed_metadata(card)
-
+        try:
+            numeric_price = float(card.get('price')) if card.get('price') is not None else None
+        except (TypeError, ValueError):
+            numeric_price = None
+        card['price_label'] = f"PHP {numeric_price:,.2f}" if numeric_price is not None else "N/A"
     return profile, cards
 
 def build_comment_count_map(client, post_ids):
@@ -293,46 +311,23 @@ def scholarship():
     user_id = user_session.get('id')
 
     try:
-        profile, cards = load_catalog_page_data(user_id, 'Scholarship')
+        profile, cards = load_catalog_page_data(user_id, 'scholarship')
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
-            profile, cards = load_catalog_page_data(user_id, 'Scholarship')
+            profile, cards = load_catalog_page_data(user_id, 'scholarship')
         elif is_jwt_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
             return redirect(url_for('core.login'))
         else:
-            raise
-
-    placeholder_cards = [
-        {
-            "id": "scholarship-placeholder-1",
-            "title": "Academic Excellence Scholarship",
-            "summary": "Financial support for students with strong academic performance.",
-            "details": "Placeholder content: eligibility, requirements, and application period details.",
-            "status": "Open"
-        },
-        {
-            "id": "scholarship-placeholder-2",
-            "title": "Athletic Scholarship",
-            "summary": "Assistance for student-athletes representing the university.",
-            "details": "Placeholder content: sports coverage, requirements, and renewal terms.",
-            "status": "Upcoming"
-        },
-        {
-            "id": "scholarship-placeholder-3",
-            "title": "Need-Based Grant",
-            "summary": "Support program for students with verified financial need.",
-            "details": "Placeholder content: assessment process, grant amount, and deadlines.",
-            "status": "Open"
-        }
-    ]
+            print(f"Error loading scholarship catalog: {e}")
+            profile = user_session or {}
+            cards = []
 
     response = make_response(render_template(
         'scholarship.html',
         user=profile,
-        cards=cards,
-        placeholder_cards=placeholder_cards
+        cards=cards
     ))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
@@ -346,46 +341,23 @@ def umak_coop():
     user_id = user_session.get('id')
 
     try:
-        profile, cards = load_catalog_page_data(user_id, 'UMak Coop')
+        profile, cards = load_catalog_page_data(user_id, 'umak_coop')
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
-            profile, cards = load_catalog_page_data(user_id, 'UMak Coop')
+            profile, cards = load_catalog_page_data(user_id, 'umak_coop')
         elif is_jwt_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
             return redirect(url_for('core.login'))
         else:
-            raise
-
-    placeholder_cards = [
-        {
-            "id": "coop-placeholder-1",
-            "title": "School Supplies Bundle",
-            "summary": "Notebook, pad paper, and basic writing set.",
-            "price_label": "PHP 199.00",
-            "status": "Available"
-        },
-        {
-            "id": "coop-placeholder-2",
-            "title": "UMak Hoodie",
-            "summary": "Official university hoodie for students.",
-            "price_label": "PHP 899.00",
-            "status": "Low Stock"
-        },
-        {
-            "id": "coop-placeholder-3",
-            "title": "ID Lace and Badge Holder",
-            "summary": "Daily campus essentials from UMak Coop.",
-            "price_label": "PHP 120.00",
-            "status": "Available"
-        }
-    ]
+            print(f"Error loading UMak Coop catalog: {e}")
+            profile = user_session or {}
+            cards = []
 
     response = make_response(render_template(
         'umak_coop.html',
         user=profile,
-        cards=cards,
-        placeholder_cards=placeholder_cards
+        cards=cards
     ))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'

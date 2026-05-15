@@ -1,0 +1,289 @@
+{% extends "admin/admin_base.html" %}
+
+{% if catalog_type == 'scholarship' %}
+    {% set page_title = "Scholarship Catalog" %}
+{% else %}
+    {% set page_title = "UMak Coop Catalog" %}
+{% endif %}
+
+{% block title %}{{ page_title }} | Admin Hub{% endblock %}
+{% block header_title %}{{ page_title }}{% endblock %}
+
+{% block admin_styles %}
+<style>
+    .catalog-switch {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .catalog-switch-link {
+        border-radius: 9999px;
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-decoration: none;
+        border: 1px solid #dbe2f0;
+        color: #4b5563;
+        background: #ffffff;
+    }
+
+    .catalog-switch-link.active {
+        color: #ffffff;
+        background: #0038a8;
+        border-color: #0038a8;
+    }
+
+    .catalog-create-card,
+    .catalog-item-card {
+        background: #ffffff;
+        border-radius: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .catalog-create-card {
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .catalog-create-card h3 {
+        margin: 0 0 0.75rem;
+        font-size: 0.85rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #0f172a;
+    }
+
+    .catalog-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+
+    .catalog-item-card {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+    }
+
+    .catalog-meta {
+        margin: 0 0 0.75rem;
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .catalog-fields {
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    .catalog-fields input,
+    .catalog-fields textarea,
+    .catalog-fields select {
+        width: 100%;
+        border-radius: 0.85rem;
+        border: 1px solid #dbe1ea;
+        background: #f8fafc;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #1e293b;
+        outline: none;
+    }
+
+    .catalog-fields textarea {
+        min-height: 82px;
+        resize: vertical;
+    }
+
+    .catalog-actions {
+        margin-top: 0.8rem;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        border: 0;
+        border-radius: 0.85rem;
+        padding: 0.55rem 0.9rem;
+        background: #0038a8;
+        color: #ffffff;
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+    }
+
+    .btn-danger {
+        border: 0;
+        border-radius: 0.85rem;
+        padding: 0.55rem 0.9rem;
+        background: #ef4444;
+        color: #ffffff;
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+    }
+
+    .btn-muted {
+        border-radius: 0.85rem;
+        padding: 0.55rem 0.9rem;
+        background: #e2e8f0;
+        color: #334155;
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .item-image {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 0.85rem;
+        border: 1px solid #dbe1ea;
+        object-fit: cover;
+        margin-bottom: 0.65rem;
+    }
+
+    @media (max-width: 1080px) {
+        .catalog-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+{% set can_edit = permissions.can_manage_catalog if permissions is defined else false %}
+
+<div class="catalog-switch">
+    <a href="{{ url_for('admin.manage_scholarship_catalog') }}" class="catalog-switch-link {% if catalog_type == 'scholarship' %}active{% endif %}">Scholarship</a>
+    <a href="{{ url_for('admin.manage_umak_coop_catalog') }}" class="catalog-switch-link {% if catalog_type == 'umak_coop' %}active{% endif %}">UMak Coop</a>
+</div>
+
+{% if can_edit %}
+<section class="catalog-create-card">
+    <h3>Create New Card</h3>
+    {% if catalog_type == 'scholarship' %}
+    <form method="POST" action="{{ url_for('admin.create_scholarship_catalog_item') }}" class="catalog-fields">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="scholarship_type" type="text" placeholder="Type/Category of Scholarship" required>
+        <input name="name" type="text" placeholder="Name of Scholarship" required>
+        <textarea name="details" placeholder="Details" required></textarea>
+        <textarea name="qualifications" placeholder="Qualifications (one per line)"></textarea>
+        <textarea name="requirements" placeholder="Requirements (one per line)"></textarea>
+        <div class="catalog-actions">
+            <button type="submit" class="btn-primary">Create Scholarship Card</button>
+        </div>
+    </form>
+    {% else %}
+    <form method="POST" action="{{ url_for('admin.create_umak_coop_item') }}" class="catalog-fields">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="name" type="text" placeholder="Item Name" required>
+        <textarea name="details" placeholder="Details" required></textarea>
+        <input name="price" type="number" min="0" step="0.01" placeholder="Price" required>
+        <input name="image_url" type="url" placeholder="Picture URL (optional)">
+        <select name="availability">
+            <option value="Available">Available</option>
+            <option value="Low Stock">Low Stock</option>
+            <option value="Out of Stock">Out of Stock</option>
+        </select>
+        <div class="catalog-actions">
+            <button type="submit" class="btn-primary">Create UMak Coop Card</button>
+        </div>
+    </form>
+    {% endif %}
+</section>
+{% endif %}
+
+{% if items %}
+<section class="catalog-grid">
+    {% for item in items %}
+    <article class="catalog-item-card">
+        <p class="catalog-meta">Created {{ (item.created_at or '')[:10] }}</p>
+        {% if catalog_type == 'scholarship' %}
+            {% if can_edit %}
+            <form method="POST" action="{{ url_for('admin.update_scholarship_catalog_item', item_id=item.id) }}" class="catalog-fields">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input name="scholarship_type" type="text" value="{{ item.scholarship_type or '' }}" required>
+                <input name="name" type="text" value="{{ item.name or '' }}" required>
+                <textarea name="details" required>{{ item.details or '' }}</textarea>
+                <textarea name="qualifications">{{ item.qualifications or '' }}</textarea>
+                <textarea name="requirements">{{ item.requirements or '' }}</textarea>
+                <div class="catalog-actions">
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+            <form method="POST" action="{{ url_for('admin.delete_scholarship_catalog_item', item_id=item.id) }}" onsubmit="return confirm('Delete this scholarship card?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="catalog-actions">
+                    <button type="submit" class="btn-danger">Delete</button>
+                </div>
+            </form>
+            {% else %}
+            <div class="catalog-fields">
+                <input type="text" value="{{ item.scholarship_type or '' }}" disabled>
+                <input type="text" value="{{ item.name or '' }}" disabled>
+                <textarea disabled>{{ item.details or '' }}</textarea>
+                <textarea disabled>{{ item.qualifications or '' }}</textarea>
+                <textarea disabled>{{ item.requirements or '' }}</textarea>
+                <span class="btn-muted">Read Only</span>
+            </div>
+            {% endif %}
+        {% else %}
+            {% if item.image_url %}
+                <img src="{{ item.image_url }}" alt="{{ item.name }} image" class="item-image">
+            {% endif %}
+            {% if can_edit %}
+            <form method="POST" action="{{ url_for('admin.update_umak_coop_item', item_id=item.id) }}" class="catalog-fields">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input name="name" type="text" value="{{ item.name or '' }}" required>
+                <textarea name="details" required>{{ item.details or '' }}</textarea>
+                <input name="price" type="number" min="0" step="0.01" value="{{ item.price if item.price is not none else '' }}" required>
+                <input name="image_url" type="url" value="{{ item.image_url or '' }}">
+                <select name="availability">
+                    <option value="Available" {% if item.availability == 'Available' %}selected{% endif %}>Available</option>
+                    <option value="Low Stock" {% if item.availability == 'Low Stock' %}selected{% endif %}>Low Stock</option>
+                    <option value="Out of Stock" {% if item.availability == 'Out of Stock' %}selected{% endif %}>Out of Stock</option>
+                </select>
+                <div class="catalog-actions">
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+            <form method="POST" action="{{ url_for('admin.delete_umak_coop_item', item_id=item.id) }}" onsubmit="return confirm('Delete this UMak Coop item?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="catalog-actions">
+                    <button type="submit" class="btn-danger">Delete</button>
+                </div>
+            </form>
+            {% else %}
+            <div class="catalog-fields">
+                <input type="text" value="{{ item.name or '' }}" disabled>
+                <textarea disabled>{{ item.details or '' }}</textarea>
+                <input type="text" value="{{ item.price if item.price is not none else '' }}" disabled>
+                <input type="text" value="{{ item.availability or '' }}" disabled>
+                <input type="text" value="{{ item.image_url or '' }}" disabled>
+                <span class="btn-muted">Read Only</span>
+            </div>
+            {% endif %}
+        {% endif %}
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<div class="catalog-item-card">
+    <p class="text-sm font-bold text-slate-500">No catalog cards yet.</p>
+</div>
+{% endif %}
+{% endblock %}

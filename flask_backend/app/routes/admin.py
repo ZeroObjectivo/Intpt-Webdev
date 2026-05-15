@@ -15,6 +15,7 @@ CONTENT_MODERATOR_ROLES = {'content_moderator'}
 ADMIN_PORTAL_ROLES = SUPER_ADMIN_ROLES | ADMIN_ROLES | ACCOUNT_MANAGER_ROLES | CONTENT_MODERATOR_ROLES
 ACCOUNT_ACCESS_ROLES = SUPER_ADMIN_ROLES | ADMIN_ROLES | ACCOUNT_MANAGER_ROLES
 CONTENT_ACCESS_ROLES = SUPER_ADMIN_ROLES | ADMIN_ROLES | CONTENT_MODERATOR_ROLES
+CATALOG_MANAGE_ROLES = SUPER_ADMIN_ROLES | ADMIN_ROLES
 
 def get_service_client():
     """
@@ -101,6 +102,11 @@ warning_access_required = role_required(
     "Only authorized moderators can issue warnings.",
 )
 
+catalog_manage_required = role_required(
+    CATALOG_MANAGE_ROLES,
+    "Only Admin or Super Admin can manage Scholarship and UMak Coop catalogs.",
+)
+
 def build_admin_permissions(role):
     current = normalize_role(role)
     is_super_admin = current in SUPER_ADMIN_ROLES
@@ -116,6 +122,7 @@ def build_admin_permissions(role):
         "is_content_moderator": is_content_moderator,
         "can_access_accounts": current in ACCOUNT_ACCESS_ROLES,
         "can_access_content": current in CONTENT_ACCESS_ROLES,
+        "can_manage_catalog": current in CATALOG_MANAGE_ROLES,
         "can_assign_admin": is_super_admin,
         "can_modify_admin_accounts": is_super_admin,
     }
@@ -442,3 +449,200 @@ def delete_forbidden_word(word):
         flash("Error removing word.", "error")
     
     return redirect(url_for('admin.manage_forbidden_words'))
+
+def _parse_catalog_price(raw_value):
+    if raw_value is None:
+        return None
+    cleaned = str(raw_value).strip().replace(',', '')
+    if not cleaned:
+        return None
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+@admin.route('/admin/catalog/scholarship')
+@login_required
+@content_access_required
+def manage_scholarship_catalog():
+    client = get_user_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    res = client.table('scholarship_catalog')\
+        .select("id, scholarship_type, name, details, qualifications, requirements, created_at")\
+        .order('created_at', desc=True).execute()
+    return render_template(
+        'admin/catalog_manage.html',
+        catalog_type='scholarship',
+        items=res.data or [],
+        user=session.get('user'),
+        permissions=permissions
+    )
+
+@admin.route('/admin/catalog/scholarship/create', methods=['POST'])
+@login_required
+@catalog_manage_required
+def create_scholarship_catalog_item():
+    scholarship_type = request.form.get('scholarship_type', '').strip()
+    name = request.form.get('name', '').strip()
+    details = request.form.get('details', '').strip()
+    qualifications = request.form.get('qualifications', '').strip()
+    requirements = request.form.get('requirements', '').strip()
+
+    if not scholarship_type or not name or not details:
+        flash("Scholarship type, name, and details are required.", "error")
+        return redirect(url_for('admin.manage_scholarship_catalog'))
+
+    try:
+        admin_client = get_service_client()
+        admin_client.table('scholarship_catalog').insert({
+            "scholarship_type": scholarship_type,
+            "name": name,
+            "details": details,
+            "qualifications": qualifications,
+            "requirements": requirements,
+            "created_by": session.get('user', {}).get('id')
+        }).execute()
+        flash("Scholarship card created.", "success")
+    except Exception as e:
+        print(f"Error creating scholarship catalog item: {e}")
+        flash("Failed to create scholarship card.", "error")
+    return redirect(url_for('admin.manage_scholarship_catalog'))
+
+@admin.route('/admin/catalog/scholarship/<item_id>/update', methods=['POST'])
+@login_required
+@catalog_manage_required
+def update_scholarship_catalog_item(item_id):
+    scholarship_type = request.form.get('scholarship_type', '').strip()
+    name = request.form.get('name', '').strip()
+    details = request.form.get('details', '').strip()
+    qualifications = request.form.get('qualifications', '').strip()
+    requirements = request.form.get('requirements', '').strip()
+
+    if not scholarship_type or not name or not details:
+        flash("Scholarship type, name, and details are required.", "error")
+        return redirect(url_for('admin.manage_scholarship_catalog'))
+
+    try:
+        admin_client = get_service_client()
+        admin_client.table('scholarship_catalog').update({
+            "scholarship_type": scholarship_type,
+            "name": name,
+            "details": details,
+            "qualifications": qualifications,
+            "requirements": requirements,
+        }).eq('id', item_id).execute()
+        flash("Scholarship card updated.", "success")
+    except Exception as e:
+        print(f"Error updating scholarship catalog item: {e}")
+        flash("Failed to update scholarship card.", "error")
+    return redirect(url_for('admin.manage_scholarship_catalog'))
+
+@admin.route('/admin/catalog/scholarship/<item_id>/delete', methods=['POST'])
+@login_required
+@catalog_manage_required
+def delete_scholarship_catalog_item(item_id):
+    try:
+        admin_client = get_service_client()
+        admin_client.table('scholarship_catalog').delete().eq('id', item_id).execute()
+        flash("Scholarship card deleted.", "success")
+    except Exception as e:
+        print(f"Error deleting scholarship catalog item: {e}")
+        flash("Failed to delete scholarship card.", "error")
+    return redirect(url_for('admin.manage_scholarship_catalog'))
+
+@admin.route('/admin/catalog/umak-coop')
+@login_required
+@content_access_required
+def manage_umak_coop_catalog():
+    client = get_user_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    res = client.table('umak_coop_items')\
+        .select("id, name, details, price, availability, image_url, created_at")\
+        .order('created_at', desc=True).execute()
+    return render_template(
+        'admin/catalog_manage.html',
+        catalog_type='umak_coop',
+        items=res.data or [],
+        user=session.get('user'),
+        permissions=permissions
+    )
+
+@admin.route('/admin/catalog/umak-coop/create', methods=['POST'])
+@login_required
+@catalog_manage_required
+def create_umak_coop_item():
+    name = request.form.get('name', '').strip()
+    details = request.form.get('details', '').strip()
+    availability = request.form.get('availability', 'Available').strip() or 'Available'
+    image_url = request.form.get('image_url', '').strip()
+    price = _parse_catalog_price(request.form.get('price'))
+
+    if not name or not details:
+        flash("Item name and details are required.", "error")
+        return redirect(url_for('admin.manage_umak_coop_catalog'))
+    if price is None:
+        flash("A valid item price is required.", "error")
+        return redirect(url_for('admin.manage_umak_coop_catalog'))
+
+    try:
+        admin_client = get_service_client()
+        admin_client.table('umak_coop_items').insert({
+            "name": name,
+            "details": details,
+            "availability": availability,
+            "price": price,
+            "image_url": image_url,
+            "created_by": session.get('user', {}).get('id')
+        }).execute()
+        flash("UMak Coop item created.", "success")
+    except Exception as e:
+        print(f"Error creating UMak Coop item: {e}")
+        flash("Failed to create UMak Coop item.", "error")
+    return redirect(url_for('admin.manage_umak_coop_catalog'))
+
+@admin.route('/admin/catalog/umak-coop/<item_id>/update', methods=['POST'])
+@login_required
+@catalog_manage_required
+def update_umak_coop_item(item_id):
+    name = request.form.get('name', '').strip()
+    details = request.form.get('details', '').strip()
+    availability = request.form.get('availability', 'Available').strip() or 'Available'
+    image_url = request.form.get('image_url', '').strip()
+    price = _parse_catalog_price(request.form.get('price'))
+
+    if not name or not details:
+        flash("Item name and details are required.", "error")
+        return redirect(url_for('admin.manage_umak_coop_catalog'))
+    if price is None:
+        flash("A valid item price is required.", "error")
+        return redirect(url_for('admin.manage_umak_coop_catalog'))
+
+    try:
+        admin_client = get_service_client()
+        admin_client.table('umak_coop_items').update({
+            "name": name,
+            "details": details,
+            "availability": availability,
+            "price": price,
+            "image_url": image_url
+        }).eq('id', item_id).execute()
+        flash("UMak Coop item updated.", "success")
+    except Exception as e:
+        print(f"Error updating UMak Coop item: {e}")
+        flash("Failed to update UMak Coop item.", "error")
+    return redirect(url_for('admin.manage_umak_coop_catalog'))
+
+@admin.route('/admin/catalog/umak-coop/<item_id>/delete', methods=['POST'])
+@login_required
+@catalog_manage_required
+def delete_umak_coop_item(item_id):
+    try:
+        admin_client = get_service_client()
+        admin_client.table('umak_coop_items').delete().eq('id', item_id).execute()
+        flash("UMak Coop item deleted.", "success")
+    except Exception as e:
+        print(f"Error deleting UMak Coop item: {e}")
+        flash("Failed to delete UMak Coop item.", "error")
+    return redirect(url_for('admin.manage_umak_coop_catalog'))
