@@ -96,47 +96,57 @@ def create_app():
     admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
     main_domain = normalize_domain(os.getenv('MAIN_DOMAIN', ''))
 
-    if admin_domain or main_domain:
-        @app.before_request
-        def enforce_domain_separation():
-            host = normalize_domain(request.host)
-            path = request.path
-            user = session.get('user') or {}
-            role = (user.get('role') or '').strip().lower()
-            admin_portal_roles = {'admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'}
-            is_admin_host = bool(admin_domain and host == admin_domain)
-            if not is_admin_host and main_domain and host.startswith('dev.') and host.endswith(f".{main_domain}"):
-                is_admin_host = True
+    def request_host_domain():
+        forwarded = request.headers.get('X-Forwarded-Host', '')
+        raw_host = forwarded.split(',')[0].strip() if forwarded else request.host
+        return normalize_domain(raw_host)
 
-            # Allow static files on any domain
-            if path.startswith('/static/'):
-                return None
+    @app.before_request
+    def enforce_domain_separation():
+        host = request_host_domain()
+        path = request.path
+        user = session.get('user') or {}
+        role = (user.get('role') or '').strip().lower()
+        admin_portal_roles = {'admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'}
+        is_admin_host = bool(admin_domain and host == admin_domain)
+        if not is_admin_host and host.startswith('dev.'):
+            is_admin_host = True
 
-            # On the ADMIN domain (dev.heronshub.social)
-            if is_admin_host:
-                # Admin domain root should always land on its login screen.
-                if path == '/':
-                    return redirect('/login')
+        # Allow static files on any domain
+        if path.startswith('/static/'):
+            return None
 
-                # Allow: login/auth/admin pages and notification sync APIs used by admin navbar
-                allowed_prefixes = ('/login', '/auth/', '/admin/', '/sync/', '/notifications/')
-                if path.startswith(allowed_prefixes):
-                    return None
-
-                # Dev domain must never render user-facing pages.
-                # Logged-in admin-portal roles are redirected to admin dashboard;
-                # everyone else returns to login.
-                if role in admin_portal_roles:
-                    return redirect(url_for('admin.dashboard'))
+        # On the ADMIN domain (dev.heronshub.social)
+        if is_admin_host:
+            # Admin domain root should always land on its login screen.
+            if path == '/':
                 return redirect('/login')
 
-            # On the MAIN domain (heronshub.social)
-            if main_domain and host in {main_domain, f"www.{main_domain}"}:
-                # Redirect /admin/* to the admin domain
-                if path.startswith('/admin/') and admin_domain:
-                    scheme = request.headers.get('X-Forwarded-Proto', 'https')
-                    return redirect(f"{scheme}://{admin_domain}{path}")
+            # Allow: login/auth/admin pages and notification sync APIs used by admin navbar
+            allowed_prefixes = ('/login', '/auth/', '/admin/', '/sync/', '/notifications/')
+            if path.startswith(allowed_prefixes):
+                return None
 
-            return None
+            # Dev domain must never render user-facing pages.
+            # Logged-in admin-portal roles are redirected to admin dashboard;
+            # everyone else returns to login.
+            if role in admin_portal_roles:
+                return redirect(url_for('admin.dashboard'))
+            return redirect('/login')
+
+        # Non-admin hosts should not directly serve /admin/*
+        if path.startswith('/admin/'):
+            if admin_domain:
+                scheme = request.headers.get('X-Forwarded-Proto', 'https')
+                return redirect(f"{scheme}://{admin_domain}{path}")
+            return redirect('/login')
+
+        # On the MAIN domain (heronshub.social), prefer canonical admin redirect
+        if main_domain and host in {main_domain, f"www.{main_domain}"}:
+            if path.startswith('/admin/') and admin_domain:
+                scheme = request.headers.get('X-Forwarded-Proto', 'https')
+                return redirect(f"{scheme}://{admin_domain}{path}")
+
+        return None
 
     return app

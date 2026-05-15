@@ -49,6 +49,18 @@ def normalize_domain(raw_value):
     raw = raw.split(':', 1)[0]
     return raw.strip().strip('.')
 
+def current_request_domain():
+    forwarded = request.headers.get('X-Forwarded-Host', '')
+    raw_host = forwarded.split(',')[0].strip() if forwarded else request.host
+    return normalize_domain(raw_host)
+
+def is_admin_domain_request():
+    admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
+    host = current_request_domain()
+    if admin_domain and host == admin_domain:
+        return True
+    return host.startswith('dev.')
+
 def normalize_text_for_moderation(text):
     lowered = (text or "").lower()
     collapsed = re.sub(r"[^\w]+", " ", lowered, flags=re.UNICODE)
@@ -1090,9 +1102,7 @@ def sync_realtime():
         "interactions": interactions,
     }
 
-    admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
-    current_host = normalize_domain(request.host)
-    is_admin_domain = bool(admin_domain and current_host == admin_domain)
+    is_admin_domain = is_admin_domain_request()
 
     if is_admin_domain and role in ['admin', 'super_admin', 'superadmin', 'content_manager', 'content_moderator', 'account_manager']:
         payload["admin"] = build_admin_activity_payload(client)
@@ -1500,9 +1510,7 @@ def mark_notification_read(notification_id):
 
 @core.route('/login')
 def login():
-    admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
-    host = normalize_domain(request.host)
-    is_admin_login = bool(admin_domain and host == admin_domain)
+    is_admin_login = is_admin_domain_request()
 
     return render_template(
         'login.html',

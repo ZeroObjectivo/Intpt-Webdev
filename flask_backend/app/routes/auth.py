@@ -18,6 +18,18 @@ def normalize_domain(raw_value):
     raw = raw.split(':', 1)[0]
     return raw.strip().strip('.')
 
+def current_request_domain():
+    forwarded = request.headers.get('X-Forwarded-Host', '')
+    raw_host = forwarded.split(',')[0].strip() if forwarded else request.host
+    return normalize_domain(raw_host)
+
+def is_admin_domain_request():
+    admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
+    host = current_request_domain()
+    if admin_domain and host == admin_domain:
+        return True
+    return host.startswith('dev.')
+
 def login_required(f):
     """
     Decorator to protect routes from unauthorized access.
@@ -76,7 +88,9 @@ def login():
     # In local dev, this is our callback route
     # Behind a reverse proxy (DO App Platform), check X-Forwarded-Proto
     scheme = request.headers.get('X-Forwarded-Proto', 'https' if request.is_secure else 'http')
-    callback_url = f"{scheme}://{request.host}/auth/callback"
+    forwarded_host = request.headers.get('X-Forwarded-Host', '')
+    callback_host = forwarded_host.split(',')[0].strip() if forwarded_host else request.host
+    callback_url = f"{scheme}://{callback_host}/auth/callback"
     
     try:
         # Request Supabase to start Google OAuth
@@ -267,8 +281,7 @@ def set_session():
             "user_metadata": user.user_metadata
         }
 
-        admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
-        current_host = normalize_domain(request.host)
+        is_admin_host = is_admin_domain_request()
 
         # 2. Check if user exists in profiles table
         user_client = get_user_client()
@@ -277,7 +290,7 @@ def set_session():
         # 3. REDIRECT: New user vs Existing user
         if not profile_check.data:
             # Never onboard fresh users through the admin domain.
-            if admin_domain and current_host == admin_domain:
+            if is_admin_host:
                 session.clear()
                 supabase.auth.sign_out()
                 return render_template('unauthorized.html',
@@ -289,7 +302,7 @@ def set_session():
         profile_res = user_client.table('profiles').select("*").eq("id", user.id).single().execute()
 
         # Admin domain gate: only admin-portal roles can log in on dev.heronshub.social
-        if admin_domain and current_host == admin_domain:
+        if is_admin_host:
             user_role = (profile_res.data.get('role', '') if profile_res.data else '').strip().lower()
             if user_role not in ('admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'):
                 session.clear()
@@ -304,7 +317,7 @@ def set_session():
             session['user'].update(profile_res.data)
 
         # On admin domain, go straight to admin dashboard
-        if admin_domain and current_host == admin_domain:
+        if is_admin_host:
             return redirect(url_for('admin.dashboard'))
 
         return redirect(url_for('auth.post_login_transition'))
@@ -353,9 +366,7 @@ def complete_onboarding():
         # 2. Move from temp_user to full user session
         session['user'] = session.pop('temp_user')
 
-        admin_domain = normalize_domain(os.getenv('ADMIN_DOMAIN', ''))
-        current_host = normalize_domain(request.host)
-        if admin_domain and current_host == admin_domain:
+        if is_admin_domain_request():
             profile_res = user_client.table('profiles').select("role").eq("id", user['id']).single().execute()
             role = (profile_res.data.get('role', '') if profile_res.data else '').strip().lower()
             if role in ('admin', 'super_admin', 'superadmin', 'account_manager', 'content_moderator'):
