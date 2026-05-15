@@ -241,7 +241,8 @@
             <div class="posts-list">
                 {% if posts %}
                     {% for post in posts %}
-                    <article class="post-card mb-6" data-post-id="{{ post.id }}">
+                    {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
+                    <article class="post-card mb-6 {% if post_images %}has-attachment{% else %}no-attachment{% endif %}" data-post-id="{{ post.id }}">
                         <!-- Reuse Post Card UI -->
                         <div class="post-header flex justify-between items-start">
                             <div class="flex">
