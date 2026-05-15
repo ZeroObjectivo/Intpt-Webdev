@@ -10,6 +10,10 @@
     const pollIntervalMs = 7000;
     const notificationSyncIntervalMs = 15000;
     const realtimeApplyDelayMs = 300;
+    const skeletonRevealDelayMs = 420;
+    const skeletonMinVisibleMs = 320;
+    const feedSkeleton = document.getElementById('feedSkeleton');
+    const feedContent = document.getElementById('feedContent');
     let baselineStateVersion = null;
     let latestAdminVersion = null;
     let pollInProgress = false;
@@ -19,6 +23,56 @@
     let interactionFlushTimer = null;
     let realtimeClient = null;
     let interactionsChannel = null;
+    let syncLoadCount = 0;
+    let skeletonRevealTimer = null;
+    let skeletonVisibleAt = 0;
+
+    function showFeedSkeleton() {
+        if (!feedSkeleton || !feedContent) return;
+        if (!feedSkeleton.classList.contains('hidden')) return;
+        feedSkeleton.classList.remove('hidden');
+        feedContent.classList.add('hidden');
+        feedContent.setAttribute('aria-busy', 'true');
+        skeletonVisibleAt = Date.now();
+    }
+
+    function hideFeedSkeleton(force) {
+        if (!feedSkeleton || !feedContent) return;
+        if (feedSkeleton.classList.contains('hidden')) return;
+
+        const visibleFor = Date.now() - skeletonVisibleAt;
+        const remaining = force ? 0 : Math.max(0, skeletonMinVisibleMs - visibleFor);
+
+        window.setTimeout(() => {
+            if (syncLoadCount > 0 && !force) return;
+            feedSkeleton.classList.add('hidden');
+            feedContent.classList.remove('hidden');
+            feedContent.setAttribute('aria-busy', 'false');
+        }, remaining);
+    }
+
+    function beginSlowSyncLoading() {
+        if (!feedSkeleton || !feedContent) return;
+        syncLoadCount += 1;
+        if (skeletonRevealTimer || !feedSkeleton.classList.contains('hidden')) return;
+        skeletonRevealTimer = window.setTimeout(() => {
+            skeletonRevealTimer = null;
+            if (syncLoadCount > 0) {
+                showFeedSkeleton();
+            }
+        }, skeletonRevealDelayMs);
+    }
+
+    function endSlowSyncLoading() {
+        if (!feedSkeleton || !feedContent) return;
+        syncLoadCount = Math.max(0, syncLoadCount - 1);
+        if (syncLoadCount > 0) return;
+        if (skeletonRevealTimer) {
+            window.clearTimeout(skeletonRevealTimer);
+            skeletonRevealTimer = null;
+        }
+        hideFeedSkeleton(false);
+    }
 
     function getVisiblePostIds() {
         return Array.from(document.querySelectorAll('.post-card[data-post-id]'))
@@ -208,6 +262,7 @@
     }
 
     async function runLoadSync() {
+        beginSlowSyncLoading();
         try {
             const data = await fetchJson(buildSyncUrl('/sync/dashboard/load', false));
             if (data && data.state && data.state.version) {
@@ -215,6 +270,8 @@
             }
         } catch (error) {
             console.error('Dashboard load sync failed:', error);
+        } finally {
+            endSlowSyncLoading();
         }
     }
 
