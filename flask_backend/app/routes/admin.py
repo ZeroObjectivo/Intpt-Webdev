@@ -3,6 +3,7 @@ import os
 from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify, request
 from app.routes.auth import login_required
 from services.supabase_client import supabase, supabase_service, get_user_client
+from app.utils.post_archive import archive_post_snapshot, purge_expired_archived_posts
 from functools import wraps
 import datetime
 import uuid
@@ -74,39 +75,35 @@ def chunked(values, size=100):
 
 
 def delete_comment_thread(admin_client, root_comment_id):
-    pending = [root_comment_id]
+    pending = [(root_comment_id, 0)]
     seen = set()
     collected = []
 
     while pending:
-        current = pending.pop(0)
+        current, depth = pending.pop(0)
         if not current or current in seen:
             continue
         seen.add(current)
-        collected.append(current)
+        collected.append((current, depth))
 
         children = admin_client.table('comments').select('id').eq('parent_id', current).execute()
         for child in (children.data or []):
             child_id = child.get('id')
             if child_id and child_id not in seen:
-                pending.append(child_id)
+                pending.append((child_id, depth + 1))
 
     if not collected:
         return
 
-    # Delete leaf+parent ids in one grouped delete per batch.
-    for batch in chunked(collected, size=100):
+    # Delete deepest children first to satisfy self-referential FK constraints.
+    ordered_ids = [comment_id for comment_id, _ in sorted(collected, key=lambda row: row[1], reverse=True)]
+    for batch in chunked(ordered_ids, size=100):
         admin_client.table('comments').delete().in_('id', batch).execute()
 
 
 def delete_post_dependencies(admin_client, post_id):
     # Clear references before removing the post in schemas without ON DELETE CASCADE.
-    comments_res = admin_client.table('comments').select('id').eq('post_id', post_id).execute()
-    for row in (comments_res.data or []):
-        comment_id = row.get('id')
-        if comment_id:
-            delete_comment_thread(admin_client, comment_id)
-
+    admin_client.table('comments').delete().eq('post_id', post_id).execute()
     admin_client.table('likes').delete().eq('post_id', post_id).execute()
     admin_client.table('reports').delete().eq('post_id', post_id).execute()
     admin_client.table('warnings').update({"post_id": None}).eq('post_id', post_id).execute()
@@ -142,6 +139,16 @@ def wants_json_response():
         return True
     requested_with = (request.headers.get('X-Requested-With') or '').lower()
     return requested_with == 'xmlhttprequest'
+
+
+def get_delete_reason_payload():
+    data = request.get_json(silent=True) if request.is_json else None
+    data = data or request.form.to_dict() or {}
+    reason = (data.get("reason") or "").strip()
+    note = (data.get("note") or "").strip()
+    if not reason:
+        reason = "Violation of community guidelines"
+    return reason, note
 
 def role_block_response(message):
     if wants_json_response():
@@ -464,22 +471,52 @@ def admin_get_post_comments(post_id):
 @login_required
 @content_access_required
 def flag_post(post_id):
-    client = get_admin_read_client()
+    client = get_service_client()
     try:
+        post_res = client.table('posts').select("id, user_id").eq("id", post_id).single().execute()
+        post = post_res.data or {}
         client.table('posts').update({"is_flagged": True}).eq("id", post_id).execute()
+        owner_id = post.get("user_id")
+        if owner_id:
+            try:
+                client.table('notifications').insert({
+                    "user_id": owner_id,
+                    "type": "warning",
+                    "reference_id": post_id,
+                    "title": "Post flagged for review",
+                    "message": "Your post was flagged by moderation and is under review.",
+                }).execute()
+            except Exception as notif_e:
+                logger.warning("Could not notify user for flagged post %s: %s", post_id, notif_e)
         return jsonify({"status": "success", "message": "Post flagged."})
     except Exception as e:
+        logger.error("Error flagging post %s: %s", post_id, e)
         return jsonify({"status": "error", "message": "An error occurred."}), 500
 
 @admin.route('/admin/comments/<comment_id>/flag', methods=['POST'])
 @login_required
 @content_access_required
 def flag_comment(comment_id):
-    client = get_admin_read_client()
+    client = get_service_client()
     try:
+        comment_res = client.table('comments').select("id, user_id, post_id").eq("id", comment_id).single().execute()
+        comment = comment_res.data or {}
         client.table('comments').update({"is_flagged": True}).eq("id", comment_id).execute()
+        owner_id = comment.get("user_id")
+        if owner_id:
+            try:
+                client.table('notifications').insert({
+                    "user_id": owner_id,
+                    "type": "warning",
+                    "reference_id": comment_id,
+                    "title": "Comment flagged for review",
+                    "message": "One of your comments was flagged by moderation and is under review.",
+                }).execute()
+            except Exception as notif_e:
+                logger.warning("Could not notify user for flagged comment %s: %s", comment_id, notif_e)
         return jsonify({"status": "success", "message": "Comment flagged."})
     except Exception as e:
+        logger.error("Error flagging comment %s: %s", comment_id, e)
         return jsonify({"status": "error", "message": "An error occurred."}), 500
 
 @admin.route('/admin/warn-user', methods=['POST'])
@@ -654,22 +691,60 @@ def admin_delete_post(post_id):
             flash("Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY.", "error")
             return redirect(request.referrer or url_for('admin.dashboard'))
 
+        delete_reason, delete_note = get_delete_reason_payload()
+        actor = session.get('user', {})
+        actor_id = actor.get('id')
+        actor_role = normalize_role(actor.get('role'))
+
         admin_client = supabase_service
+        purge_expired_archived_posts(admin_client)
+
+        archived_post = archive_post_snapshot(
+            admin_client,
+            post_id,
+            deleted_by=actor_id,
+            deleted_by_role=actor_role,
+            source="admin",
+            reason=delete_reason,
+            note=delete_note or None,
+        )
+        if not archived_post:
+            if wants_json_response():
+                return jsonify({"status": "error", "message": "Post not found."}), 404
+            flash("Post not found.", "error")
+            return redirect(request.referrer or url_for('admin.dashboard'))
+
         delete_post_dependencies(admin_client, post_id)
         admin_client.table('posts').delete().eq("id", post_id).execute()
 
+        owner_id = archived_post.get("user_id")
+        if owner_id:
+            try:
+                preview = (archived_post.get("content") or "").strip()
+                if len(preview) > 120:
+                    preview = f"{preview[:117]}..."
+                admin_client.table('notifications').insert({
+                    "user_id": owner_id,
+                    "type": "warning",
+                    "reference_id": post_id,
+                    "title": "Post removed by moderation",
+                    "message": f"Your post was removed. Reason: {delete_reason}" + (f" | \"{preview}\"" if preview else ""),
+                }).execute()
+            except Exception as notif_e:
+                logger.warning("Could not notify post owner for deleted post %s: %s", post_id, notif_e)
+
         try:
             admin_client.table('admin_logs').insert({
-                "admin_id": session.get('user', {}).get('id'),
+                "admin_id": actor_id,
                 "action_type": "remove_post",
                 "target_id": post_id,
-                "details": "Post removed by admin."
+                "details": f"Post removed by admin. Reason: {delete_reason}" + (f" | Note: {delete_note}" if delete_note else ""),
             }).execute()
         except Exception as log_e:
             logger.error("Audit log error (delete post): %s", log_e)
 
         if wants_json_response():
-            return jsonify({"status": "deleted"})
+            return jsonify({"status": "deleted", "message": "Post removed and archived."})
         flash("Post removed.", "success")
     except Exception as e:
         logger.error("Error deleting post (admin): %s", e)
@@ -689,7 +764,21 @@ def admin_delete_post(post_id):
 def admin_delete_comment(comment_id):
     try:
         admin_client = get_service_client()
+        comment_res = admin_client.table('comments').select("id, user_id, post_id").eq("id", comment_id).single().execute()
+        comment = comment_res.data or {}
         delete_comment_thread(admin_client, comment_id)
+        owner_id = comment.get("user_id")
+        if owner_id:
+            try:
+                admin_client.table('notifications').insert({
+                    "user_id": owner_id,
+                    "type": "warning",
+                    "reference_id": comment_id,
+                    "title": "Comment removed by moderation",
+                    "message": "One of your comments was removed by moderation due to policy enforcement.",
+                }).execute()
+            except Exception as notif_e:
+                logger.warning("Could not notify comment owner for deleted comment %s: %s", comment_id, notif_e)
         return jsonify({"status": "deleted"})
     except Exception as e:
         logger.error("Error deleting comment (admin): %s", e)

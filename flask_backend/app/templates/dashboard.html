@@ -526,13 +526,14 @@
                     const response = await fetch(`/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
                     const data = await response.json();
                     if (data.status === 'deleted') {
+                        if (window.createToast) window.createToast('Post deleted successfully.', 'success');
                         window.location.reload();
                     } else {
-                        alert('Error: ' + (data.error || 'Failed to delete post'));
+                        if (window.createToast) window.createToast(data.error || 'Failed to delete post', 'error');
                     }
                 } catch (error) {
                     console.error('Error deleting post:', error);
-                    alert('An unexpected error occurred.');
+                    if (window.createToast) window.createToast('An unexpected error occurred.', 'error');
                 }
             }
         );

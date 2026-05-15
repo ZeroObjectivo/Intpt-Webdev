@@ -348,13 +348,32 @@
     }
 
     function confirmRemovePost(postId) {
+        const reasonOptions = [
+            'Harassment or bullying',
+            'Hate speech or abusive language',
+            'Spam or fraudulent content',
+            'Misinformation',
+            'Violation of marketplace rules',
+            'Other policy violation'
+        ];
         if (typeof showConfirmModal === 'function') {
             showConfirmModal(
                 'Remove Post?',
                 'Are you sure you want to PERMANENTLY remove this post? This action cannot be undone.',
-                async () => {
+                async (payload = {}) => {
                     try {
-                        const res = await fetch(`/admin/posts/${postId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' } });
+                        const res = await fetch(`/admin/posts/${postId}/delete`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCSRFToken(),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                reason: payload.reason || '',
+                                note: payload.note || ''
+                            })
+                        });
                         if (!res.ok) {
                             let errorMessage = `Delete request failed (${res.status})`;
                             try {
@@ -368,6 +387,7 @@
                         }
                         const data = await res.json();
                         if (data.status === 'deleted') {
+                            showToast(data.message || 'Post removed successfully', 'success');
                             location.reload();
                         } else {
                             showToast(data.message || 'Error removing post', 'error');
@@ -375,6 +395,11 @@
                     } catch (e) {
                         showToast(e.message || 'Failed to remove post', 'error');
                     }
+                }
+                ,
+                {
+                    reasons: reasonOptions,
+                    requireReason: true
                 }
             );
         } else if (confirm('Remove this post?')) {

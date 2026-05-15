@@ -91,6 +91,15 @@
             </div>
             <h3 id="confirmTitle" class="text-xl font-black text-slate-800 mb-2">Delete Post?</h3>
             <p id="confirmMessage" class="text-slate-500 text-sm font-medium mb-8">Are you sure you want to delete this? This action cannot be undone.</p>
+
+            <div id="confirmReasonContainer" class="hidden text-left mb-6">
+                <label for="confirmReasonSelect" class="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Reason</label>
+                <select id="confirmReasonSelect" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-umak-blue/20 mb-2">
+                    <option value="">Choose a reason...</option>
+                </select>
+                <textarea id="confirmReasonNote" rows="2" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-600 outline-none focus:ring-2 focus:ring-umak-blue/20 resize-none" placeholder="Optional note for audit trail..."></textarea>
+                <p id="confirmReasonError" class="hidden mt-2 text-[10px] font-bold text-rose-500">Please select a reason before proceeding.</p>
+            </div>
             
             <div class="flex gap-3">
                 <button onclick="closeConfirmModal()" class="flex-1 px-6 py-3 rounded-2xl text-sm font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all">

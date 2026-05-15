@@ -6,6 +6,7 @@ from .auth import (
     refresh_supabase_auth,
 )
 from services.supabase_client import get_user_client, supabase_service
+from app.utils.post_archive import archive_post_snapshot, purge_expired_archived_posts
 import datetime
 import time
 import os
@@ -108,6 +109,22 @@ def _safe_int(value, default=0):
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None):
+    if not user_id:
+        return
+    sender_client = supabase_service or client
+    try:
+        sender_client.table('notifications').insert({
+            "user_id": user_id,
+            "type": notif_type,
+            "reference_id": reference_id,
+            "title": title,
+            "message": message,
+        }).execute()
+    except Exception as e:
+        logger.warning("Notification insert skipped for user %s: %s", user_id, e)
 
 def _upsert_policy_warning_notification(client, user_id, title, message, warn_reason=None):
     try:
@@ -1136,6 +1153,25 @@ def toggle_like(post_id):
         else:
             try:
                 client.table('likes').insert({"post_id": post_id, "user_id": user_id}).execute()
+                try:
+                    post_res = client.table('posts').select("id, user_id").eq("id", post_id).single().execute()
+                    post_owner_id = (post_res.data or {}).get("user_id")
+                    if post_owner_id and post_owner_id != user_id:
+                        liker_name = (
+                            ((user_session.get('user_metadata') or {}).get('full_name'))
+                            or user_session.get('full_name')
+                            or "A user"
+                        )
+                        push_notification(
+                            client,
+                            post_owner_id,
+                            title="New like on your post",
+                            message=f"{liker_name} liked your post.",
+                            notif_type="interaction",
+                            reference_id=post_id,
+                        )
+                except Exception as notif_e:
+                    logger.warning("Like notification skipped for post %s: %s", post_id, notif_e)
                 return {"status": "liked", "post_id": post_id}
             except Exception:
                 return {"status": "liked", "post_id": post_id}
@@ -1200,6 +1236,42 @@ def add_comment(post_id):
             .select("*, profiles(full_name, avatar_url)")\
             .eq("id", comment_response.data[0]['id'])\
             .single().execute()
+
+        commenter_name = (
+            ((user_session.get('user_metadata') or {}).get('full_name'))
+            or user_session.get('full_name')
+            or "A user"
+        )
+        try:
+            post_owner_res = client.table('posts').select("user_id").eq("id", post_id).single().execute()
+            post_owner_id = (post_owner_res.data or {}).get("user_id")
+            if post_owner_id and post_owner_id != user_id:
+                push_notification(
+                    client,
+                    post_owner_id,
+                    title="New comment on your post",
+                    message=f"{commenter_name} commented on your post.",
+                    notif_type="interaction",
+                    reference_id=post_id,
+                )
+        except Exception as notif_e:
+            logger.warning("Post owner comment notification skipped for post %s: %s", post_id, notif_e)
+
+        if parent_id:
+            try:
+                parent_res = client.table('comments').select("user_id").eq("id", parent_id).single().execute()
+                parent_owner_id = (parent_res.data or {}).get("user_id")
+                if parent_owner_id and parent_owner_id not in (user_id,):
+                    push_notification(
+                        client,
+                        parent_owner_id,
+                        title="New reply to your comment",
+                        message=f"{commenter_name} replied to your comment.",
+                        notif_type="interaction",
+                        reference_id=post_id,
+                    )
+            except Exception as notif_e:
+                logger.warning("Reply notification skipped for parent comment %s: %s", parent_id, notif_e)
 
         return {"comment": new_comment.data}
     except Exception as e:
@@ -1270,8 +1342,29 @@ def delete_post(post_id):
     user_session = session.get('user')
     user_id = user_session.get('id')
     client = get_user_client()
+    delete_reason = (request.form.get('reason') or request.args.get('reason') or "Deleted by post author").strip()
+    if not delete_reason:
+        delete_reason = "Deleted by post author"
 
     try:
+        post_check = client.table('posts').select("id").eq("id", post_id).eq("user_id", user_id).limit(1).execute()
+        if not (post_check.data or []):
+            return {"error": "Unauthorized or post not found"}, 403
+
+        if supabase_service:
+            try:
+                purge_expired_archived_posts(supabase_service)
+                archive_post_snapshot(
+                    supabase_service,
+                    post_id,
+                    deleted_by=user_id,
+                    deleted_by_role=(user_session.get('role') or 'student'),
+                    source="user",
+                    reason=delete_reason,
+                )
+            except Exception as archive_e:
+                logger.warning("User delete archive skipped for post %s: %s", post_id, archive_e)
+
         result = client.table('posts').delete().eq("id", post_id).eq("user_id", user_id).execute()
 
         if not result.data:

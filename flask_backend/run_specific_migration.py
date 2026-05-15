@@ -21,7 +21,8 @@ if __name__ == "__main__":
         '20260514000300_add_flag_status.sql',
         '20260514000400_add_event_title.sql',
         '20260514000500_fix_warnings_policies.sql',
-        '20260514000600_sync_notifications_schema.sql'
+        '20260514000600_sync_notifications_schema.sql',
+        '20260515000400_add_archived_posts_table.sql'
     ]
     for m in migrations:
         run_migration(m)

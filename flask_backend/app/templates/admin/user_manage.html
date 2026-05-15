@@ -2,6 +2,9 @@
 
 {% block title %}Manage {{ target_user.full_name }} | Admin Hub{% endblock %}
 {% block header_title %}User Management{% endblock %}
+{% block admin_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
+{% endblock %}
 
 {% block admin_content %}
 <div class="mb-6">
@@ -189,10 +192,11 @@
                         </div>
                         <p class="text-xs text-slate-700 leading-relaxed line-clamp-2 mb-3">{{ p.content }}</p>
                         <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            <form action="{{ url_for('admin.admin_delete_post', post_id=p.id) }}" method="POST" onsubmit="return confirm('Remove this post permanently?');" style="display:inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="px-3 py-1 bg-white text-[9px] font-black uppercase text-slate-600 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all">Remove</button>
-                            </form>
+                            <button type="button"
+                                    onclick="confirmRemoveManagedPost('{{ p.id }}')"
+                                    class="px-3 py-1 bg-white text-[9px] font-black uppercase text-slate-600 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all">
+                                Remove
+                            </button>
                         </div>
                     </div>
                     {% endfor %}
@@ -203,4 +207,54 @@
         </div>
     </div>
 </div>
+{% include 'includes/modal.html' %}
+{% endblock %}
+
+{% block admin_scripts %}
+<script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+<script>
+    function confirmRemoveManagedPost(postId) {
+        const reasonOptions = [
+            'Harassment or bullying',
+            'Hate speech or abusive language',
+            'Spam or fraudulent content',
+            'Misinformation',
+            'Violation of marketplace rules',
+            'Other policy violation'
+        ];
+
+        showConfirmModal(
+            'Remove Post?',
+            'This removes the post from public view and archives it for 3 months before permanent purge.',
+            async (payload = {}) => {
+                try {
+                    const res = await fetch(`/admin/posts/${postId}/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCSRFToken(),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            reason: payload.reason || '',
+                            note: payload.note || ''
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || data.status !== 'deleted') {
+                        throw new Error((data && data.message) || 'Failed to remove post.');
+                    }
+                    if (window.createToast) window.createToast(data.message || 'Post removed.', 'success');
+                    window.location.reload();
+                } catch (e) {
+                    if (window.createToast) window.createToast(e.message || 'Failed to remove post.', 'error');
+                }
+            },
+            {
+                reasons: reasonOptions,
+                requireReason: true
+            }
+        );
+    }
+</script>
 {% endblock %}

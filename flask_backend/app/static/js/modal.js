@@ -524,9 +524,11 @@ async function saveEditComment(commentId) {
         if (data.comment) {
             document.getElementById(`comment-text-${commentId}`).innerText = data.comment.content;
             cancelEditComment(commentId);
+            if (window.createToast) window.createToast('Comment updated.', 'success');
         }
     } catch (error) {
         console.error('Error saving comment:', error);
+        if (window.createToast) window.createToast('Failed to update comment.', 'error');
     }
 }
 
@@ -545,30 +547,74 @@ async function deleteComment(commentId) {
                         updateDashboardCount(currentPost.id, 'comments', -1);
                         if (window.requestInteractionSync) window.requestInteractionSync(currentPost.id);
                     }
+                    if (window.createToast) window.createToast('Comment deleted.', 'success');
+                } else if (window.createToast) {
+                    window.createToast(data.error || data.message || 'Failed to delete comment.', 'error');
                 }
             } catch (error) {
                 console.error('Error deleting comment:', error);
+                if (window.createToast) window.createToast('Failed to delete comment.', 'error');
             }
         }
     );
 }
 
 // Custom Confirmation Modal Helpers
-function showConfirmModal(title, message, onConfirm) {
+function showConfirmModal(title, message, onConfirm, options = {}) {
     const modal = document.getElementById('confirmModal');
     const titleEl = document.getElementById('confirmTitle');
     const messageEl = document.getElementById('confirmMessage');
     const confirmBtn = document.getElementById('confirmActionBtn');
+    const reasonContainer = document.getElementById('confirmReasonContainer');
+    const reasonSelect = document.getElementById('confirmReasonSelect');
+    const reasonNote = document.getElementById('confirmReasonNote');
+    const reasonError = document.getElementById('confirmReasonError');
     
     titleEl.innerText = title;
     messageEl.innerText = message;
+
+    const reasons = Array.isArray(options.reasons) ? options.reasons : [];
+    if (reasonContainer && reasonSelect && reasonNote && reasonError) {
+        reasonError.classList.add('hidden');
+        if (reasons.length > 0) {
+            reasonContainer.classList.remove('hidden');
+            reasonSelect.innerHTML = '<option value="">Choose a reason...</option>';
+            reasons.forEach((reason) => {
+                const opt = document.createElement('option');
+                opt.value = reason;
+                opt.textContent = reason;
+                reasonSelect.appendChild(opt);
+            });
+            reasonSelect.value = '';
+            reasonNote.value = '';
+        } else {
+            reasonContainer.classList.add('hidden');
+            reasonSelect.innerHTML = '<option value="">Choose a reason...</option>';
+            reasonSelect.value = '';
+            reasonNote.value = '';
+        }
+    }
     
     // Use a new button reference to clear old listeners
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
     
     newConfirmBtn.onclick = async () => {
-        await onConfirm();
+        const payload = {};
+        if (reasons.length > 0 && reasonSelect && reasonNote) {
+            const selectedReason = (reasonSelect.value || '').trim();
+            if (options.requireReason && !selectedReason) {
+                if (reasonError) reasonError.classList.remove('hidden');
+                if (typeof window.createToast === 'function') {
+                    window.createToast('Please select a reason first.', 'error');
+                }
+                return;
+            }
+            if (reasonError) reasonError.classList.add('hidden');
+            payload.reason = selectedReason;
+            payload.note = (reasonNote.value || '').trim();
+        }
+        await onConfirm(payload);
         closeConfirmModal();
     };
     
@@ -578,8 +624,16 @@ function showConfirmModal(title, message, onConfirm) {
 
 function closeConfirmModal(event) {
     const modal = document.getElementById('confirmModal');
+    const reasonContainer = document.getElementById('confirmReasonContainer');
+    const reasonSelect = document.getElementById('confirmReasonSelect');
+    const reasonNote = document.getElementById('confirmReasonNote');
+    const reasonError = document.getElementById('confirmReasonError');
     // Allow closing if no event (manual call), clicking the overlay, or clicking any button
     if (!event || event.target === modal || event.target.closest('button')) {
+        if (reasonContainer) reasonContainer.classList.add('hidden');
+        if (reasonSelect) reasonSelect.value = '';
+        if (reasonNote) reasonNote.value = '';
+        if (reasonError) reasonError.classList.add('hidden');
         modal.classList.remove('active');
         // Only restore body overflow if the main image modal is also closed
         const imageModal = document.getElementById('imageModal');
@@ -652,9 +706,11 @@ async function submitComment(event) {
             // Update comments count on dashboard
             updateDashboardCount(currentPost.id, 'comments', 1);
             if (window.requestInteractionSync) window.requestInteractionSync(currentPost.id);
+            if (window.createToast) window.createToast('Comment posted.', 'success');
         }
     } catch (error) {
         console.error('Error submitting comment:', error);
+        if (window.createToast) window.createToast('Failed to post comment.', 'error');
     } finally {
         submitBtn.disabled = false;
     }
