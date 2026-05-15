@@ -5,6 +5,15 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ---
 
+## [Unreleased] - 2026-05-16
+
+### Added
+- **Synced Skeleton Loading:** Implemented a high-fidelity skeleton loading state that matches the count and structure of the actual posts. The skeleton now dynamically reflects the presence of attachments (images) and uses a refined shimmer animation for a more polished "Facebook-like" experience. (References: `flask_backend/app/templates/dashboard.html`, `flask_backend/app/static/css/dashboard.css`, `flask_backend/app/static/js/realtime_sync.js`)
+- **Infinite Scrolling with Skeleton:** Implemented efficient infinite scrolling for the dashboard feed using the Intersection Observer API. New posts are fetched on-demand as the user scrolls, with dedicated infinite scroll skeletons displayed during retrieval. This improves initial load performance and memory efficiency. (References: `flask_backend/app/routes/core.py`, `flask_backend/app/templates/dashboard.html`, `flask_backend/app/static/js/realtime_sync.js`)
+
+### Changed
+- **Smooth Dashboard Reveal:** Integrated a smooth opacity transition for revealing the home feed content after the initial skeleton load, eliminating jarring layout jumps.
+
 ## [Unreleased] - 2026-05-14
 
 ### Added

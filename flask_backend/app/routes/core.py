@@ -1083,7 +1083,7 @@ def update_profile():
         flash("Error updating profile. Please try again.", "error")
         return redirect(url_for('core.profile_settings'))
 
-def load_dashboard_data(user_id, category=None):
+def load_dashboard_data(user_id, category=None, before_timestamp=None):
     client = get_user_client()
 
     profile_response = client.table('profiles').select("*").eq("id", user_id).single().execute()
@@ -1096,6 +1096,9 @@ def load_dashboard_data(user_id, category=None):
             query = query.in_('category', HERON_BUSINESS_CATEGORIES)
         else:
             query = query.eq('category', category)
+
+    if before_timestamp:
+        query = query.lt('created_at', before_timestamp)
 
     posts_response = query.order("created_at", desc=True).limit(20).execute()
     posts = posts_response.data
@@ -1386,6 +1389,38 @@ def sync_realtime():
     response = jsonify(payload)
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return response
+
+@core.route('/posts/fetch')
+@login_required
+def fetch_posts():
+    user_session = session.get('user')
+    user_id = user_session.get('id')
+    category = normalize_dashboard_category(request.args.get('category'))
+    before_timestamp = request.args.get('before')
+
+    try:
+        profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category, before_timestamp)
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            profile, posts, trending, upcoming_events = load_dashboard_data(user_id, category, before_timestamp)
+        elif is_jwt_error(e):
+            return jsonify({"status": "error", "reason": "session_expired"}), 401
+        else:
+            logger.error("Error fetching posts: %s", e)
+            return jsonify({"status": "error", "reason": "fetch_failed"}), 500
+
+    html_posts = []
+    for post in posts:
+        html = render_template('includes/post_card.html', post=post, user=profile, DISPLAY_TIMEZONE=DISPLAY_TIMEZONE)
+        html_posts.append(html)
+
+    return jsonify({
+        "status": "ok",
+        "posts": html_posts,
+        "raw_posts": posts,
+        "has_more": len(posts) == 20,
+        "last_timestamp": posts[-1]['created_at'] if posts else None
+    })
 
 @core.route('/posts/<post_id>/like', methods=['POST'])
 @login_required

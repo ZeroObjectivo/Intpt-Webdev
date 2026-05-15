@@ -191,30 +191,32 @@
 .feed-skeleton:not(.hidden) {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .skeleton-card {
-    padding: 20px;
-    border-radius: 20px;
-    border: 1px solid #edf2f7;
-    background: #ffffff;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    padding: 14px 16px 12px;
+    background: rgba(246, 247, 249, 0.88);
+    border: 1px solid #d6d8df;
+    border-radius: 16px;
+    box-shadow: 0 3px 8px rgba(7, 10, 18, 0.08);
 }
 
 .skeleton-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 .skeleton-avatar {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    border-radius: 14px;
-    background: #f1f5f9;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 9999px;
+    background: #eef2f7;
+    position: relative;
+    overflow: hidden;
 }
 
 .skeleton-text-group {
@@ -229,39 +231,49 @@
     overflow: hidden;
     height: 10px;
     border-radius: 4px;
-    background: #f1f5f9;
+    background: #eef2f7;
 }
 
-.skeleton-line::after {
+.skeleton-line::after,
+.skeleton-avatar::after {
     content: "";
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
-    animation: hh-skeleton-shimmer 1.5s infinite;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: hh-skeleton-shimmer 1.2s infinite ease-in-out;
 }
 
 .skeleton-content {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .skeleton-actions {
     display: flex;
-    gap: 20px;
-    padding-top: 16px;
-    border-top: 1px solid #f8fafc;
+    gap: 16px;
+    padding-top: 10px;
+    border-top: 1px solid #edf1f5;
 }
 
 .skeleton-action-item {
-    width: 60px;
+    width: 64px;
     height: 12px;
-    background: #f1f5f9;
+    background: #eef2f7;
     border-radius: 4px;
+    position: relative;
+    overflow: hidden;
 }
-    animation: hh-skeleton-shimmer 1.2s infinite;
+
+.skeleton-action-item::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: hh-skeleton-shimmer 1.2s infinite ease-in-out;
 }
 
 .skeleton-line-lg { width: 88%; }

@@ -1120,6 +1120,10 @@ h1,
   height: 1px;
 }
 
+.h-\[240px\] {
+  height: 240px;
+}
+
 .max-h-24 {
   max-height: 6rem;
 }

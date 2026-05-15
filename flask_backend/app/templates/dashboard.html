@@ -122,7 +122,71 @@
                 </div>
 
                 <div id="feedSkeleton" class="feed-skeleton" aria-hidden="true">
-                    {% for i in range(3) %}
+                    {% if posts %}
+                        {% for post in posts %}
+                        <div class="skeleton-card">
+                            <div class="skeleton-header">
+                                <div class="skeleton-avatar"></div>
+                                <div class="skeleton-text-group">
+                                    <div class="skeleton-line skeleton-line-md"></div>
+                                    <div class="skeleton-line skeleton-line-sm"></div>
+                                </div>
+                            </div>
+                            <div class="skeleton-content">
+                                <div class="skeleton-line skeleton-line-full"></div>
+                                {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
+                                {% if post_images %}
+                                    <div class="skeleton-line skeleton-line-full h-[240px] rounded-xl mt-3"></div>
+                                {% else %}
+                                    <div class="skeleton-line skeleton-line-full"></div>
+                                    <div class="skeleton-line skeleton-line-lg"></div>
+                                {% endif %}
+                            </div>
+                            <div class="skeleton-actions">
+                                <div class="skeleton-action-item"></div>
+                                <div class="skeleton-action-item"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        {% for i in range(3) %}
+                        <div class="skeleton-card">
+                            <div class="skeleton-header">
+                                <div class="skeleton-avatar"></div>
+                                <div class="skeleton-text-group">
+                                    <div class="skeleton-line skeleton-line-md"></div>
+                                    <div class="skeleton-line skeleton-line-sm"></div>
+                                </div>
+                            </div>
+                            <div class="skeleton-content">
+                                <div class="skeleton-line skeleton-line-full"></div>
+                                <div class="skeleton-line skeleton-line-full"></div>
+                                <div class="skeleton-line skeleton-line-lg"></div>
+                            </div>
+                            <div class="skeleton-actions">
+                                <div class="skeleton-action-item"></div>
+                                <div class="skeleton-action-item"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div id="feedContent" class="posts-list hidden opacity-0 transition-all duration-500 ease-out" aria-busy="true">
+                    {% if posts %}
+                        {% for post in posts %}
+                            {% include 'includes/post_card.html' %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-feed">
+                            <p>No posts yet. Be the first to share something.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Infinite Scroll Skeleton & Sentinel -->
+                <div id="infiniteScrollSkeleton" class="feed-skeleton mt-4 hidden" aria-hidden="true">
+                    {% for i in range(2) %}
                     <div class="skeleton-card">
                         <div class="skeleton-header">
                             <div class="skeleton-avatar"></div>
@@ -143,165 +207,7 @@
                     </div>
                     {% endfor %}
                 </div>
-
-                <div id="feedContent" class="posts-list hidden" aria-busy="true">
-                    {% if posts %}
-                        {% for post in posts %}
-                        {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
-                        <article class="post-card {% if post_images %}has-attachment{% else %}no-attachment{% endif %}" data-post-id="{{ post.id }}">
-                            {% set post_category = post.category or 'General' %}
-                            <div class="post-header flex justify-between items-start gap-4">
-                                <div class="flex items-start min-w-0">
-                                    <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
-                                    <div class="post-user-info">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="post-author-name capitalize hover:underline decoration-slate-300 underline-offset-2">{{ post.profiles.full_name | title }}</a>
-                                            {% if post.profiles.college %}
-                                                <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
-                                                {% set coll_code = post.profiles.college.split(' ')[0]|lower %}
-                                                <span class="badge college-{{ coll_code }} shrink-0">{{ post.profiles.college.split(' ')[0] }}</span>
-                                            {% endif %}
-                                        </div>
-                                        
-                                        <div class="flex items-center gap-2 mt-1">
-                                            {% set post_dt = post.created_at|datetime_obj %}
-                                            {% set post_local = post_dt.astimezone(DISPLAY_TIMEZONE) %}
-                                            <span class="post-meta" title="{{ post_local.strftime('%A, %B %d, %Y at %I:%M:%S %p') }}">
-                                                Posted {{ post.relative_created_at }}
-                                            </span>
-                                            <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
-                                            {% if post_category == 'Lost & Found' %}
-                                                <span class="badge badge-lost-found">Lost & Found</span>
-                                            {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
-                                                <span class="badge badge-heron-business">Heron Business</span>
-                                            {% elif post_category == 'Question' %}
-                                                <span class="badge badge-question">Question</span>
-                                            {% elif post_category == 'Events' %}
-                                                <span class="badge badge-events">Events</span>
-                                            {% else %}
-                                                <span class="badge badge-general">General</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col items-end gap-2">
-                                    <div class="flex items-center gap-2">
-                                        <div class="relative">
-                                            <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                                            </button>
-                                            <div id="post-menu-{{ post.id }}" class="post-menu-dropdown absolute right-0 top-full mt-1 w-36 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 py-1 hidden z-20">
-                                                {% if post.user_id == user.id %}
-                                                <button onclick="showEditForm('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">Edit Post</button>
-                                                <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors">Delete Post</button>
-                                                {% else %}
-                                                <button onclick="reportPost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50 transition-colors">Report Post</button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% set show_status = post.status and (post_category == 'Lost & Found' or (post_category in ['Buy & Sell', 'Heron Business'] and post.status in ['Available', 'Sold'])) %}
-                                    {% if show_status %}
-                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {% if post.status in ['Lost', 'Sold'] %}bg-red-50 text-red-500{% else %}bg-green-50 text-green-500{% endif %}">
-                                        {{ post.status }}
-                                    </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="post-content" id="post-content-{{ post.id }}">
-                                {% if post.category in ['Buy & Sell', 'Heron Business', 'Lost & Found', 'Events'] %}
-                                <div class="flex flex-wrap gap-4 mb-4 text-xs font-bold">
-                                    {% if post.price %}
-                                    <div class="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-                                        <span>₱{{ "{:,.2f}".format(post.price) }}</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if post.location %}
-                                    <div class="flex items-center gap-1.5 text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                        <span>{{ post.location }}</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if post.event_date %}
-                                    <div class="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        <span>{{ post.event_date[:16].replace('T', ' ') }}</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                {% endif %}
-                                <p>{{ post.content }}</p>
-                                {% if post.embed and post.embed.embed_url %}
-                                    <div class="post-embed">
-                                        <iframe
-                                            src="{{ post.embed.embed_url }}"
-                                            title="Embedded {{ (post.embed.provider or 'media')|title }} content"
-                                            loading="lazy"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                            allowfullscreen
-                                            referrerpolicy="strict-origin-when-cross-origin"></iframe>
-                                    </div>
-                                {% endif %}
-                                {% if post_images %}
-                                    <div class="fb-grid fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }} mt-4">
-                                        {% for url in post_images %}
-                                            {% if loop.index <= 5 %}
-                                                <div class="relative group overflow-hidden cursor-pointer w-full h-full" 
-                                                     onclick='{% if post.image_urls or post.image_url %}openImageModal({{ post|tojson|safe }}, {{ loop.index0 }}){% else %}openCommentModal({{ post|tojson|safe }}){% endif %}'>
-                                                    <img src="{{ url }}" alt="Post image" loading="lazy" class="w-full h-full object-cover">
-                                                    {% if loop.index == 5 and post_images|length > 5 %}
-                                                        <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl">
-                                                            +{{ post_images|length - 5 }}
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            {% if post.user_id == user.id %}
-                            <div id="edit-form-{{ post.id }}" class="hidden mt-4">
-                                <form action="{{ url_for('core.update_post', post_id=post.id) }}" method="POST">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <textarea name="content" class="w-full p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all resize-none mb-3">{{ post.content }}</textarea>
-                                    <input type="hidden" name="category" value="{{ post.category }}">
-                                    <div class="flex justify-end gap-2">
-                                        <button type="button" onclick="hideEditForm('{{ post.id }}')" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-                                        <button type="submit" class="bg-umak-blue text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-umak-blue/20 hover:bg-blue-700 transition-all">Save Changes</button>
-                                    </div>
-                                </form>
-                            </div>
-                            {% endif %}
-
-                            <div class="post-actions border-t border-slate-50 mt-4 pt-2">
-                                <button class="action-item group like-btn {% if post.user_has_liked %}text-red-500{% else %}text-slate-400{% endif %} hover:text-red-500"
-                                        type="button" onclick="toggleLike('{{ post.id }}', this)">
-                                    <span class="flex items-center gap-1.5">
-                                        <svg aria-hidden="true" class="action-icon {% if post.user_has_liked %}fill-current{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"></path>
-                                        </svg>
-                                        <span class="likes-count">{{ post.likes_count }}</span>
-                                    </span>
-                                </button>
-                                <button class="action-item text-slate-400 hover:text-blue-500" type="button" onclick='openCommentModal({{ post|tojson|safe }})'>
-                                    <span class="flex items-center gap-1.5">
-                                        <svg aria-hidden="true" class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 0 1-4.255-.949L3 20l1.395-3.72A7.58 7.58 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"></path>
-                                        </svg>
-                                        <span class="comments-count">{{ post.comments_count }}</span>
-                                    </span>
-                                </button>
-                            </div>
-                        </article>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-feed">
-                            <p>No posts yet. Be the first to share something.</p>
-                        </div>
-                    {% endif %}
-                </div>
+                <div id="infiniteScrollSentinel" class="h-10 w-full" aria-hidden="true"></div>
             </main>
 
             <aside class="sidebar sticky top-20 h-full">
