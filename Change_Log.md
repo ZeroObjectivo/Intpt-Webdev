@@ -14,6 +14,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 ### Fixed
 - **JWT Expiration Errors:** Fixed a critical bug causing "JWT expired" errors on protected routes by implementing an automatic token refresh mechanism. (References: `flask_backend/app/routes/auth.py`)
 - **Reliable Counter Synchronization:** Fixed a bug where comment and like counters on the dashboard feed were not reliably updating when modified within the modal. (References: `flask_backend/app/static/js/modal.js`)
+- **Username Casing in Modal:** Implemented a multi-layered fix for all-caps usernames in the posts modal. Added a JavaScript `toTitleCase` helper to format names correctly even if stored as uppercase in the database, and applied CSS `!important` overrides for `text-transform` and `font-family` to bypass global small-caps heading styles. (References: `flask_backend/app/static/js/modal.js`, `flask_backend/app/static/css/modal.css`)
 
 ### 1. UI/UX & Design Overhaul
 #### Added

@@ -211,6 +211,13 @@ function checkHashAndOpenModal() {
     }
 }
 
+function toTitleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().split(' ').map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    }).join(' ');
+}
+
 function updateModalContent() {
     const modalImg = document.getElementById('modalImg');
     const prevBtn = document.getElementById('modalPrevBtn');
@@ -235,7 +242,7 @@ function updateModalContent() {
     const profile = currentPost.profiles || {};
     
     avatar.src = profile.avatar_url || "/static/images/Logo.png";
-    document.getElementById('modalUserName').innerText = profile.full_name || 'Heron';
+    document.getElementById('modalUserName').innerText = toTitleCase(profile.full_name) || 'Heron';
 
     // College Pill
     const collegeEl = document.getElementById('modalUserCollege');
@@ -343,7 +350,7 @@ function renderComment(comment, isReply = false) {
             <div class="flex-1 min-w-0">
                 <div class="bg-slate-50 rounded-2xl px-4 py-3 relative group/comment transition-all hover:bg-slate-100/50">
                     <div class="flex justify-between items-start mb-1">
-                        <h5 class="text-[13px] font-bold text-slate-900">${comment.profiles.full_name}</h5>
+                        <h5 class="text-[13px] font-bold text-slate-900">${toTitleCase(comment.profiles.full_name)}</h5>
                         <div class="flex items-center gap-1 opacity-0 group-hover/comment:opacity-100 transition-opacity">
                             ${allowOwnEdit ? `
                                 <button onclick="startEditComment('${comment.id}')" class="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 transition-all" title="Edit">
@@ -368,7 +375,7 @@ function renderComment(comment, isReply = false) {
                 
                 <div class="flex items-center gap-4 mt-1.5 ml-2">
                     <span class="text-[10px] font-medium text-slate-400 uppercase tracking-widest">${formatPostTime(comment.created_at)}</span>
-                    <button onclick="setReply('${comment.id}', '${comment.profiles.full_name}')" class="text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-widest">Reply</button>
+                    <button onclick="setReply('${comment.id}', '${toTitleCase(comment.profiles.full_name)}')" class="text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-widest">Reply</button>
                 </div>
             </div>
         </div>
