@@ -19,6 +19,7 @@
     align-items: start;
     gap: 24px;
     width: min(1440px, calc(100vw - 40px));
+    min-height: calc(100vh - 56px);
     margin: 0 auto;
 }
 
@@ -45,7 +46,7 @@
     gap: 12px;
     min-height: 44px;
     padding: 10px 12px;
-    border-radius: var(--hh-radius);
+    border-radius: 8px;
     color: var(--hh-blue-500);
     font-size: 0.94rem;
     font-weight: 700;
@@ -61,7 +62,6 @@
 .primary-nav-link.active {
     background: var(--hh-blue-500);
     color: var(--hh-surface);
-    box-shadow: inset 4px 0 0 var(--hh-blue-500);
 }
 
 .primary-nav-link.active:hover {
@@ -182,10 +182,66 @@
     transform: translateY(-1px);
 }
 
+.category-pills .pill {
+    background-color: #C7CDE6;
+    color: #111942;
+}
+
+.category-pills .pill.active {
+    background-color: #111942 !important;
+    color: #C7CDE6 !important;
+}
+
 .posts-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.feed-skeleton,
+.sidebar-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeleton-card,
+.sidebar-skeleton-card {
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid #d6d8df;
+    background: rgba(246, 247, 249, 0.88);
+    box-shadow: 0 3px 8px rgba(7, 10, 18, 0.08);
+}
+
+.skeleton-line {
+    position: relative;
+    overflow: hidden;
+    height: 12px;
+    border-radius: 9999px;
+    background: #e5e7eb;
+    margin-bottom: 10px;
+}
+
+.skeleton-line:last-child {
+    margin-bottom: 0;
+}
+
+.skeleton-line::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+    animation: hh-skeleton-shimmer 1.2s infinite;
+}
+
+.skeleton-line-lg { width: 88%; }
+.skeleton-line-md { width: 72%; }
+.skeleton-line-sm { width: 54%; }
+
+@keyframes hh-skeleton-shimmer {
+    100% { transform: translateX(100%); }
 }
 
 .post-card,
@@ -341,6 +397,9 @@
     flex-direction: column;
     gap: 16px;
     min-width: 0;
+    position: sticky;
+    top: 112px;
+    max-height: calc(100vh - 112px);
 }
 
 .sidebar-section {
@@ -578,6 +637,22 @@
 .badge-events {
     background: #533074;
     color: #EDF1FF;
+}
+
+.category-tag,
+.post-category-tag {
+    background-color: #C7CDE6;
+    color: #111942;
+}
+
+.global-image-feedback {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+}
+
+.global-image-preview {
+    display: grid;
+    gap: 0.5rem;
 }
 
 @media (max-width: 1320px) {
