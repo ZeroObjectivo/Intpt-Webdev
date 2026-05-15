@@ -464,6 +464,8 @@ def format_relative_time(created_at, now=None):
 
     delta = now - created_at
     seconds = max(int(delta.total_seconds()), 0)
+    created_local = created_at.astimezone(DISPLAY_TIMEZONE)
+    now_local = now.astimezone(DISPLAY_TIMEZONE)
 
     # Within 24 hours: Use relative time (mins/hrs)
     if seconds < 86400:
@@ -478,8 +480,11 @@ def format_relative_time(created_at, now=None):
         unit = "hr" if hours == 1 else "hrs"
         return f"{hours} {unit} ago"
 
-    # Past 24 hours: Use full descriptive date with year and time
-    created_local = created_at.astimezone(DISPLAY_TIMEZONE)
+    # Previous local calendar day: use "Yesterday at ..." copy.
+    if created_local.date() == (now_local.date() - datetime.timedelta(days=1)):
+        return created_local.strftime("Yesterday at %I:%M %p").replace(" 0", " ")
+
+    # Older posts: use descriptive date with year and time
     return created_local.strftime("%B %d, %Y at %I:%M %p").replace(" 0", " ")
 
 def parse_catalog_multiline(value):
