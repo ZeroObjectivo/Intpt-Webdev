@@ -87,26 +87,7 @@ body.login-page {
 
 /* Login color split by domain */
 body.login-page .login-card::before {
-    content: "";
-    position: absolute;
-    width: 210px;
-    height: 210px;
-    border-radius: 999px;
-    top: 1.2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    filter: blur(24px);
-    opacity: 0.22;
-    z-index: -1;
-}
-
-body.login-page.user-login .login-card::before {
-    background: linear-gradient(135deg, #2f6dff 0%, #8fb7ff 100%);
-}
-
-body.login-page.admin-login .login-card::before {
-    background: linear-gradient(135deg, #ffe36a 0%, #f8b32f 100%);
-    opacity: 0.28;
+    content: none;
 }
 
 body.login-page.admin-login .card-logo {
