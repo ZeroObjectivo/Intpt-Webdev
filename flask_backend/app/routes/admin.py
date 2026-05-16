@@ -718,33 +718,36 @@ def ban_user(user_id):
 @content_access_required
 def admin_delete_post(post_id):
     try:
-        if not supabase_service:
-            logger.error("Admin delete blocked: SUPABASE_SERVICE_ROLE_KEY is not configured.")
-            if wants_json_response():
-                return jsonify({
-                    "status": "error",
-                    "message": "Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY.",
-                }), 500
-            flash("Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY.", "error")
-            return redirect(request.referrer or url_for('admin.dashboard'))
+        admin_client, service_error = require_admin_service_client("Delete post")
+        if service_error:
+            return service_error
 
         delete_reason, delete_note = get_delete_reason_payload()
         actor = session.get('user', {})
         actor_id = actor.get('id')
         actor_role = normalize_role(actor.get('role'))
 
-        admin_client = supabase_service
         purge_expired_archived_posts(admin_client)
 
-        archived_post = archive_post_snapshot(
-            admin_client,
-            post_id,
-            deleted_by=actor_id,
-            deleted_by_role=actor_role,
-            source="admin",
-            reason=delete_reason,
-            note=delete_note or None,
-        )
+        archived_post = None
+        archived_ok = False
+        try:
+            archived_post = archive_post_snapshot(
+                admin_client,
+                post_id,
+                deleted_by=actor_id,
+                deleted_by_role=actor_role,
+                source="admin",
+                reason=delete_reason,
+                note=delete_note or None,
+            )
+            archived_ok = bool(archived_post)
+        except Exception as archive_error:
+            logger.warning("Archive snapshot skipped for post %s: %s", post_id, archive_error)
+            post_res = admin_client.table('posts').select("*").eq("id", post_id).limit(1).execute()
+            rows = post_res.data or []
+            archived_post = rows[0] if rows else None
+
         if not archived_post:
             if wants_json_response():
                 return jsonify({"status": "error", "message": "Post not found."}), 404
@@ -781,8 +784,10 @@ def admin_delete_post(post_id):
             logger.error("Audit log error (delete post): %s", log_e)
 
         if wants_json_response():
-            return jsonify({"status": "deleted", "message": "Post removed and archived."})
-        flash("Post removed.", "success")
+            if archived_ok:
+                return jsonify({"status": "deleted", "message": "Post removed and archived."})
+            return jsonify({"status": "deleted", "message": "Post removed."})
+        flash("Post removed and archived." if archived_ok else "Post removed.", "success")
     except Exception as e:
         logger.error("Error deleting post (admin): %s", e)
         if wants_json_response():

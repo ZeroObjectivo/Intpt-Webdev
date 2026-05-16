@@ -634,7 +634,7 @@ function showConfirmModal(title, message, onConfirm, options = {}) {
     const reasonContainer = document.getElementById('confirmReasonContainer');
     const reasonSelect = document.getElementById('confirmReasonSelect');
     const reasonNote = document.getElementById('confirmReasonNote');
-    if (!modal || !titleEl || !msgEl || !confirmBtn) return;
+    if (!modal || !titleEl || !msgEl || !confirmBtn) return false;
 
     titleEl.textContent = title || 'Confirm Action';
     msgEl.textContent = message || 'Are you sure you want to proceed with this action?';
@@ -671,6 +671,7 @@ function showConfirmModal(title, message, onConfirm, options = {}) {
 
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('modal-visible'));
+    return true;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
