@@ -7,6 +7,28 @@
     .home-page {
         background: #070d1f;
         color: #f8fafc;
+        margin-top: -96px;
+        padding-top: 96px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .home-page::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.4;
+        mix-blend-mode: soft-light;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        background-size: 240px 240px;
+        background-repeat: repeat;
+    }
+
+    .home-page > section {
+        position: relative;
+        z-index: 1;
     }
 
     .home-hero {
@@ -64,48 +86,9 @@
         color: #f8fafc;
     }
 
-    .hero-actions {
-        margin-top: 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.85rem;
-        flex-wrap: wrap;
-    }
-
-    .hero-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 9999px;
-        min-height: 44px;
-        padding: 0.6rem 1.4rem;
-        font-size: 0.92rem;
-        font-weight: 700;
-        letter-spacing: 0.01em;
-        text-decoration: none;
-        transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-    }
-
-    .hero-btn-primary {
-        background: #f7d751;
-        color: #0f172a;
-        box-shadow: 0 10px 20px rgba(2, 6, 23, 0.34);
-    }
-
-    .hero-btn-secondary {
-        background: rgba(255, 255, 255, 0.08);
-        color: #f8fafc;
-        border: 1px solid rgba(255, 255, 255, 0.25);
-    }
-
-    .hero-btn:hover {
-        transform: translateY(-1px);
-    }
-
     .home-content {
         position: relative;
-        padding: clamp(2.2rem, 5.5vw, 4rem) 0 0;
+        padding: clamp(4rem, 7vw, 7rem) 0 0;
         background:
             linear-gradient(180deg, rgba(8, 12, 29, 0.92) 0%, rgba(8, 12, 29, 0.88) 38%, rgba(19, 24, 40, 0.9) 100%),
             url("{{ url_for('static', filename='images/landing/paper-texture.png') }}") center / cover no-repeat;
@@ -123,7 +106,7 @@
     .home-section {
         position: relative;
         z-index: 1;
-        width: min(1160px, calc(100% - 2rem));
+        width: min(1320px, calc(100% - 2rem));
         margin: 0 auto;
     }
 
@@ -139,33 +122,47 @@
 
     .about-copy {
         margin: 1.25rem auto 0;
-        max-width: 880px;
+        max-width: 980px;
         text-align: center;
-        font-size: clamp(1rem, 1.3vw, 1.2rem);
+        font-size: clamp(1.06rem, 1.5vw, 1.32rem);
         font-weight: 500;
-        line-height: 1.7;
+        line-height: 1.82;
         color: #e2e8f0;
     }
 
     .features-section {
-        margin-top: clamp(2.4rem, 5.2vw, 4rem);
-        padding-bottom: clamp(2.4rem, 5.2vw, 4rem);
+        margin-top: clamp(3.2rem, 6vw, 5.6rem);
+        padding-bottom: clamp(3rem, 6vw, 5.5rem);
     }
 
     .features-grid {
-        margin-top: 1.4rem;
+        margin-top: 2.1rem;
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 1.25rem;
+        align-items: stretch;
     }
 
     .feature-card {
+        grid-column: span 3;
+        min-height: 235px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         border-radius: 28px;
-        padding: 1.2rem 1rem 1.1rem;
+        padding: 1.5rem 1.2rem 1.25rem;
         border: 1px solid rgba(219, 234, 254, 0.18);
-        background: rgba(226, 232, 240, 0.13);
-        box-shadow: 0 7px 18px rgba(2, 6, 23, 0.22);
+        background: linear-gradient(160deg, rgba(226, 232, 240, 0.15), rgba(148, 163, 184, 0.16));
+        box-shadow: 0 12px 28px rgba(2, 6, 23, 0.26);
         text-align: center;
+        transition: transform 500ms ease, box-shadow 500ms ease, border-color 500ms ease, background-color 500ms ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px) scale(1.01);
+        border-color: rgba(186, 230, 253, 0.5);
+        box-shadow: 0 20px 36px rgba(15, 23, 42, 0.36);
+        background: linear-gradient(160deg, rgba(226, 232, 240, 0.2), rgba(148, 163, 184, 0.2));
     }
 
     .feature-icon-wrap {
@@ -177,6 +174,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        transition: transform 500ms ease, background-color 500ms ease;
+    }
+
+    .feature-card:hover .feature-icon-wrap {
+        transform: translateY(-3px) scale(1.08);
+        background: rgba(147, 197, 253, 0.34);
     }
 
     .feature-icon-wrap svg {
@@ -204,10 +207,24 @@
 
     .feature-note {
         margin: 0;
-        font-size: 0.78rem;
+        font-size: 0.84rem;
         font-weight: 600;
         color: #cbd5e1;
         line-height: 1.45;
+    }
+
+    .scroll-reveal {
+        opacity: 0;
+        transform: translateY(40px) scale(0.985);
+        filter: blur(4px);
+        transition: opacity 800ms ease, transform 800ms ease, filter 800ms ease;
+        transition-delay: var(--reveal-delay, 0ms);
+    }
+
+    .scroll-reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
     }
 
     .home-footer {
@@ -280,8 +297,18 @@
     }
 
     @media (max-width: 1080px) {
+        .home-page {
+            margin-top: -84px;
+            padding-top: 84px;
+        }
+
         .features-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .feature-card {
+            grid-column: span 1;
+            min-height: 220px;
         }
     }
 
@@ -301,12 +328,21 @@
     }
 
     @media (max-width: 640px) {
+        .home-page {
+            margin-top: -74px;
+            padding-top: 74px;
+        }
+
         .home-hero {
             min-height: calc(100vh - 74px);
         }
 
         .features-grid {
             grid-template-columns: 1fr;
+        }
+
+        .feature-card {
+            min-height: 208px;
         }
     }
 </style>
@@ -319,30 +355,21 @@
             <img src="{{ url_for('static', filename='images/landing/landing-logo-large.svg') }}" alt="Herons Hub mark" class="hero-logo-mark">
             <h1 class="hero-title">Herons' Hub</h1>
             <p class="hero-subtitle">Community for everyone</p>
-            <div class="hero-actions">
-                {% if user %}
-                <a href="{{ url_for('core.dashboard') }}" class="hero-btn hero-btn-primary">Go to Dashboard</a>
-                <a href="{{ url_for('core.event_calendar') }}" class="hero-btn hero-btn-secondary">View Event Calendar</a>
-                {% else %}
-                <a href="{{ url_for('core.login') }}" class="hero-btn hero-btn-primary">Log In / Sign Up</a>
-                <a href="{{ url_for('core.login') }}" class="hero-btn hero-btn-secondary">Continue with Google</a>
-                {% endif %}
-            </div>
         </div>
     </section>
 
     <section class="home-content">
-        <div class="home-section">
+        <div class="home-section scroll-reveal" style="--reveal-delay: 80ms;">
             <p class="section-kicker">About Us</p>
             <p class="about-copy">
                 Herons' Hub is a University of Makati digital community where students can share campus updates, discover opportunities, join events, and connect through verified school identities.
                 Built for collaboration, it keeps discussions relevant, student-focused, and easy to navigate.
             </p>
 
-            <div class="features-section">
+            <div class="features-section scroll-reveal" style="--reveal-delay: 120ms;">
                 <p class="section-kicker">Features</p>
                 <div class="features-grid">
-                    <article class="feature-card">
+                    <article class="feature-card scroll-reveal" style="--reveal-delay: 150ms;">
                         <div class="feature-icon-wrap">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"></path></svg>
                         </div>
@@ -351,7 +378,7 @@
                         <p class="feature-note">Verified UMak profiles in the community.</p>
                     </article>
 
-                    <article class="feature-card">
+                    <article class="feature-card scroll-reveal" style="--reveal-delay: 210ms;">
                         <div class="feature-icon-wrap">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 8h10M7 12h10M7 16h6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"></path></svg>
                         </div>
@@ -360,7 +387,7 @@
                         <p class="feature-note">Discussions, announcements, and student updates.</p>
                     </article>
 
-                    <article class="feature-card">
+                    <article class="feature-card scroll-reveal" style="--reveal-delay: 270ms;">
                         <div class="feature-icon-wrap">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>
                         </div>
@@ -369,7 +396,7 @@
                         <p class="feature-note">Event posts with schedule and campus location.</p>
                     </article>
 
-                    <article class="feature-card">
+                    <article class="feature-card scroll-reveal" style="--reveal-delay: 330ms;">
                         <div class="feature-icon-wrap">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h16M4 17h10"></path></svg>
                         </div>
@@ -398,4 +425,23 @@
         </footer>
     </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const revealTargets = document.querySelectorAll('.scroll-reveal');
+    if (!revealTargets.length) return;
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            obs.unobserve(entry.target);
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+
+    revealTargets.forEach((element) => observer.observe(element));
+});
+</script>
 {% endblock %}
