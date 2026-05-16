@@ -21,20 +21,29 @@
     
     <style>
         :root {
+            /* High-Contrast Color System */
             --admin-primary: #0038a8;
             --admin-secondary: #001035;
-            --admin-accent: #3b82f6;
-            --admin-bg: #f8fafc;
+            --admin-accent: #2563eb;
+            --admin-bg: #f1f5f9;
             --sidebar-width: 260px;
+            
+            /* Typography Scale */
+            --text-main: #0f172a;      /* Slate 900 - High Contrast */
+            --text-muted: #475569;    /* Slate 600 - Readable Muted */
+            --text-ghost: #64748b;    /* Slate 500 - Light Labels */
         }
 
         body {
             background-color: var(--admin-bg);
-            font-family: 'Metropolis', sans-serif;
+            font-family: 'Metropolis', 'Inter', system-ui, sans-serif;
+            color: var(--text-main);
+            line-height: 1.5;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Sidebar Styles */
+        /* Sidebar Styles - Sharper Contrast */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
@@ -46,6 +55,7 @@
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .sidebar-backdrop {
@@ -113,8 +123,8 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.875rem 1rem;
-            color: #94a3b8;
+            padding: 0.875rem 1.25rem;
+            color: #cbd5e1; /* Lighter slate for better contrast on dark bg */
             border-radius: 0.75rem;
             font-weight: 700;
             font-size: 0.875rem;
@@ -122,16 +132,18 @@
             margin-bottom: 0.25rem;
             cursor: pointer;
             text-decoration: none;
+            letter-spacing: 0.01em;
         }
 
         .nav-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: white;
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
         }
 
         .nav-item.active {
             background-color: var(--admin-primary);
-            color: white;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 56, 168, 0.3);
         }
 
         .nav-dropdown-btn {
@@ -152,7 +164,7 @@
         .dropdown-item {
             display: block;
             padding: 0.5rem 0;
-            color: #64748b;
+            color: #94a3b8;
             font-size: 0.8125rem;
             font-weight: 600;
             text-decoration: none;
@@ -219,6 +231,7 @@
             gap: 0.5rem;
             width: 300px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
         }
 
         .admin-search input {
@@ -226,42 +239,40 @@
             outline: none;
             font-size: 0.875rem;
             width: 100%;
+            color: var(--text-main);
         }
 
-        /* Rounded Boxes */
+        /* Sharper Stat Cards */
         .stat-card {
             background: white;
-            border-radius: 1.5rem;
+            border-radius: 1.25rem;
             padding: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
-            border: 1px solid #f1f5f9;
+            border: 1px solid #e2e8f0; /* Darker border for clarity */
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-card.expanded {
-            grid-column: span 2;
-            grid-row: span 2;
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #cbd5e1;
         }
 
         .stat-label {
-            color: #64748b;
-            font-size: 0.75rem;
-            font-weight: 900;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.75rem;
         }
 
         .stat-value {
             font-size: 1.875rem;
-            font-weight: 900;
-            color: var(--admin-secondary);
+            font-weight: 950; /* Extra black for clarity */
+            color: var(--text-main);
+            letter-spacing: -0.02em;
         }
 
         /* Favorites bar */
@@ -279,15 +290,15 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: all 0.2s;
-            border: 1px solid #f1f5f9;
+            border: 1px solid #e2e8f0;
         }
 
         .fav-item:hover {
             border-color: var(--admin-primary);
-            background: #eff6ff;
+            background: #f8fafc;
         }
 
         .fav-icon {
@@ -304,7 +315,7 @@
         .fav-text {
             font-weight: 800;
             font-size: 0.8125rem;
-            color: #1e293b;
+            color: var(--text-main);
         }
 
         #flash-container {
@@ -373,11 +384,6 @@
             .admin-search {
                 width: 100%;
                 min-width: 0;
-            }
-
-            .stat-card.expanded {
-                grid-column: auto;
-                grid-row: auto;
             }
 
             #notification-menu {
@@ -456,7 +462,7 @@
                 <div id="moderation-drop" class="nav-dropdown-content">
                     <a href="{{ url_for('admin.manage_users') }}" class="dropdown-item">User Management</a>
                     <a href="{{ url_for('admin.manage_disputes') }}" class="dropdown-item">Verification Disputes</a>
-                    <a href="{{ url_for('admin.content_management', category='All') }}" class="dropdown-item flex items-center justify-between">
+                    <a href="{{ url_for('admin.reports_queue', category='All') }}" class="dropdown-item flex items-center justify-between">
                         Reports Queue
                         {% if stats and stats.get('new_reports_count', 0) > 0 %}
                         <span class="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span>

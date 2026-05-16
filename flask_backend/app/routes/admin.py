@@ -600,10 +600,10 @@ def approvals_queue():
                            user=session.get('user'), 
                            permissions=permissions)
 
-@admin.route('/admin/content/<category>')
+@admin.route('/admin/reports/<category>')
 @login_required
 @content_access_required
-def content_management(category):
+def reports_queue(category):
     client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
@@ -617,7 +617,7 @@ def content_management(category):
         pending_reports = reports_res.data or []
         
         if not pending_reports:
-            return render_template('admin/content_manage.html', accounts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+            return render_template('admin/content_manage.html', accounts=[], category=category, sort=sort_method, report_type=report_type, is_reports_queue=True, user=session.get('user'), permissions=permissions)
 
         # 2. Group reports by user_id
         report_stats = {}
@@ -650,7 +650,7 @@ def content_management(category):
         else:
             accounts.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
 
-        return render_template('admin/content_manage.html', accounts=accounts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+        return render_template('admin/content_manage.html', accounts=accounts, category=category, sort=sort_method, report_type=report_type, is_reports_queue=True, user=session.get('user'), permissions=permissions)
 
     else: # report_type == 'posts' (Reported Posts)
         # 1. Fetch all pending post reports
@@ -658,7 +658,7 @@ def content_management(category):
         pending_reports = reports_res.data or []
         
         if not pending_reports:
-            return render_template('admin/content_manage.html', posts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+            return render_template('admin/content_manage.html', posts=[], category=category, sort=sort_method, report_type=report_type, is_reports_queue=True, user=session.get('user'), permissions=permissions)
 
         # 2. Group reports by post_id
         report_stats = {}
@@ -694,7 +694,28 @@ def content_management(category):
         else:
             posts.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
 
-        return render_template('admin/content_manage.html', posts=posts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+        return render_template('admin/content_manage.html', posts=posts, category=category, sort=sort_method, report_type=report_type, is_reports_queue=True, user=session.get('user'), permissions=permissions)
+
+@admin.route('/admin/content/<category>')
+@login_required
+@content_access_required
+def content_management(category):
+    client = get_admin_read_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    
+    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
+    if category != 'All':
+        query = query.eq('category', category)
+        
+    res = query.order('created_at', desc=True).execute()
+    
+    return render_template('admin/content_manage.html', 
+                           posts=res.data, 
+                           category=category, 
+                           is_reports_queue=False,
+                           user=session.get('user'), 
+                           permissions=permissions)
 
 @admin.route('/admin/posts/bulk-approve', methods=['POST'])
 @login_required
