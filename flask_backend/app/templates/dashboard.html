@@ -175,6 +175,7 @@
                 <div id="feedContent" class="posts-list hidden opacity-0 transition-all duration-500 ease-out" aria-busy="true">
                     {% if posts %}
                         {% for post in posts %}
+                            <div class="hidden" data-relative-created-at="{{ post.relative_created_at }}"></div>
                             {% include 'includes/post_card.html' %}
                         {% endfor %}
                     {% else %}
@@ -283,6 +284,7 @@
         </div>
 
         <form id="createPostForm" action="{{ url_for('core.create_post') }}" method="POST" enctype="multipart/form-data" class="flex flex-col">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="px-4 py-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
                 <!-- User Identity Section -->

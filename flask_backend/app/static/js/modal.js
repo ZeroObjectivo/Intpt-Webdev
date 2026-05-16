@@ -544,6 +544,135 @@ function cancelReply() {
     currentReplyTo = null;
 }
 
+function startEditComment(commentId) {
+    const area = document.getElementById(`comment-edit-area-${commentId}`);
+    const input = document.getElementById(`comment-edit-input-${commentId}`);
+    if (!area || !input) return;
+    area.classList.remove('hidden');
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+}
+
+function cancelEditComment(commentId) {
+    const area = document.getElementById(`comment-edit-area-${commentId}`);
+    if (area) area.classList.add('hidden');
+}
+
+async function saveEditComment(commentId) {
+    const input = document.getElementById(`comment-edit-input-${commentId}`);
+    const text = document.getElementById(`comment-text-${commentId}`);
+    if (!input || !text) return;
+    const content = input.value.trim();
+    if (!content) return;
+
+    try {
+        const response = await fetch(`/comments/${commentId}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+            body: JSON.stringify({ content })
+        });
+        const data = await response.json();
+        if (!response.ok || (data && data.error)) {
+            showModerationPopup((data && data.error) || 'Failed to update comment.');
+            return;
+        }
+        text.innerText = content;
+        cancelEditComment(commentId);
+        if (window.requestInteractionSync && currentPost) window.requestInteractionSync(currentPost.id);
+    } catch (error) {
+        console.error('Update comment error:', error);
+    }
+}
+
+async function deleteComment(commentId) {
+    showConfirmModal(
+        'Delete Comment?',
+        'Are you sure you want to delete this comment?',
+        async () => {
+            try {
+                const response = await fetch(`/comments/${commentId}/delete`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
+                const data = await response.json();
+                if (!response.ok || (data && data.error)) {
+                    showModerationPopup((data && data.error) || 'Failed to delete comment.');
+                    return;
+                }
+                const node = document.getElementById(`comment-${commentId}`);
+                if (node) node.remove();
+                if (currentPost) fetchComments(currentPost.id, { force: true, silent: true });
+                if (window.requestInteractionSync && currentPost) window.requestInteractionSync(currentPost.id);
+            } catch (error) {
+                console.error('Delete comment error:', error);
+            }
+        }
+    );
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (!modal) return;
+    modal.classList.remove('modal-visible');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 150);
+
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    if (confirmBtn) confirmBtn.onclick = null;
+
+    const reasonContainer = document.getElementById('confirmReasonContainer');
+    const reasonSelect = document.getElementById('confirmReasonSelect');
+    const reasonNote = document.getElementById('confirmReasonNote');
+    if (reasonContainer) reasonContainer.classList.add('hidden');
+    if (reasonSelect) reasonSelect.innerHTML = '<option value="">Select a reason</option>';
+    if (reasonNote) reasonNote.value = '';
+}
+
+function showConfirmModal(title, message, onConfirm, options = {}) {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const msgEl = document.getElementById('confirmMessage');
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    const reasonContainer = document.getElementById('confirmReasonContainer');
+    const reasonSelect = document.getElementById('confirmReasonSelect');
+    const reasonNote = document.getElementById('confirmReasonNote');
+    if (!modal || !titleEl || !msgEl || !confirmBtn) return;
+
+    titleEl.textContent = title || 'Confirm Action';
+    msgEl.textContent = message || 'Are you sure you want to proceed with this action?';
+
+    const reasons = Array.isArray(options.reasons) ? options.reasons : [];
+    const requireReason = Boolean(options.requireReason);
+    if (reasonContainer && reasonSelect && reasons.length > 0) {
+        reasonContainer.classList.remove('hidden');
+        reasonSelect.innerHTML = '<option value="">Select a reason</option>';
+        reasons.forEach((reason) => {
+            const option = document.createElement('option');
+            option.value = reason;
+            option.textContent = reason;
+            reasonSelect.appendChild(option);
+        });
+    } else if (reasonContainer) {
+        reasonContainer.classList.add('hidden');
+        if (reasonSelect) reasonSelect.innerHTML = '<option value="">Select a reason</option>';
+        if (reasonNote) reasonNote.value = '';
+    }
+
+    confirmBtn.onclick = async () => {
+        const payload = {
+            reason: reasonSelect ? reasonSelect.value : '',
+            note: reasonNote ? reasonNote.value.trim() : ''
+        };
+        if (requireReason && !payload.reason) {
+            showModerationPopup('Please select a reason before continuing.');
+            return;
+        }
+        closeConfirmModal();
+        if (typeof onConfirm === 'function') await onConfirm(payload);
+    };
+
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('modal-visible'));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     checkHashAndOpenModal();
     window.addEventListener('hashchange', checkHashAndOpenModal);
