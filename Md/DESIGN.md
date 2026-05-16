@@ -83,11 +83,15 @@ Dashboard filter tags use a strict two-color interaction rule:
 No category-specific chip colors are used in the filter row.
 
 ### Filter row structure
-- Section title: Marcellus SC, 17px, weight 400
+- Section title: Metropolis, 17px, weight 700, uppercase
 - Section body: Metropolis, 12px, weight 500
 - Chip height: 34px
 - Chip radius: full (9999px)
 - Chip text: Metropolis, 13px, weight 700
+
+Sidebar card emphasis:
+- Trending item title: Metropolis, bold (700)
+- Upcoming event title: Metropolis, bold (700)
 
 ## 6) Layout and Spacing
 Dashboard spacing rhythm:

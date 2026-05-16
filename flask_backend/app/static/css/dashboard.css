@@ -139,21 +139,23 @@
 }
 
 .feed-filter-panel {
-    margin-bottom: 14px;
+    margin: 8px 0 16px;
+    padding: 0 10px 2px;
 }
 
 .feed-filter-meta {
-    margin: 2px 2px 8px;
+    margin: 0 2px 10px;
 }
 
 .feed-filter-title {
     margin: 0;
     color: #111111;
-    font-family: 'Marcellus SC', Georgia, serif;
-    font-size: 1.06rem;
-    font-weight: 400;
+    font-family: 'Metropolis', 'Inter', sans-serif;
+    font-size: 1.04rem;
+    font-weight: 700;
     line-height: 1.2;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
 }
 
 .feed-filter-body {
@@ -167,9 +169,9 @@
 
 .category-pills {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 0;
-    padding: 6px 0 2px;
+    padding: 2px 0 4px;
     overflow-x: auto;
 }
 
@@ -548,7 +550,7 @@
     margin: 0;
     color: #0f172a;
     font-size: 1.2rem;
-    font-weight: 500;
+    font-weight: 700;
     line-height: 1.15;
     text-transform: capitalize;
 }
@@ -617,7 +619,7 @@
     margin: 0 0 5px;
     color: #000000;
     font-size: 1.05rem;
-    font-weight: 500;
+    font-weight: 700;
     line-height: 1.2;
     text-transform: uppercase;
     overflow-wrap: anywhere;
@@ -953,19 +955,20 @@
     }
 
     .feed-filter-panel {
-        margin-bottom: 12px;
+        margin: 6px 0 12px;
+        padding: 0 2px 2px;
     }
 
     .feed-filter-meta {
-        margin: 0 1px 6px;
+        margin: 0 1px 7px;
     }
 
     .feed-filter-title {
-        font-size: 0.96rem;
+        font-size: 0.92rem;
     }
 
     .feed-filter-body {
-        font-size: 0.74rem;
+        font-size: 0.72rem;
     }
 
     .post-card {
