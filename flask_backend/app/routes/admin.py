@@ -258,6 +258,7 @@ def dashboard():
         "total_posts": 0,
         "reported_posts": 0,
         "pending_approvals": 0,
+        "open_tickets_count": 0,
         "banned_accounts": 0,
         "user_list": [],
         "reports_list": [],
@@ -309,24 +310,47 @@ def dashboard():
         banned_res = client.table('profiles').select("id").eq("status", "banned").execute()
         stats["banned_accounts"] = len(banned_res.data)
 
-        # User Breakdown (by college)
+        # 1. Official Unit Color Map
+        UNIT_COLORS = {
+            "CLAS": "#630100", "CHK": "#5d4a2a", "CBFS": "#645430", "CCIS": "#003130",
+            "CITE": "#05172d", "HSU": "#1a4266", "CGPP": "#3c2b58", "CCSE": "#222222",
+            "CET": "#603407", "CTHM": "#524415", "CCAPS": "#222945", "SOL": "#181520",
+            "IAD": "#451916", "IOA": "#1f3e03", "IOP": "#2a2231", "ION": "#023a0d",
+            "IIHS": "#202a4d", "ITEST": "#5e4c28", "ISDNB": "#412f00", "IOPSY": "#1d4746",
+            "ISW": "#4a0732", "IDEM": "#0f1225", "Other": "#94a3b8"
+        }
+
+        # 2. Fetch official unit mapping to distinguish College vs Institute
+        units_res = client.table('colleges_institutes').select("name, type").execute()
+        unit_type_map = {u['name']: u['type'] for u in units_res.data}
+
+        # 3. User Breakdown (by college)
         college_counts = {}
-        course_counts = {}
         for profile in users_res.data:
             col = profile.get('college') or 'Other'
-            course = profile.get('course') or 'Unknown'
             college_counts[col] = college_counts.get(col, 0) + 1
-            course_counts[course] = course_counts.get(course, 0) + 1
         
         total = stats["total_users"] or 1
-        stats["college_breakdown"] = [
-            {"label": k, "count": v, "percentage": round((v / total) * 100)} 
-            for k, v in sorted(college_counts.items(), key=lambda x: x[1], reverse=True)
-        ]
-        stats["course_breakdown"] = [
-            {"label": k, "count": v, "percentage": round((v / total) * 100)} 
-            for k, v in sorted(course_counts.items(), key=lambda x: x[1], reverse=True)
-        ]
+        breakdown = []
+        current_angle = 0
+        
+        sorted_counts = sorted(college_counts.items(), key=lambda x: x[1], reverse=True)
+        for k, v in sorted_counts:
+            percentage = (v / total) * 100
+            color = UNIT_COLORS.get(k.upper(), UNIT_COLORS['Other'])
+            
+            breakdown.append({
+                "label": k,
+                "count": v,
+                "percentage": round(percentage),
+                "type": unit_type_map.get(k, 'College'),
+                "color": color,
+                "start_angle": current_angle,
+                "end_angle": current_angle + (percentage * 3.6)
+            })
+            current_angle += (percentage * 3.6)
+            
+        stats["college_breakdown"] = breakdown
 
         # Recent Activities (Admin Logs)
         logs_res = client.table('admin_logs').select("*, profiles!admin_logs_admin_id_fkey(full_name)").order("created_at", desc=True).limit(20).execute()
@@ -335,11 +359,59 @@ def dashboard():
         # Verification Disputes Count
         disputes_res = client.table('verification_disputes').select("id", count="exact").eq("status", "pending").execute()
         stats["disputes_count"] = disputes_res.count if hasattr(disputes_res, 'count') else len(disputes_res.data)
+
+        # Support Tickets Count
+        tickets_res = client.table('support_tickets').select("id", count="exact").eq("status", "open").execute()
+        stats["open_tickets_count"] = tickets_res.count if hasattr(tickets_res, 'count') else len(tickets_res.data)
             
     except Exception as e:
         logger.error("Error fetching admin stats: %s", e)
 
     return render_template('admin/dashboard.html', stats=stats, user=session.get('user'), permissions=permissions)
+
+@admin.route('/admin/support')
+@login_required
+@admin_required
+def manage_support():
+    client = get_admin_read_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    
+    status_filter = request.args.get('status', 'open')
+    
+    query = client.table('support_tickets').select("*, profiles(full_name, avatar_url, email)")
+    if status_filter != 'all':
+        query = query.eq('status', status_filter)
+        
+    res = query.order('created_at', desc=True).execute()
+    
+    return render_template('admin/support_inbox.html', 
+                           tickets=res.data, 
+                           status_filter=status_filter,
+                           user=session.get('user'), 
+                           permissions=permissions)
+
+@admin.route('/admin/support/<ticket_id>/update', methods=['POST'])
+@login_required
+@admin_required
+def update_ticket(ticket_id):
+    status = request.form.get('status')
+    notes = request.form.get('admin_notes', '').strip()
+    
+    try:
+        admin_client = get_service_client()
+        admin_client.table('support_tickets').update({
+            "status": status,
+            "admin_notes": notes,
+            "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }).eq("id", ticket_id).execute()
+        
+        flash("Ticket updated successfully.", "success")
+    except Exception as e:
+        logger.error("Error updating ticket: %s", e)
+        flash("Failed to update ticket.", "error")
+        
+    return redirect(url_for('admin.manage_support'))
 
 @admin.route('/admin/users')
 @login_required

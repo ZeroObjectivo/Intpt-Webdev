@@ -1484,6 +1484,30 @@ def delete_post(post_id):
         logger.error("Error deleting post: %s", e)
         return {"error": "Failed to delete post."}, 500
 
+@core.route('/support/ticket/create', methods=['POST'])
+@login_required
+def create_support_ticket():
+    user_id = session.get('user', {}).get('id')
+    data = request.get_json(silent=True) or {}
+    subject = data.get('subject', '').strip()
+    message = data.get('message', '').strip()
+
+    if not subject or not message:
+        return {"error": "Subject and message are required."}, 400
+
+    try:
+        client = get_user_client()
+        client.table('support_tickets').insert({
+            "user_id": user_id,
+            "subject": subject,
+            "message": message
+        }).execute()
+
+        return {"status": "created"}
+    except Exception as e:
+        logger.error("Error creating support ticket: %s", e)
+        return {"error": "Failed to send message."}, 500
+
 @core.route('/profiles/<target_user_id>/report', methods=['POST'])
 @login_required
 def report_user(target_user_id):
