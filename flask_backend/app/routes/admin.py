@@ -140,6 +140,23 @@ def wants_json_response():
     requested_with = (request.headers.get('X-Requested-With') or '').lower()
     return requested_with == 'xmlhttprequest'
 
+def require_admin_service_client(action_label="Admin action"):
+    """
+    Enforce service-role usage for privileged writes.
+    Without service credentials, many actions will fail under RLS.
+    """
+    if supabase_service:
+        return supabase_service, None
+
+    message = "Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY."
+    logger.error("%s blocked: %s", action_label, message)
+
+    if wants_json_response():
+        return None, (jsonify({"status": "error", "message": message}), 500)
+
+    flash(message, "error")
+    return None, redirect(request.referrer or url_for('admin.dashboard'))
+
 
 def get_delete_reason_payload():
     data = request.get_json(silent=True) if request.is_json else None
@@ -336,7 +353,9 @@ def update_user_role(user_id):
         new_role = 'super_admin'
     
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Update role")
+        if service_error:
+            return service_error
 
         target_profile_res = admin_client.table('profiles').select("id, role").eq("id", user_id).single().execute()
         target_role = normalize_role(target_profile_res.data.get('role') if target_profile_res.data else '')
@@ -400,7 +419,9 @@ def update_user_role(user_id):
 @account_access_required
 def lift_user_suspension(user_id):
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Lift suspension")
+        if service_error:
+            return service_error
         actor_role = get_current_role()
         target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
         target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
@@ -477,7 +498,9 @@ def admin_get_post_comments(post_id):
 @login_required
 @content_access_required
 def flag_post(post_id):
-    client = get_service_client()
+    client, service_error = require_admin_service_client("Flag post")
+    if service_error:
+        return service_error
     try:
         post_res = client.table('posts').select("id, user_id").eq("id", post_id).single().execute()
         post = post_res.data or {}
@@ -503,7 +526,9 @@ def flag_post(post_id):
 @login_required
 @content_access_required
 def flag_comment(comment_id):
-    client = get_service_client()
+    client, service_error = require_admin_service_client("Flag comment")
+    if service_error:
+        return service_error
     try:
         comment_res = client.table('comments').select("id, user_id, post_id").eq("id", comment_id).single().execute()
         comment = comment_res.data or {}
@@ -546,7 +571,9 @@ def warn_user():
         return redirect(request.referrer or url_for('admin.dashboard'))
 
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Warn user")
+        if service_error:
+            return service_error
 
         # 1. Insert into warnings table
         admin_client.table('warnings').insert({
@@ -598,7 +625,9 @@ def suspend_user(user_id):
     days = max(1, min(days, 365))
 
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Suspend user")
+        if service_error:
+            return service_error
         actor_role = get_current_role()
         target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
         target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
@@ -644,7 +673,9 @@ def ban_user(user_id):
     reason = request.form.get('reason', '').strip() or 'Banned by admin'
 
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Ban user")
+        if service_error:
+            return service_error
         actor_role = get_current_role()
         target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
         target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
@@ -769,7 +800,9 @@ def admin_delete_post(post_id):
 @content_access_required
 def admin_delete_comment(comment_id):
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Delete comment")
+        if service_error:
+            return service_error
         comment_res = admin_client.table('comments').select("id, user_id, post_id").eq("id", comment_id).single().execute()
         comment = comment_res.data or {}
         delete_comment_thread(admin_client, comment_id)
