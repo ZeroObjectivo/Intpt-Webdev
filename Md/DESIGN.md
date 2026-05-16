@@ -1,102 +1,105 @@
-# Herons Hub: UI/UX Design System & Reference
-**Version:** 1.0.0
-**Context:** Frontend design tokens, component guidelines, and CSS/Tailwind referencing for the Herons Hub Community Platform.
+# Herons Hub Design System
+Version: 1.1.0  
+Last updated: 2026-05-16
 
----
+This document defines the production branding and layout rules for Herons Hub.  
+It is based on the UMak brand guideline reference and adapted to this app architecture.
 
-## 1. Core Brand Identity
-The UI strictly enforces the official University of Makati visual identity, modernized for a SaaS-like community platform.
+## 1) Brand Identity
+- Tone: academic, modern, focused, community-first
+- Visual balance: high-contrast dark navigation + light content surfaces
+- Corner style: rounded cards and pill controls for friendly readability
+- UI behavior: quick scan, low visual noise, predictable interaction patterns
 
-* **Brand Vibe:** Academic, Innovative, Exclusive, Community-oriented.
-* **Layout Philosophy:** Mobile-first, responsive, utilizing clean spacing and subtle glassmorphism for layered modals.
-* **Border Radius:** Global radius is `0.5rem` (8px) for cards and buttons to maintain a friendly but structured look.
+## 2) Typeface System
+Two font families are mandatory across the app:
 
----
+1. Marcellus SC (display and formal headings)
+2. Metropolis (UI, body, controls, metadata)
 
-## 2. Color Palette & Tokens
-Use these exact hex codes for CSS variables or Tailwind configuration.
+Fallbacks:
+- Marcellus SC -> `Georgia, serif`
+- Metropolis -> `Inter, system-ui, sans-serif`
 
-### Primary Blue (Space Cadet)
-Used for primary backgrounds, navbars, active states, and strong contrasts.
-* `blue-900` / `--color-primary-darkest`: **#01061c** (Deep background / Dark Mode)
-* `blue-800` / `--color-primary-dark`: **#060e33**
-* `blue-500` / `--color-primary-base`: **#28336b** (Main Brand Blue / Headers)
-* `blue-300` / `--color-primary-light`: **#47528a** ### Primary Gold (Maximum Yellow)
-Used for primary calls-to-action (CTAs), highlights, and warning states.
-* `gold-900` / `--color-accent-darkest`: **#aca404**
-* `gold-800` / `--color-accent-dark`: **#ddd311**
-* `gold-500` / `--color-accent-base`: **#fef760** (Primary Buttons)
-* `gold-300` / `--color-accent-light`: **#fff989**
+## 3) Typography Scale
+Use these sizes and weights for consistent hierarchy.
 
-### Secondary Blue (Silver Lake Blue)
-Used for hover states, secondary backgrounds, and lighter UI elements.
-* `silver-900` / `--color-secondary-darkest`: **#275996**
-* `silver-800` / `--color-secondary-dark`: **#406fa5**
-* `silver-500` / `--color-secondary-base`: **#8bb0dc**
-* `silver-300` / `--color-secondary-light`: **#c0d5f0** (Card Hover States / Subtle Backgrounds)
+| Token | Family | Size | Weight | Line Height | Usage |
+|---|---|---:|---:|---:|---|
+| Display L | Marcellus SC | 48px | 400 | 1.1 | Hero titles |
+| Display M | Marcellus SC | 36px | 400 | 1.15 | Page hero subtitles |
+| Heading L | Marcellus SC | 28px | 400 | 1.2 | Primary section titles |
+| Heading M | Marcellus SC | 20px | 400 | 1.25 | Secondary section titles |
+| Label L | Metropolis | 16px | 700 | 1.3 | Strong inline labels |
+| Label M | Metropolis | 14px | 700 | 1.3 | Buttons, nav actions |
+| Body M | Metropolis | 14px | 500 | 1.45 | Standard body text |
+| Body S | Metropolis | 12px | 500 | 1.45 | Helper and metadata |
+| Caption | Metropolis | 11px | 600 | 1.35 | Minor status text |
 
-### Neutral & Backgrounds
-* `bg-main`: **#f4f6f8** (App background)
-* `bg-surface`: **#ffffff** (Cards, Sidebars, Post containers)
-* `text-main`: **#1a1d20** (Standard body text)
-* `text-muted`: **#6c757d** (Timestamps, secondary info)
+## 4) Color System
+Core production colors:
 
----
+- Brand navy: `#111c4e`
+- Active blue: `#1d4ed8`
+- Neutral black: `#111111`
+- Surface white: `#ffffff`
+- Soft panel bg: `#f4f6f8`
+- Border neutral: `rgba(17, 17, 17, 0.24)`
 
-## 3. Typography Hierarchy
-The dual-font strategy separates academic authority from modern usability.
+Status colors (alerts only):
+- Success: `#1a7a4a`
+- Warning: `#b8860b`
+- Error: `#c0392b`
 
-### Headings (Marcellus - Serif)
-Used *only* for page titles, large banners, and formal sections.
-* **Font-Family:** `'Marcellus', serif`
-* **Weights:** 400 (Regular)
-* **Usage Example:** `h1` Platform Title, `h2` Section Headers ("Heron Business Marketplace").
+## 5) Filter Chip Standard
+Dashboard filter tags use a strict two-color interaction rule:
 
-### UI & Body (Metropolis - Sans-Serif)
-Used for all interface elements, navigation, buttons, and user-generated content.
-* **Font-Family:** `'Metropolis', sans-serif` (Fallback: `'Inter', sans-serif`)
-* **Weights:** 400 (Regular), 600 (Semi-Bold), 700 (Bold)
-* **Usage Example:** Post body text, `<UserNav />`, Timestamps, Tags.
+- Idle: white background + black text/border
+- Active: blue background + white text
+- Hover: black border increases contrast
 
----
+No category-specific chip colors are used in the filter row.
 
-## 4. Component Guidelines
+### Filter row structure
+- Section title: Marcellus SC, 17px, weight 400
+- Section body: Metropolis, 12px, weight 500
+- Chip height: 34px
+- Chip radius: full (9999px)
+- Chip text: Metropolis, 13px, weight 700
 
-### Buttons
-* **Primary (Action):** Background `#fef760` (Gold Base), Text `#01061c` (Dark Blue), Bold. Subtle hover lift (`translate-y-[-1px]`).
-* **Secondary:** Background `#c0d5f0` (Light Silver Lake), Text `#28336b`.
-* **Danger/Destructive:** Background `#ef4444` (Standard Red fallback), Text White. 
+## 6) Layout and Spacing
+Dashboard spacing rhythm:
 
-### Cards & Surfaces
-* **Background:** Solid White (`#ffffff`).
-* **Border:** 1px solid `#e2e8f0` (Light gray) or borderless with shadow.
-* **Shadow (Light):** `0 2px 4px rgba(1, 6, 28, 0.05)` — Use for static feed posts.
-* **Shadow (Hover):** `0 4px 12px rgba(1, 6, 28, 0.1)` — Use for interactive cards (COOP Store, Scholarships).
+- Shell horizontal padding: 20px desktop, 8px mobile
+- Major section gap: 24px
+- Card spacing: 10px to 16px
+- Filter title to body spacing: 4px
+- Filter meta to chips spacing: 8px
 
-### Tags & Badges
-* **Style:** Pill shape (`border-radius: 9999px`), small text (`0.75rem`), Semi-bold.
-* **Lost & Found:** Soft Red/Orange background, Dark Red text.
-* **Heron Business:** Soft Green background, Dark Green text.
-* **Question:** Soft Silver Lake Blue background, Space Cadet text.
+Responsive breakpoints:
 
----
+- Mobile: `<= 768px`
+- Tablet: `769px - 1320px`
+- Desktop: `> 1320px`
 
-## 5. Layout & Responsive Structure
+## 7) Component Rules
+- Buttons: Metropolis 700 for primary actions, minimum height 38px
+- Cards: white/light surface, subtle border, restrained shadow
+- Metadata: never heavier than 600 weight
+- Body copy: always Metropolis
+- Display/section titles: Marcellus SC only
 
-### Mobile-First Breakpoints
-* **Mobile (Default):** 0px - 767px. (Bottom tab navigation, single column feed).
-* **Tablet (md):** 768px - 1023px. (Left sidebar appears, main feed scales).
-* **Desktop (lg):** 1024px+. (3-column layout: Left Nav, Center Feed, Right Context Widget).
+## 8) Current Implementation Map
+Primary files aligned with this document:
 
-### Glassmorphism Effects (Modals & Auth)
-For the gated entry screen and pop-up modals, utilize modern glass aesthetics to maintain depth.
-* **Backdrop Blur:** `backdrop-filter: blur(12px)`
-* **Overlay Color:** `rgba(1, 6, 28, 0.6)` (Space Cadet with 60% opacity)
-* **Modal Surface:** White background with a subtle inner border (`border: 1px solid rgba(255,255,255,0.2)`).
+- `flask_backend/app/templates/dashboard.html`
+- `flask_backend/app/static/css/dashboard.css`
+- `flask_backend/app/templates/base.html`
 
----
+## 9) Governance
+When adding or revising UI:
 
-## 6. Iconography
-* **Library:** Lucide Icons / Phosphor Icons.
-* **Stroke Width:** 1.5px to 2px for clean, scalable vector graphics.
-* **Sizing:** `20x20` for inline text, `24x24` for navigation tabs.
+1. Keep Marcellus SC only for display and formal headings.
+2. Keep Metropolis for interactive controls and body content.
+3. Preserve two-color filter chip behavior.
+4. Do not introduce new accent colors without updating this spec.

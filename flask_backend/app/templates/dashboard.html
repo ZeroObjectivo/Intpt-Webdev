@@ -101,6 +101,12 @@
                     </button>
                 </div>
 
+                <section class="feed-filter-panel" aria-label="Feed filter controls">
+                    <div class="feed-filter-meta">
+                        <h2 class="feed-filter-title">Filter Feed</h2>
+                        <p class="feed-filter-body">Use a category tag to focus what appears in your timeline.</p>
+                    </div>
+
                 <div class="category-filter-mobile">
                     <label for="mobileCategoryFilter" class="hidden">Filter posts by category</label>
                     <select id="mobileCategoryFilter" class="category-filter-select" onchange="if (this.value) { window.location.href = this.value; }">
@@ -120,6 +126,7 @@
                     <a href="{{ url_for('core.dashboard', category='Question') }}" class="pill badge-question rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Question' %}active{% endif %}" role="button">Question</a>
                     <a href="{{ url_for('core.dashboard', category='Events') }}" class="pill badge-events rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Events' %}active{% endif %}" role="button">Events</a>
                 </div>
+                </section>
 
                 <div id="feedSkeleton" class="feed-skeleton" aria-hidden="true">
                     {% if posts %}
