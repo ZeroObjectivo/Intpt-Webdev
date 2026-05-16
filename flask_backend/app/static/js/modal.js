@@ -610,7 +610,7 @@ async function deleteComment(commentId) {
 function closeConfirmModal() {
     const modal = document.getElementById('confirmModal');
     if (!modal) return;
-    modal.classList.remove('modal-visible');
+    modal.classList.remove('active', 'modal-visible');
     setTimeout(() => {
         modal.style.display = 'none';
     }, 150);
@@ -670,7 +670,7 @@ function showConfirmModal(title, message, onConfirm, options = {}) {
     };
 
     modal.style.display = 'flex';
-    requestAnimationFrame(() => modal.classList.add('modal-visible'));
+    requestAnimationFrame(() => modal.classList.add('active'));
     return true;
 }
 
