@@ -103,11 +103,11 @@
 
                 <section class="feed-filter-panel" aria-label="Feed filter controls">
                     <div class="feed-filter-meta">
-                        <h2 class="feed-filter-title">Filter Feed</h2>
                         <p class="feed-filter-body">Use a category tag to focus what appears in your timeline.</p>
                     </div>
 
                 <div class="category-filter-mobile">
+                    <h2 class="feed-filter-title mb-2">Filter:</h2>
                     <label for="mobileCategoryFilter" class="hidden">Filter posts by category</label>
                     <select id="mobileCategoryFilter" class="category-filter-select" onchange="if (this.value) { window.location.href = this.value; }">
                         <option value="{{ url_for('core.dashboard') }}" {% if not active_category %}selected{% endif %}>All Post</option>
@@ -118,13 +118,16 @@
                         <option value="{{ url_for('core.dashboard', category='Events') }}" {% if active_category == 'Events' %}selected{% endif %}>Events</option>
                     </select>
                 </div>
-                <div class="category-pills category-pills-desktop" aria-label="Post categories" role="group">
-                    <a href="{{ url_for('core.dashboard') }}" class="pill badge-all rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if not active_category %}active{% endif %}" role="button">All Posts</a>
-                    <a href="{{ url_for('core.dashboard', category='General') }}" class="pill badge-general rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'General' %}active{% endif %}" role="button">General</a>
-                    <a href="{{ url_for('core.dashboard', category='Lost & Found') }}" class="pill badge-lost-found rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Lost & Found' %}active{% endif %}" role="button">Lost & Found</a>
-                    <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="pill badge-heron-business rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Heron Business' %}active{% endif %}" role="button">Heron Business</a>
-                    <a href="{{ url_for('core.dashboard', category='Question') }}" class="pill badge-question rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Question' %}active{% endif %}" role="button">Question</a>
-                    <a href="{{ url_for('core.dashboard', category='Events') }}" class="pill badge-events rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Events' %}active{% endif %}" role="button">Events</a>
+                <div class="category-filter-row category-pills-desktop">
+                    <h2 class="feed-filter-title">Filter:</h2>
+                    <div class="category-pills" aria-label="Post categories" role="group">
+                        <a href="{{ url_for('core.dashboard') }}" class="pill badge-all rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if not active_category %}active{% endif %}" role="button">All Posts</a>
+                        <a href="{{ url_for('core.dashboard', category='General') }}" class="pill badge-general rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'General' %}active{% endif %}" role="button">General</a>
+                        <a href="{{ url_for('core.dashboard', category='Lost & Found') }}" class="pill badge-lost-found rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Lost & Found' %}active{% endif %}" role="button">Lost & Found</a>
+                        <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="pill badge-heron-business rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Heron Business' %}active{% endif %}" role="button">Heron Business</a>
+                        <a href="{{ url_for('core.dashboard', category='Question') }}" class="pill badge-question rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Question' %}active{% endif %}" role="button">Question</a>
+                        <a href="{{ url_for('core.dashboard', category='Events') }}" class="pill badge-events rounded-full px-4 py-1.5 text-sm font-bold my-[5px] {% if active_category == 'Events' %}active{% endif %}" role="button">Events</a>
+                    </div>
                 </div>
                 </section>
 
