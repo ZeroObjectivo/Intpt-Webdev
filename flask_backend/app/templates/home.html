@@ -4,11 +4,13 @@
 
 {% block styles %}
 <style>
+    body {
+        padding-top: 0 !important;
+    }
+
     .home-page {
         background: #070d1f;
         color: #f8fafc;
-        margin-top: -96px;
-        padding-top: 96px;
         position: relative;
         overflow: hidden;
     }
@@ -33,7 +35,7 @@
 
     .home-hero {
         position: relative;
-        min-height: calc(100vh - 96px);
+        min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -88,7 +90,8 @@
 
     .home-content {
         position: relative;
-        padding: clamp(4rem, 7vw, 7rem) 0 0;
+        padding: clamp(5.2rem, 8vw, 8.6rem) 0 0;
+        min-height: clamp(1020px, 112vh, 1380px);
         background:
             linear-gradient(180deg, rgba(8, 12, 29, 0.92) 0%, rgba(8, 12, 29, 0.88) 38%, rgba(19, 24, 40, 0.9) 100%),
             url("{{ url_for('static', filename='images/landing/paper-texture.png') }}") center / cover no-repeat;
@@ -121,48 +124,50 @@
     }
 
     .about-copy {
-        margin: 1.25rem auto 0;
-        max-width: 980px;
+        margin: 1.45rem auto 0;
+        max-width: 1040px;
         text-align: center;
-        font-size: clamp(1.06rem, 1.5vw, 1.32rem);
+        font-size: clamp(1.08rem, 1.55vw, 1.35rem);
         font-weight: 500;
-        line-height: 1.82;
+        line-height: 1.88;
         color: #e2e8f0;
     }
 
     .features-section {
-        margin-top: clamp(3.2rem, 6vw, 5.6rem);
-        padding-bottom: clamp(3rem, 6vw, 5.5rem);
+        margin-top: clamp(3.8rem, 6.5vw, 6.2rem);
+        padding-bottom: clamp(4rem, 7vw, 7.2rem);
     }
 
     .features-grid {
-        margin-top: 2.1rem;
+        margin-top: 2.5rem;
         display: grid;
         grid-template-columns: repeat(12, minmax(0, 1fr));
-        gap: 1.25rem;
+        gap: 1.45rem;
         align-items: stretch;
     }
 
     .feature-card {
         grid-column: span 3;
-        min-height: 235px;
+        min-height: 300px;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        border-radius: 28px;
-        padding: 1.5rem 1.2rem 1.25rem;
-        border: 1px solid rgba(219, 234, 254, 0.18);
-        background: linear-gradient(160deg, rgba(226, 232, 240, 0.15), rgba(148, 163, 184, 0.16));
-        box-shadow: 0 12px 28px rgba(2, 6, 23, 0.26);
+        justify-content: flex-start;
+        border-radius: 32px;
+        padding: 1.7rem 1.35rem 1.45rem;
+        border: 1px solid rgba(219, 234, 254, 0.2);
+        background: linear-gradient(155deg, rgba(255, 255, 255, 0.16), rgba(148, 163, 184, 0.16));
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 12px 26px rgba(2, 6, 23, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         text-align: center;
         transition: transform 500ms ease, box-shadow 500ms ease, border-color 500ms ease, background-color 500ms ease;
     }
 
     .feature-card:hover {
-        transform: translateY(-8px) scale(1.01);
-        border-color: rgba(186, 230, 253, 0.5);
-        box-shadow: 0 20px 36px rgba(15, 23, 42, 0.36);
-        background: linear-gradient(160deg, rgba(226, 232, 240, 0.2), rgba(148, 163, 184, 0.2));
+        transform: translateY(-10px) scale(1.015);
+        border-color: rgba(186, 230, 253, 0.56);
+        box-shadow: 0 20px 34px rgba(15, 23, 42, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.26);
+        background: linear-gradient(155deg, rgba(255, 255, 255, 0.22), rgba(148, 163, 184, 0.22));
     }
 
     .feature-icon-wrap {
@@ -188,29 +193,22 @@
         color: #dbeafe;
     }
 
-    .feature-value {
-        margin: 0;
-        font-size: clamp(1.55rem, 2.3vw, 2.25rem);
-        line-height: 1;
-        font-weight: 900;
-        color: #f8fafc;
-    }
-
     .feature-label {
-        margin: 0.48rem 0 0.3rem;
-        font-size: 0.9rem;
+        margin: 0.8rem 0 0.55rem;
+        font-size: 1.18rem;
+        line-height: 1.32;
         font-weight: 800;
-        color: #dbeafe;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+        color: #f8fafc;
+        letter-spacing: 0.01em;
+        text-transform: none;
     }
 
     .feature-note {
         margin: 0;
-        font-size: 0.84rem;
-        font-weight: 600;
+        font-size: 0.98rem;
+        font-weight: 500;
         color: #cbd5e1;
-        line-height: 1.45;
+        line-height: 1.55;
     }
 
     .scroll-reveal {
@@ -255,12 +253,9 @@
     }
 
     .home-footer-brand img {
-        width: 48px;
-        height: 48px;
+        width: clamp(170px, 22vw, 230px);
+        height: auto;
         object-fit: contain;
-        background: #001035;
-        border-radius: 9999px;
-        padding: 4px;
     }
 
     .home-footer-brand-text {
@@ -297,9 +292,8 @@
     }
 
     @media (max-width: 1080px) {
-        .home-page {
-            margin-top: -84px;
-            padding-top: 84px;
+        .home-content {
+            min-height: auto;
         }
 
         .features-grid {
@@ -308,18 +302,18 @@
 
         .feature-card {
             grid-column: span 1;
-            min-height: 220px;
+            min-height: 280px;
         }
     }
 
     @media (max-width: 768px) {
-        .home-hero {
-            min-height: calc(100vh - 84px);
-        }
-
         .home-footer-inner {
             flex-direction: column;
             align-items: flex-start;
+        }
+
+        .home-footer-brand img {
+            width: min(210px, 72vw);
         }
 
         .home-footer-contact {
@@ -328,21 +322,14 @@
     }
 
     @media (max-width: 640px) {
-        .home-page {
-            margin-top: -74px;
-            padding-top: 74px;
-        }
-
-        .home-hero {
-            min-height: calc(100vh - 74px);
-        }
-
         .features-grid {
             grid-template-columns: 1fr;
         }
 
         .feature-card {
-            min-height: 208px;
+            min-height: 250px;
+            border-radius: 26px;
+            padding: 1.35rem 1rem 1.15rem;
         }
     }
 </style>
@@ -373,36 +360,32 @@
                         <div class="feature-icon-wrap">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"></path></svg>
                         </div>
-                        <p class="feature-value">{{ "{:,}".format(metrics.members_count or 0) }}</p>
-                        <p class="feature-label">Active Members</p>
-                        <p class="feature-note">Verified UMak profiles in the community.</p>
+                        <p class="feature-label">Only UMak Students allowed</p>
+                        <p class="feature-note">Access is limited to verified <code>@umak.edu.ph</code> accounts to keep the community safe and school-focused.</p>
                     </article>
 
                     <article class="feature-card scroll-reveal" style="--reveal-delay: 210ms;">
                         <div class="feature-icon-wrap">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 8h10M7 12h10M7 16h6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"></path></svg>
                         </div>
-                        <p class="feature-value">{{ "{:,}".format(metrics.posts_count or 0) }}</p>
                         <p class="feature-label">Community Posts</p>
-                        <p class="feature-note">Discussions, announcements, and student updates.</p>
+                        <p class="feature-note">Share updates, marketplace offers, and questions in one moderated student feed.</p>
                     </article>
 
                     <article class="feature-card scroll-reveal" style="--reveal-delay: 270ms;">
                         <div class="feature-icon-wrap">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>
                         </div>
-                        <p class="feature-value">{{ "{:,}".format(metrics.upcoming_events_count or 0) }}</p>
-                        <p class="feature-label">Upcoming Events</p>
-                        <p class="feature-note">Event posts with schedule and campus location.</p>
+                        <p class="feature-label">Unified Platform</p>
+                        <p class="feature-note">Events, scholarship listings, and UMak Coop catalogs are accessible in one place.</p>
                     </article>
 
                     <article class="feature-card scroll-reveal" style="--reveal-delay: 330ms;">
                         <div class="feature-icon-wrap">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h16M4 17h10"></path></svg>
                         </div>
-                        <p class="feature-value">{{ "{:,}".format(metrics.catalog_count or 0) }}</p>
-                        <p class="feature-label">Catalog Entries</p>
-                        <p class="feature-note">Combined scholarship and UMak coop listings.</p>
+                        <p class="feature-label">Student-Based Application</p>
+                        <p class="feature-note">Built around student needs with campus-first features, reporting, and real-time interactions.</p>
                     </article>
                 </div>
             </div>
@@ -411,11 +394,7 @@
         <footer class="home-footer">
             <div class="home-footer-inner">
                 <div class="home-footer-brand">
-                    <img src="{{ url_for('static', filename='images/landing/umak-white-logo.png') }}" alt="UMak logo">
-                    <p class="home-footer-brand-text">
-                        Herons' Hub<br>
-                        University of Makati
-                    </p>
+                    <img src="{{ url_for('static', filename='images/Top Navigation Bar Logo.svg') }}" alt="University of Makati Herons' Hub">
                 </div>
                 <div class="home-footer-contact">
                     <h3>Developers / Contact</h3>
