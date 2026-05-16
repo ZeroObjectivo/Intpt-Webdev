@@ -102,6 +102,15 @@ class ProfileSettingsTemplateTest(unittest.TestCase):
                         "group": "Institutes",
                     },
                 ],
+                social_links=[
+                    {"platform": "facebook", "url": "https://facebook.com/juan", "label": "Facebook", "visibility": "public", "position": 1},
+                    {"platform": "instagram", "url": "https://instagram.com/juan", "label": "Instagram", "visibility": "only_me", "position": 2},
+                    {"platform": "linkedin", "url": "https://linkedin.com/in/juan", "label": "LinkedIn", "visibility": "public", "position": 3},
+                ],
+                public_social_links=[
+                    {"platform": "facebook", "url": "https://facebook.com/juan", "label": "Facebook", "visibility": "public", "position": 1},
+                    {"platform": "linkedin", "url": "https://linkedin.com/in/juan", "label": "LinkedIn", "visibility": "public", "position": 3},
+                ],
                 is_own_profile=True,
                 now=datetime.datetime.now(datetime.timezone.utc),
                 csrf_token=lambda: "token",
@@ -115,6 +124,22 @@ class ProfileSettingsTemplateTest(unittest.TestCase):
         self.assertIn("Select Unit", html)
         self.assertIn("Colleges", html)
         self.assertIn("Institutes", html)
+        self.assertIn("Social Links", html)
+        self.assertIn("Add up to 3 social links.", html)
+        self.assertIn("Add social links", html)
+        self.assertIn("Add another link", html)
+        self.assertIn("Public", html)
+        self.assertIn("Only me", html)
+        self.assertIn('name="social_link_1"', html)
+        self.assertIn('name="social_link_2"', html)
+        self.assertIn('name="social_link_3"', html)
+        self.assertIn('name="social_link_visibility_1"', html)
+        self.assertIn("Facebook", html)
+        self.assertIn("Instagram", html)
+        self.assertIn("LinkedIn", html)
+        self.assertIn("https://facebook.com/juan", html)
+        self.assertIn("https://instagram.com/juan", html)
+        self.assertIn("https://linkedin.com/in/juan", html)
         self.assertIn("College of Computing and Information Sciences", html)
         self.assertIn("Recent liked posts", html)
         self.assertIn("Recent comments", html)

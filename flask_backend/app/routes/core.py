@@ -13,7 +13,7 @@ import os
 import re
 
 logger = logging.getLogger(__name__)
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse, urlunparse
 from zoneinfo import ZoneInfo
 
 core = Blueprint('core', __name__)
@@ -491,6 +491,106 @@ def format_profile_date(value):
         return ""
     return parsed.astimezone(DISPLAY_TIMEZONE).strftime("%b %d, %Y").replace(" 0", " ")
 
+SOCIAL_HOST_PLATFORM_MAP = {
+    "facebook.com": "facebook",
+    "www.facebook.com": "facebook",
+    "m.facebook.com": "facebook",
+    "instagram.com": "instagram",
+    "www.instagram.com": "instagram",
+    "tiktok.com": "tiktok",
+    "www.tiktok.com": "tiktok",
+    "linkedin.com": "linkedin",
+    "www.linkedin.com": "linkedin",
+    "discord.com": "discord",
+    "www.discord.com": "discord",
+}
+
+SOCIAL_PLATFORM_LABELS = {
+    "facebook": "Facebook",
+    "instagram": "Instagram",
+    "tiktok": "TikTok",
+    "linkedin": "LinkedIn",
+    "discord": "Discord",
+}
+
+VALID_SOCIAL_VISIBILITIES = {"public", "only_me"}
+
+def normalize_social_url(raw_url):
+    candidate = (raw_url or "").strip()
+    if not candidate:
+        return None
+
+    if "://" not in candidate:
+        candidate = f"https://{candidate}"
+
+    parsed = urlparse(candidate)
+    host = (parsed.netloc or "").strip().lower()
+    path = (parsed.path or "").strip()
+    normalized_path = path.rstrip("/")
+
+    if not host or not normalized_path:
+        raise ValueError("Please enter valid social profile URLs.")
+
+    platform = SOCIAL_HOST_PLATFORM_MAP.get(host)
+    if not platform:
+        raise ValueError("Only supported social media links can be saved right now.")
+
+    normalized_url = urlunparse(("https", host, normalized_path, "", "", ""))
+    return platform, normalized_url
+
+def normalize_social_links_input(raw_links, raw_visibilities=None):
+    raw_links = list(raw_links or [])
+    raw_visibilities = list(raw_visibilities or [])
+    values = [(value or "").strip() for value in raw_links if (value or "").strip()]
+    if len(values) > 3:
+        raise ValueError("You can save up to 3 social links only.")
+
+    results = []
+    seen_urls = set()
+    compact_index = 0
+    for index, value in enumerate(raw_links):
+        value = (value or "").strip()
+        if not value:
+            continue
+        compact_index += 1
+        normalized = normalize_social_url(value)
+        if normalized is None:
+            continue
+        platform, normalized_url = normalized
+        if normalized_url in seen_urls:
+            raise ValueError("Duplicate social links are not allowed.")
+        visibility = (raw_visibilities[index] if index < len(raw_visibilities) else "public") or "public"
+        visibility = visibility.strip().lower()
+        if visibility not in VALID_SOCIAL_VISIBILITIES:
+            raise ValueError("Please choose a valid visibility setting for each social link.")
+        seen_urls.add(normalized_url)
+        results.append({
+            "platform": platform,
+            "url": normalized_url,
+            "visibility": visibility,
+            "position": compact_index,
+        })
+    return results
+
+def load_profile_social_links(client, user_id):
+    response = client.table('profile_social_links')\
+        .select("platform, url, visibility, position")\
+        .eq("profile_id", user_id)\
+        .order("position")\
+        .execute()
+
+    return [
+        {
+            "platform": row.get("platform"),
+            "url": row.get("url"),
+            "label": SOCIAL_PLATFORM_LABELS.get(row.get("platform"), (row.get("platform") or "").title()),
+            "visibility": row.get("visibility") or "public",
+            "position": row.get("position"),
+        }
+        for row in (response.data or [])
+        if row.get("url")
+    ]
+
 def load_college_institute_options():
     client = supabase_service or get_user_client()
     try:
@@ -686,7 +786,7 @@ def view_profile(target_user_id):
     current_user_id = session.get('user').get('id')
 
     try:
-        profile, posts, interactions, college_options = load_profile_data(target_user_id, viewer_id=current_user_id)
+        profile, posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
         is_own_profile = (current_user_id == target_user_id)
 
         return render_template('profile_settings.html',
@@ -694,14 +794,16 @@ def view_profile(target_user_id):
                                posts=posts,
                                interactions=interactions,
                                college_options=college_options,
+                               social_links=social_links,
+                               public_social_links=public_social_links,
                                is_own_profile=is_own_profile,
                                now=datetime.datetime.now(datetime.timezone.utc))
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
-            profile, posts, interactions, college_options = load_profile_data(target_user_id, viewer_id=current_user_id)
+            profile, posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
             is_own_profile = (current_user_id == target_user_id)
             return render_template('profile_settings.html',
-                                   user=profile, posts=posts, interactions=interactions, college_options=college_options,
+                                   user=profile, posts=posts, interactions=interactions, college_options=college_options, social_links=social_links, public_social_links=public_social_links,
                                    is_own_profile=is_own_profile,
                                    now=datetime.datetime.now(datetime.timezone.utc))
         elif is_jwt_error(e):
@@ -776,6 +878,8 @@ def search_users():
 def load_profile_data(user_id, viewer_id=None):
     client = get_user_client()
     college_options = load_college_institute_options()
+    social_links = load_profile_social_links(client, user_id)
+    public_social_links = [link for link in social_links if link.get("visibility") == "public"]
 
     profile_response = client.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
@@ -880,7 +984,7 @@ def load_profile_data(user_id, viewer_id=None):
                 "group": "Colleges",
             })
 
-    return profile, posts, interactions, college_options
+    return profile, posts, interactions, college_options, social_links, public_social_links
 
 @core.route('/settings/profile', methods=['POST'])
 @login_required
@@ -894,10 +998,21 @@ def update_profile():
     course = request.form.get('course')
     level = request.form.get('level')
     bio = request.form.get('bio')
+    social_links_raw = [
+        request.form.get('social_link_1', ''),
+        request.form.get('social_link_2', ''),
+        request.form.get('social_link_3', ''),
+    ]
+    social_visibility_raw = [
+        request.form.get('social_link_visibility_1', 'public'),
+        request.form.get('social_link_visibility_2', 'public'),
+        request.form.get('social_link_visibility_3', 'public'),
+    ]
 
     client = get_user_client()
 
     try:
+        normalized_social_links = normalize_social_links_input(social_links_raw, social_visibility_raw)
         update_data = {
             "contact_number": contact_number,
             "contact_privacy": contact_privacy,
@@ -908,7 +1023,19 @@ def update_profile():
         }
 
         client.table('profiles').update(update_data).eq("id", user_id).execute()
+        client.table('profile_social_links').delete().eq('profile_id', user_id).execute()
+        for link in normalized_social_links:
+            client.table('profile_social_links').insert({
+                "profile_id": user_id,
+                "platform": link["platform"],
+                "url": link["url"],
+                "visibility": link["visibility"],
+                "position": link["position"],
+            }).execute()
         flash("Profile updated successfully!", "success")
+        return redirect(url_for('core.profile_settings'))
+    except ValueError as e:
+        flash(str(e), "error")
         return redirect(url_for('core.profile_settings'))
     except Exception as e:
         flash("Error updating profile. Please try again.", "error")
