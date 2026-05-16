@@ -21,6 +21,9 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
         <span class="fav-text">Reports Queue</span>
+        {% if stats.get('new_reports_count', 0) > 0 %}
+        <span class="ml-auto bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">{{ stats.new_reports_count }} NEW</span>
+        {% endif %}
     </div>
     {% endif %}
     {% if can_access_accounts %}
@@ -47,9 +50,11 @@
 <!-- Main Stats Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     <!-- 1. Registered Users -->
-    <div class="stat-card" onclick="toggleExpand(this)">
-        <div class="stat-label">Total Registered Users</div>
-        <div class="stat-value">{{ stats.total_users }}</div>
+    <div class="stat-card flex flex-col justify-between py-5 px-6" onclick="toggleExpand(this)">
+        <div>
+            <div class="stat-label">Registered Users</div>
+            <div class="stat-value text-2xl">{{ stats.total_users }}</div>
+        </div>
         <div class="expanded-content hidden mt-6">
             <h4 class="font-black text-slate-800 text-sm mb-4">User Directory</h4>
             <div class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
@@ -71,9 +76,11 @@
     </div>
 
     <!-- 2. Total Posts -->
-    <div class="stat-card" onclick="toggleExpand(this)">
-        <div class="stat-label">Total Posts</div>
-        <div class="stat-value">{{ stats.total_posts }}</div>
+    <div class="stat-card flex flex-col justify-between py-5 px-6" onclick="toggleExpand(this)">
+        <div>
+            <div class="stat-label">Total Posts</div>
+            <div class="stat-value text-2xl">{{ stats.total_posts }}</div>
+        </div>
         <div class="expanded-content hidden mt-6">
             <h4 class="font-black text-slate-800 text-sm mb-4">Posts by Category</h4>
             <div class="space-y-3">
@@ -89,24 +96,43 @@
     </div>
 
     <!-- 3. Media Approvals -->
-    <div class="stat-card" onclick="toggleExpand(this)">
-        <div class="flex justify-between items-start">
-            <div class="stat-label">Pending Approvals</div>
-            {% if stats.pending_approvals %}
-            <span class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full animate-pulse">{{ stats.pending_approvals }} NEW</span>
-            {% endif %}
+    <div class="stat-card flex flex-col justify-between py-5 px-6" onclick="toggleExpand(this)">
+        <div>
+            <div class="flex justify-between items-start">
+                <div class="stat-label">Pending Approvals</div>
+                {% if stats.pending_approvals %}
+                <span class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full animate-pulse">{{ stats.pending_approvals }} NEW</span>
+                {% endif %}
+            </div>
+            <div class="stat-value text-amber-600 text-2xl">{{ stats.pending_approvals }}</div>
         </div>
-        <div class="stat-value text-amber-600">{{ stats.pending_approvals }}</div>
         <div class="expanded-content hidden mt-6">
-            <p class="text-[11px] text-slate-500 font-medium mb-4">Media-heavy posts awaiting admin review.</p>
-            <button onclick="window.location.href='{{ url_for('admin.approvals_queue') }}'" class="w-full py-2 bg-amber-600 text-[10px] font-black uppercase text-white rounded-xl shadow-lg shadow-amber-200">View Queue</button>
+            <h4 class="font-black text-slate-800 text-sm mb-4">Verification Queue</h4>
+            <div class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                {% if stats.pending_list %}
+                    {% for p in stats.pending_list %}
+                    <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100/50 cursor-pointer hover:bg-amber-50 transition-colors" onclick="window.location.href='{{ url_for('admin.approvals_queue') }}'">
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="text-[10px] font-black text-amber-700 uppercase tracking-tight">{{ p.profiles.full_name }}</p>
+                            <span class="text-[8px] font-bold text-slate-400">{{ p.created_at[:10] }}</span>
+                        </div>
+                        <p class="text-[11px] font-medium text-slate-600 line-clamp-1">"{{ p.content }}"</p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-xs text-slate-400 font-bold italic text-center py-4">No posts awaiting review.</p>
+                {% endif %}
+            </div>
+            <button onclick="window.location.href='{{ url_for('admin.approvals_queue') }}'" class="mt-6 w-full py-2 bg-amber-600 text-[10px] font-black uppercase text-white rounded-xl shadow-lg shadow-amber-200">Go to Approvals</button>
         </div>
     </div>
 
     <!-- 4. Suspended/Banned -->
-    <div class="stat-card" onclick="toggleExpand(this)">
-        <div class="stat-label">Banned Accounts</div>
-        <div class="stat-value">{{ stats.banned_accounts }}</div>
+    <div class="stat-card flex flex-col justify-between py-5 px-6" onclick="toggleExpand(this)">
+        <div>
+            <div class="stat-label">Banned Accounts</div>
+            <div class="stat-value text-2xl">{{ stats.banned_accounts }}</div>
+        </div>
         <div class="expanded-content hidden mt-6">
             <h4 class="font-black text-slate-800 text-sm mb-4">Account Status</h4>
             <div class="space-y-3">

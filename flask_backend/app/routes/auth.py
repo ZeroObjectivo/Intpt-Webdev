@@ -272,27 +272,23 @@ def set_session():
         # 1. VALIDATION: Check for @umak.edu.ph
         if not email.endswith('@umak.edu.ph'):
             # Automatically record as a verification dispute for admin review
-            # Use direct SQL engine to bypass RLS issues for this system-level log
+            # Using service client to bypass RLS and DNS issues with raw SQL engine
             try:
-                full_name = user.user_metadata.get('full_name', 'Unknown User')
-                with engine.connect() as conn:
-                    # Check if already exists to avoid duplicates
-                    check_stmt = text("SELECT id FROM public.verification_disputes WHERE email = :email")
-                    existing = conn.execute(check_stmt, {"email": email}).fetchone()
+                if supabase_service:
+                    full_name = user.user_metadata.get('full_name', 'Unknown User')
                     
-                    if not existing:
-                        insert_stmt = text("""
-                            INSERT INTO public.verification_disputes (email, full_name, reason, status)
-                            VALUES (:email, :full_name, :reason, 'pending')
-                        """)
-                        conn.execute(insert_stmt, {
+                    # Check for duplicate
+                    existing = supabase_service.table('verification_disputes').select("id").eq("email", email).execute()
+                    
+                    if not existing.data:
+                        supabase_service.table('verification_disputes').insert({
                             "email": email,
                             "full_name": full_name,
-                            "reason": f"Restricted Domain Attempt: {email}"
-                        })
-                        conn.commit()
+                            "reason": f"Restricted Domain Attempt: {email}",
+                            "status": "auto_rejected"
+                        }).execute()
             except Exception as dispute_error:
-                logger.error("Failed to record dispute via SQL: %s", dispute_error)
+                logger.error("Failed to record dispute via Supabase API: %s", dispute_error)
 
             supabase.auth.sign_out()
             return render_template('unauthorized.html', email=email)

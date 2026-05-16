@@ -288,6 +288,10 @@ def dashboard():
         stats["posts_by_category"] = [{"category": k, "count": v} for k, v in cat_counts.items()]
         stats["pending_approvals"] = pending_count
 
+        # Fetch pending posts for preview
+        pending_res = client.table('posts').select("*, profiles(full_name)").eq('status', 'pending').order("created_at", desc=True).limit(5).execute()
+        stats["pending_list"] = pending_res.data
+
         # Fetch reports
         reports_res = client.table('reports').select("*, posts(content), profiles!reports_reporter_id_fkey(full_name)").order("created_at", desc=True).execute()
         stats["reported_posts"] = len(reports_res.data)
