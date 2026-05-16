@@ -471,7 +471,8 @@ def update_user_role(user_id):
     try:
         admin_client = get_service_client()
 
-        target_profile_res = admin_client.table('profiles').select("id, role").eq("id", user_id).single().execute()
+        target_profile_res = admin_client.table('profiles').select("id, role, full_name").eq("id", user_id).single().execute()
+        target_name = target_profile_res.data.get('full_name', 'Unknown User') if target_profile_res.data else 'Unknown User'
         target_role = normalize_role(target_profile_res.data.get('role') if target_profile_res.data else '')
         if target_role == 'superadmin':
             target_role = 'super_admin'
@@ -535,7 +536,8 @@ def lift_user_suspension(user_id):
     try:
         admin_client = get_service_client()
         actor_role = get_current_role()
-        target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
+        target_res = admin_client.table('profiles').select("role, full_name").eq("id", user_id).single().execute()
+        target_name = target_res.data.get('full_name', 'Unknown User') if target_res.data else 'Unknown User'
         target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
         if not can_manage_target_role(actor_role, target_role):
             flash("You cannot override this account level.", "error")
@@ -829,7 +831,7 @@ def bulk_delete_posts():
         admin_client.table('admin_logs').insert({
             "admin_id": session.get('user', {}).get('id'),
             "action_type": "bulk_delete_posts",
-            "details": f"Bulk deleted {len(post_ids)} posts. Reason: {reason}"
+            "details": f"Bulk removed {len(post_ids)} posts. Reason: {reason}"
         }).execute()
         
         return jsonify({"status": "success", "count": len(post_ids)})
@@ -875,15 +877,19 @@ def approve_post(post_id):
     try:
         admin_client = get_service_client()
         
-        # 1. Update post status
-        res = admin_client.table('posts').update({"status": "approved"}).eq("id", post_id).execute()
-        if not res.data:
+        # 1. Fetch post and author info
+        post_res = admin_client.table('posts').select("*, profiles(full_name)").eq("id", post_id).single().execute()
+        if not post_res.data:
             return jsonify({"status": "error", "message": "Post not found"}), 404
             
-        post = res.data[0]
+        post = post_res.data
         owner_id = post.get('user_id')
+        author_name = post.get('profiles', {}).get('full_name', 'Unknown User')
         
-        # 2. Notify user
+        # 2. Update post status
+        admin_client.table('posts').update({"status": "approved"}).eq("id", post_id).execute()
+        
+        # 3. Notify user
         if owner_id:
             push_notification(
                 admin_client, owner_id,
@@ -893,12 +899,12 @@ def approve_post(post_id):
                 reference_id=post_id
             )
             
-        # 3. Log action
+        # 4. Log action
         admin_client.table('admin_logs').insert({
             "admin_id": session.get('user', {}).get('id'),
             "action_type": "approve_post",
             "target_id": post_id,
-            "details": f"Approved post with media from user_id: {owner_id}"
+            "details": f"Approved post from {author_name}."
         }).execute()
         
         return jsonify({"status": "success", "message": "Post approved."})
@@ -914,15 +920,16 @@ def reject_post(post_id):
     try:
         admin_client = get_service_client()
         
-        # 1. Fetch post info before deletion/update
-        post_res = admin_client.table('posts').select("user_id, content").eq("id", post_id).single().execute()
+        # 1. Fetch post and author info
+        post_res = admin_client.table('posts').select("*, profiles(full_name)").eq("id", post_id).single().execute()
         if not post_res.data:
             return jsonify({"status": "error", "message": "Post not found"}), 404
             
         post = post_res.data
         owner_id = post.get('user_id')
+        author_name = post.get('profiles', {}).get('full_name', 'Unknown User')
 
-        # 2. Update status to rejected (or delete if preferred, but rejected allows tracking)
+        # 2. Update status to rejected
         admin_client.table('posts').update({"status": "rejected"}).eq("id", post_id).execute()
         
         # 3. Notify user
@@ -940,7 +947,7 @@ def reject_post(post_id):
             "admin_id": session.get('user', {}).get('id'),
             "action_type": "reject_post",
             "target_id": post_id,
-            "details": f"Rejected post from user_id: {owner_id}. Reason: {reason}"
+            "details": f"Rejected post from {author_name}. Reason: {reason}"
         }).execute()
         
         return jsonify({"status": "success", "message": "Post rejected."})
@@ -1068,6 +1075,10 @@ def warn_user():
     try:
         admin_client = get_service_client()
 
+        # Get target name for logging
+        target_res = admin_client.table('profiles').select("full_name").eq("id", user_id).single().execute()
+        target_name = target_res.data.get('full_name', 'Unknown User') if target_res.data else 'Unknown User'
+
         # 1. Insert into warnings table
         admin_client.table('warnings').insert({
             "user_id": user_id,
@@ -1084,6 +1095,17 @@ def warn_user():
             "message": message,
             "type": "warning"
         }).execute()
+
+        # 3. Log action
+        try:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": "issue_warning",
+                "target_id": user_id,
+                "details": f"Issued warning to {target_name}. Reason: {reason}"
+            }).execute()
+        except Exception as log_e:
+            logger.error("Audit log error (warn user): %s", log_e)
 
         if is_json:
             return jsonify({"status": "success", "message": "Warning sent successfully."})
@@ -1121,7 +1143,8 @@ def suspend_user(user_id):
     try:
         admin_client = get_service_client()
         actor_role = get_current_role()
-        target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
+        target_res = admin_client.table('profiles').select("role, full_name").eq("id", user_id).single().execute()
+        target_name = target_res.data.get('full_name', 'Unknown User') if target_res.data else 'Unknown User'
         target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
         if not can_manage_target_role(actor_role, target_role):
             flash("You cannot suspend this account level.", "error")
@@ -1146,7 +1169,7 @@ def suspend_user(user_id):
                 "admin_id": session.get('user', {}).get('id'),
                 "action_type": "suspend",
                 "target_id": user_id,
-                "details": f"Suspended for {days} day(s). Reason: {reason}"
+                "details": f"Suspended {target_name} for {days} day(s). Reason: {reason}"
             }).execute()
         except Exception as log_e:
             logger.error("Audit log error (suspend): %s", log_e)
@@ -1167,7 +1190,8 @@ def ban_user(user_id):
     try:
         admin_client = get_service_client()
         actor_role = get_current_role()
-        target_res = admin_client.table('profiles').select("role").eq("id", user_id).single().execute()
+        target_res = admin_client.table('profiles').select("role, full_name").eq("id", user_id).single().execute()
+        target_name = target_res.data.get('full_name', 'Unknown User') if target_res.data else 'Unknown User'
         target_role = normalize_role(target_res.data.get('role') if target_res.data else '')
         if not can_manage_target_role(actor_role, target_role):
             flash("You cannot ban this account level.", "error")
@@ -1191,7 +1215,7 @@ def ban_user(user_id):
                 "admin_id": session.get('user', {}).get('id'),
                 "action_type": "ban",
                 "target_id": user_id,
-                "details": f"Banned. Reason: {reason}"
+                "details": f"Banned {target_name}. Reason: {reason}"
             }).execute()
         except Exception as log_e:
             logger.error("Audit log error (ban): %s", log_e)
@@ -1226,6 +1250,17 @@ def admin_delete_post(post_id):
         admin_client = supabase_service
         purge_expired_archived_posts(admin_client)
 
+        # Archive and delete
+        post_res = admin_client.table('posts').select("*, profiles(full_name)").eq("id", post_id).single().execute()
+        if not post_res.data:
+            if wants_json_response():
+                return jsonify({"status": "error", "message": "Post not found."}), 404
+            flash("Post not found.", "error")
+            return redirect(request.referrer or url_for('admin.dashboard'))
+        
+        post = post_res.data
+        author_name = post.get('profiles', {}).get('full_name', 'Unknown User')
+
         archived_post = archive_post_snapshot(
             admin_client,
             post_id,
@@ -1235,11 +1270,6 @@ def admin_delete_post(post_id):
             reason=delete_reason,
             note=delete_note or None,
         )
-        if not archived_post:
-            if wants_json_response():
-                return jsonify({"status": "error", "message": "Post not found."}), 404
-            flash("Post not found.", "error")
-            return redirect(request.referrer or url_for('admin.dashboard'))
 
         delete_post_dependencies(admin_client, post_id)
         admin_client.table('posts').delete().eq("id", post_id).execute()
@@ -1265,7 +1295,7 @@ def admin_delete_post(post_id):
                 "admin_id": actor_id,
                 "action_type": "remove_post",
                 "target_id": post_id,
-                "details": f"Post removed by admin. Reason: {delete_reason}" + (f" | Note: {delete_note}" if delete_note else ""),
+                "details": f"Removed post from {author_name}. Reason: {delete_reason}" + (f" | Note: {delete_note}" if delete_note else ""),
             }).execute()
         except Exception as log_e:
             logger.error("Audit log error (delete post): %s", log_e)
@@ -1291,10 +1321,13 @@ def admin_delete_post(post_id):
 def admin_delete_comment(comment_id):
     try:
         admin_client = get_service_client()
-        comment_res = admin_client.table('comments').select("id, user_id, post_id").eq("id", comment_id).single().execute()
+        comment_res = admin_client.table('comments').select("id, user_id, post_id, profiles(full_name)").eq("id", comment_id).single().execute()
         comment = comment_res.data or {}
+        author_name = comment.get('profiles', {}).get('full_name', 'Unknown User')
+        
         delete_comment_thread(admin_client, comment_id)
         owner_id = comment.get("user_id")
+        
         if owner_id:
             try:
                 admin_client.table('notifications').insert({
@@ -1306,6 +1339,18 @@ def admin_delete_comment(comment_id):
                 }).execute()
             except Exception as notif_e:
                 logger.warning("Could not notify comment owner for deleted comment %s: %s", comment_id, notif_e)
+
+        # Log action
+        try:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": "remove_comment",
+                "target_id": comment_id,
+                "details": f"Removed comment from {author_name}."
+            }).execute()
+        except Exception as log_e:
+            logger.error("Audit log error (delete comment): %s", log_e)
+
         return jsonify({"status": "deleted"})
     except Exception as e:
         logger.error("Error deleting comment (admin): %s", e)
@@ -1322,6 +1367,10 @@ def resolve_dispute(dispute_id):
 
     try:
         admin_client = get_service_client()
+        dispute_res = admin_client.table('verification_disputes').select("full_name, email").eq("id", dispute_id).single().execute()
+        dispute = dispute_res.data or {}
+        target_info = dispute.get('full_name') or dispute.get('email') or 'Unknown'
+
         admin_client.table('verification_disputes').update({
             "status": action
         }).eq("id", dispute_id).execute()
@@ -1331,7 +1380,7 @@ def resolve_dispute(dispute_id):
                 "admin_id": session.get('user', {}).get('id'),
                 "action_type": f"dispute_{action}",
                 "target_id": dispute_id,
-                "details": f"Verification dispute {action}."
+                "details": f"Resolved verification dispute for {target_info} as {action}."
             }).execute()
         except Exception as log_e:
             logger.error("Audit log error (dispute): %s", log_e)

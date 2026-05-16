@@ -151,84 +151,77 @@
 </div>
 
 <!-- Secondary Grid for Analytics and Recent Activities -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-    <!-- User Breakdown Chart Placeholder -->
-    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 lg:col-span-1">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6 items-stretch">
+    <!-- User Breakdown Chart -->
+    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col">
         <h3 class="text-lg font-black text-slate-800 mb-6">User Breakdown</h3>
-        <div class="aspect-square bg-slate-50 rounded-full flex items-center justify-center relative border-4 border-white shadow-inner overflow-hidden" 
-             style="background: conic-gradient(
-                {% for item in stats.college_breakdown %}
-                    {{ item.color }} {{ item.start_angle }}deg {{ item.end_angle }}deg{% if not loop.last %},{% endif %}
-                {% endfor %}
-             );">
-            <!-- Inner Circle to create a Donut effect -->
-            <div class="absolute inset-4 bg-white rounded-full shadow-sm flex items-center justify-center z-10">
-                <div class="text-center">
-                    <p class="text-2xl font-black text-umak-blue leading-none">{{ stats.total_users }}</p>
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Students</p>
+        <div class="flex-1">
+            <div class="aspect-square bg-slate-50 rounded-full flex items-center justify-center relative border-4 border-white shadow-inner overflow-hidden mx-auto max-w-[200px]" 
+                 style="background: conic-gradient(
+                    {% for item in stats.college_breakdown %}
+                        {{ item.color }} {{ item.start_angle }}deg {{ item.end_angle }}deg{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                 );">
+                <div class="absolute inset-4 bg-white rounded-full shadow-sm flex items-center justify-center z-10">
+                    <div class="text-center">
+                        <p class="text-2xl font-black text-umak-blue leading-none">{{ stats.total_users }}</p>
+                        <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Students</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="mt-8 space-y-4 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-            {% if stats.college_breakdown %}
-                {% for item in stats.college_breakdown %}
-                <div class="flex justify-between items-center group">
-                    <div class="flex items-center gap-3">
-                        <span class="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-125" style="background-color: {{ item.color }}"></span>
-                        <div>
-                            <span class="text-xs font-black text-slate-800 group-hover:text-umak-blue block leading-none">{{ item.label }}</span>
-                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{{ item.type }}</span>
+            <div class="mt-8 space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                {% if stats.college_breakdown %}
+                    {% for item in stats.college_breakdown %}
+                    <div class="flex justify-between items-center group">
+                        <div class="flex items-center gap-3">
+                            <span class="w-2 h-2 rounded-full" style="background-color: {{ item.color }}"></span>
+                            <span class="text-[11px] font-black text-slate-800 leading-none">{{ item.label }}</span>
                         </div>
+                        <span class="text-[11px] font-black text-slate-800">{{ item.percentage }}%</span>
                     </div>
-                    <div class="text-right">
-                        <span class="text-xs font-black text-slate-800 block leading-none">{{ item.percentage }}%</span>
-                        <span class="text-[8px] font-bold text-slate-300 uppercase">{{ item.count }} users</span>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-xs text-slate-400 font-bold italic text-center">No college data available.</p>
-            {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
         </div>
     </div>
 
     <!-- Recent Activities -->
-    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 lg:col-span-2">
+    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-black text-slate-800">Recent Activities</h3>
-            <a href="{{ url_for('admin.view_logs') }}" class="text-[10px] font-black text-umak-blue uppercase tracking-widest hover:underline">View All Logs</a>
         </div>
         
-        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+        <div class="flex-1 space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             {% if stats.recent_activities %}
                 {% for log in stats.recent_activities %}
-                <div class="flex gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-colors border border-transparent hover:border-slate-100">
-                    <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-umak-blue">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-start mb-0.5">
-                            <p class="text-[11px] font-black text-slate-800 truncate">
-                                {{ log.profiles.full_name if log.profiles else 'System' }}
-                            </p>
-                            <span class="text-[9px] font-bold text-slate-300 uppercase whitespace-nowrap">{{ log.created_at[:10] }}</span>
-                        </div>
-                        <p class="text-[11px] text-slate-500 font-medium leading-tight mt-1">
-                            <span class="px-2 py-0.5 rounded-lg bg-blue-50 text-umak-blue font-black uppercase text-[8px] tracking-widest mr-1 border border-blue-100/50">
-                                {{ log.action_type|replace('_', ' ') }}
-                            </span> 
-                            {{ log.details }}
+                <div class="p-3 hover:bg-slate-50 rounded-2xl transition-colors border border-transparent hover:border-slate-100">
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="text-[10px] font-black text-slate-800 truncate">
+                            {{ log.profiles.full_name if log.profiles else 'System' }}
                         </p>
+                        <span class="text-[8px] font-bold text-slate-300 uppercase">{{ log.created_at[:10] }}</span>
                     </div>
+                    <p class="text-[11px] text-slate-500 font-medium leading-tight">
+                        {{ log.details }}
+                    </p>
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="flex flex-col items-center justify-center py-12">
-                    <svg class="w-12 h-12 text-slate-100 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="h-full flex items-center justify-center">
                     <p class="text-xs text-slate-400 font-bold italic">No activity logs found.</p>
                 </div>
             {% endif %}
         </div>
+        <a href="{{ url_for('admin.view_logs') }}" class="mt-6 block text-center py-2 bg-slate-50 text-[10px] font-black uppercase text-umak-blue rounded-xl border border-slate-100 hover:bg-blue-50 transition-colors">View All Logs</a>
+    </div>
+
+    <!-- Placeholder for Upcoming Feature -->
+    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 border-dashed border-slate-200 bg-slate-50/30 flex flex-col items-center justify-center text-center">
+        <div class="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-300 mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+        </div>
+        <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest">Upcoming Feature</h3>
+        <p class="text-[10px] text-slate-400 font-bold mt-2 px-4 uppercase tracking-tighter">Space reserved for new administrative tools</p>
     </div>
 </div>
 {% endblock %}
