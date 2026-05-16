@@ -16,7 +16,7 @@
     </div>
     {% endif %}
     {% if can_access_content %}
-    <div class="fav-item" onclick="window.location.href='{{ url_for('admin.content_management', category='All') }}'">
+    <div class="fav-item" onclick="window.location.href='{{ url_for('admin.reports_queue', category='All') }}'">
         <div class="fav-icon bg-rose-50 text-rose-500">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
@@ -48,7 +48,7 @@
 </div>
 
 <!-- Main Stats Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
     <!-- 1. Registered Users -->
     <div class="stat-card flex flex-col justify-between py-5 px-6" onclick="toggleExpand(this)">
         <div>
@@ -99,7 +99,7 @@
     <div class="stat-card flex flex-col justify-between py-5 px-6" onclick="toggleExpand(this)">
         <div>
             <div class="flex justify-between items-start">
-                <div class="stat-label">Pending Approvals</div>
+                <div class="stat-label text-amber-600">Pending Approvals</div>
                 {% if stats.pending_approvals %}
                 <span class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full animate-pulse">{{ stats.pending_approvals }} NEW</span>
                 {% endif %}
@@ -130,8 +130,8 @@
     <!-- 4. Suspended/Banned -->
     <div class="stat-card flex flex-col justify-between py-5 px-6" onclick="toggleExpand(this)">
         <div>
-            <div class="stat-label">Banned Accounts</div>
-            <div class="stat-value text-2xl">{{ stats.banned_accounts }}</div>
+            <div class="stat-label text-rose-600">Banned Accounts</div>
+            <div class="stat-value text-rose-600 text-2xl">{{ stats.banned_accounts }}</div>
         </div>
         <div class="expanded-content hidden mt-6">
             <h4 class="font-black text-slate-800 text-sm mb-4">Account Status</h4>
@@ -241,14 +241,15 @@
         
         // Find and toggle content visibility
         const content = card.querySelector('.expanded-content');
-        content.classList.toggle('hidden');
+        if (content) content.classList.toggle('hidden');
         
         // If expanding, close others (optional but keeps it clean)
         if (card.classList.contains('expanded')) {
             document.querySelectorAll('.stat-card').forEach(c => {
                 if (c !== card && c.classList.contains('expanded')) {
                     c.classList.remove('expanded');
-                    c.querySelector('.expanded-content').classList.add('hidden');
+                    const otherContent = c.querySelector('.expanded-content');
+                    if (otherContent) otherContent.classList.add('hidden');
                 }
             });
         }

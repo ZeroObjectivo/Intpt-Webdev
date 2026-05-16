@@ -600,16 +600,17 @@ def approvals_queue():
                            user=session.get('user'), 
                            permissions=permissions)
 
+@admin.route('/admin/reports')
 @admin.route('/admin/reports/<category>')
 @login_required
 @content_access_required
-def reports_queue(category):
+def reports_queue(category='All'):
     client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     
-    sort_method = request.args.get('sort', 'recent_reports')
     report_type = request.args.get('type', 'posts') # 'posts' or 'accounts'
+    sort_method = request.args.get('sort', 'recent_reports')
     
     if report_type == 'accounts':
         # 1. Fetch all pending user reports
@@ -617,7 +618,7 @@ def reports_queue(category):
         pending_reports = reports_res.data or []
         
         if not pending_reports:
-            return render_template('admin/content_manage.html', accounts=[], category=category, sort=sort_method, report_type=report_type, is_reports_queue=True, user=session.get('user'), permissions=permissions)
+            return render_template('admin/reports_queue.html', accounts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
 
         # 2. Group reports by user_id
         report_stats = {}
@@ -650,7 +651,7 @@ def reports_queue(category):
         else:
             accounts.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
 
-        return render_template('admin/content_manage.html', accounts=accounts, category=category, sort=sort_method, report_type=report_type, is_reports_queue=True, user=session.get('user'), permissions=permissions)
+        return render_template('admin/reports_queue.html', accounts=accounts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
 
     else: # report_type == 'posts' (Reported Posts)
         # 1. Fetch all pending post reports
@@ -658,7 +659,7 @@ def reports_queue(category):
         pending_reports = reports_res.data or []
         
         if not pending_reports:
-            return render_template('admin/content_manage.html', posts=[], category=category, sort=sort_method, report_type=report_type, is_reports_queue=True, user=session.get('user'), permissions=permissions)
+            return render_template('admin/reports_queue.html', posts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
 
         # 2. Group reports by post_id
         report_stats = {}
@@ -694,7 +695,7 @@ def reports_queue(category):
         else:
             posts.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
 
-        return render_template('admin/content_manage.html', posts=posts, category=category, sort=sort_method, report_type=report_type, is_reports_queue=True, user=session.get('user'), permissions=permissions)
+        return render_template('admin/reports_queue.html', posts=posts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
 
 @admin.route('/admin/content/<category>')
 @login_required
@@ -704,16 +705,18 @@ def content_management(category):
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     
+    sort_method = request.args.get('sort', 'recent')
+    
     query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
     if category != 'All':
         query = query.eq('category', category)
         
-    res = query.order('created_at', desc=True).execute()
+    res = query.order('created_at', desc=(sort_method == 'recent')).execute()
     
     return render_template('admin/content_manage.html', 
                            posts=res.data, 
                            category=category, 
-                           is_reports_queue=False,
+                           sort=sort_method,
                            user=session.get('user'), 
                            permissions=permissions)
 

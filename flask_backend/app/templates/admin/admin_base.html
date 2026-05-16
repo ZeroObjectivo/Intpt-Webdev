@@ -462,7 +462,7 @@
                 <div id="moderation-drop" class="nav-dropdown-content">
                     <a href="{{ url_for('admin.manage_users') }}" class="dropdown-item">User Management</a>
                     <a href="{{ url_for('admin.manage_disputes') }}" class="dropdown-item">Verification Disputes</a>
-                    <a href="{{ url_for('admin.reports_queue', category='All') }}" class="dropdown-item flex items-center justify-between">
+                    <a href="{{ url_for('admin.reports_queue') }}" class="dropdown-item flex items-center justify-between">
                         Reports Queue
                         {% if stats and stats.get('new_reports_count', 0) > 0 %}
                         <span class="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span>
