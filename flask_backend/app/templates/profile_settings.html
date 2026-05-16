@@ -794,42 +794,39 @@
 
 <script>
 async function reportUser(targetId) {
-    const reason = window.prompt(
-        'Why are you reporting this account? (e.g., Harassment, Fake Profile, Inappropriate content)',
-        'Violation of community standards'
-    );
+    if (typeof showConfirmModal !== 'function') return;
 
-    if (reason === null) return;
-    const trimmedReason = reason.trim();
-    if (!trimmedReason) {
-        if (window.createToast) window.createToast('Report reason is required.', 'error');
-        return;
-    }
+    showConfirmModal('Report Account?', 'Are you sure you want to flag this user for review?', async (payload = {}) => {
+        try {
+            const response = await fetch(`/profiles/${targetId}/report`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ reason: payload.reason || 'Community violation' })
+            });
+            const data = await response.json();
 
-    try {
-        const response = await fetch(`/profiles/${targetId}/report`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({ reason: trimmedReason })
-        });
-        const data = await response.json();
-
-        if (data.status === 'reported') {
-            if (window.createToast) window.createToast('User report submitted. Thank you.', 'success');
-            return;
+            if (data.status === 'reported') {
+                if (window.createToast) window.createToast('User report submitted. Thank you.', 'success');
+                return;
+            }
+            if (data.status === 'already_reported') {
+                if (window.createToast) window.createToast('You already reported this user.', 'info');
+                return;
+            }
+            throw new Error(data.error || 'Failed to submit report');
+        } catch (e) {
+            console.error(e);
+            if (window.createToast) window.createToast('Error submitting report. Please try again.', 'error');
         }
-        if (data.status === 'already_reported') {
-            if (window.createToast) window.createToast('You already reported this user.', 'info');
-            return;
-        }
-        throw new Error(data.error || 'Failed to submit report');
-    } catch (e) {
-        console.error(e);
-        if (window.createToast) window.createToast('Error submitting report. Please try again.', 'error');
-    }
+    }, {
+        reasons: ['Harassment', 'Spam / Fake Account', 'Inappropriate Language', 'Misinformation', 'Other'],
+        requireReason: true,
+        confirmText: 'Submit Report',
+        confirmClass: 'bg-rose-500 hover:bg-rose-600 shadow-rose-200'
+    });
 }
 
 function setActiveProfileTab(tabName) {

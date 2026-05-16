@@ -1,7 +1,7 @@
 {% extends "admin/admin_base.html" %}
 
-{% block title %}Content Moderation | Admin Hub{% endblock %}
-{% block header_title %}Reports Queue{% endblock %}
+{% block title %}Manage {{ category }} Posts | Admin Hub{% endblock %}
+{% block header_title %}Content Moderation{% endblock %}
 
 {% block admin_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
@@ -29,6 +29,33 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
+    /* Simple circular checkbox style */
+    .tick-circle {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+    }
+    input[type="checkbox"]:checked + .tick-circle {
+        background: #001035;
+        border-color: #001035;
+    }
+    input[type="checkbox"]:checked + .tick-circle svg {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .tick-circle svg {
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s ease;
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -36,25 +63,54 @@
 <!-- Navigation and Filters -->
 <div class="mb-8 space-y-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm w-fit">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            Dashboard
-        </a>
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm w-fit">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Dashboard
+            </a>
+            
+            <div class="h-6 w-px bg-slate-200"></div>
+            
+            <!-- Bulk Actions Integration -->
+            <div class="flex items-center gap-4 bg-slate-50/50 p-1 rounded-2xl border border-slate-100">
+                <label class="flex items-center gap-2 cursor-pointer group px-3 py-1.5">
+                    <div class="relative">
+                        <input type="checkbox" id="selectAllReports" onchange="toggleAllReports(this)" class="hidden">
+                        <div class="tick-circle">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-600 transition-colors">Select All</span>
+                </label>
+
+                <div id="headerBulkActions" class="hidden flex items-center gap-2 border-l border-slate-200 pl-4 py-1 pr-2">
+                    <span id="headerSelectedCount" class="text-[10px] font-black text-umak-blue uppercase mr-2">0 Selected</span>
+                    {% if report_type == 'posts' %}
+                    <button onclick="bulkRemovePosts()" class="px-4 py-2 bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm active:scale-95">
+                        Remove
+                    </button>
+                    {% endif %}
+                    <button onclick="bulkDismissReports()" class="px-4 py-2 bg-slate-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95">
+                        Dismiss
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <div class="flex flex-wrap items-center gap-3">
-        <!-- Report Type Toggle -->
-        <div class="bg-slate-100 p-1 rounded-2xl flex items-center shadow-inner">
-            <a href="{{ url_for('admin.content_management', category=category) }}?type=posts&sort={{ sort }}" 
-               class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all type-pill
-               {% if report_type == 'posts' %} bg-white text-umak-blue shadow-sm {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
-                Post Flags
-            </a>
-            <a href="{{ url_for('admin.content_management', category='All') }}?type=accounts&sort={{ sort }}" 
-               class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all type-pill
-               {% if report_type == 'accounts' %} bg-white text-umak-blue shadow-sm {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
-                Account Flags
-            </a>
-        </div>
+            <!-- Report Type Toggle -->
+            <div class="bg-slate-100 p-1 rounded-2xl flex items-center shadow-inner">
+                <a href="{{ url_for('admin.content_management', category=category) }}?type=posts&sort={{ sort }}" 
+                   class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all type-pill
+                   {% if report_type == 'posts' %} bg-white text-umak-blue shadow-sm {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
+                    Post Flags
+                </a>
+                <a href="{{ url_for('admin.content_management', category='All') }}?type=accounts&sort={{ sort }}" 
+                   class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all type-pill
+                   {% if report_type == 'accounts' %} bg-white text-umak-blue shadow-sm {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
+                    Account Flags
+                </a>
+            </div>
 
             <!-- Sort Dropdown -->
             <div class="relative">
@@ -85,12 +141,22 @@
 </div>
 
 <!-- Moderation Feed -->
-<div class="max-w-4xl mx-auto space-y-6">
+<div class="max-w-4xl mx-auto space-y-6 pb-20">
     {% if report_type == 'posts' %}
         {% if posts %}
             {% for p in posts %}
-            <div class="report-card group" data-admin-post-id="{{ p.id }}">
-                <div class="flex justify-between items-start mb-6">
+            <div class="report-card group relative" data-admin-post-id="{{ p.id }}">
+                <!-- Selection Checkbox -->
+                <div class="absolute top-8 left-6 z-10">
+                    <label class="cursor-pointer">
+                        <input type="checkbox" name="report-select" value="{{ p.id }}" onchange="updateBulkUI()" class="hidden">
+                        <div class="tick-circle shadow-sm border-2">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.4" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex justify-between items-start mb-6 pl-12">
                     <div class="flex items-center gap-4">
                         <div class="relative">
                             <img src="{{ p.profiles.avatar_url if p.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" 
@@ -117,13 +183,13 @@
                     </div>
                 </div>
 
-                <div class="bg-slate-50/50 rounded-2xl p-5 mb-6">
+                <div class="bg-slate-50/50 rounded-2xl p-5 mb-6 ml-12">
                     <p class="text-slate-600 text-sm font-medium leading-relaxed">{{ p.content }}</p>
                 </div>
 
                 {% set post_images = p.image_urls if p.image_urls else ([p.image_url] if p.image_url else []) %}
                 {% if post_images %}
-                <div class="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                <div class="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide ml-12">
                     {% for img in post_images %}
                     <div class="shrink-0 relative group/img cursor-pointer" onclick="openAdminPostView('{{ p.id }}', {{ loop.index0 }})">
                         <img src="{{ img }}" class="h-24 w-24 rounded-2xl object-cover border-2 border-white shadow-sm transition-transform group-hover/img:scale-105">
@@ -133,7 +199,7 @@
                 </div>
                 {% endif %}
 
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-50">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-50 ml-12">
                     <div class="flex items-center gap-6">
                         <div class="flex items-center gap-2 text-slate-400">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
@@ -146,16 +212,6 @@
                     </div>
                     
                     <div class="flex items-center gap-2">
-                        {% if report_type == 'pending' %}
-                        <button onclick="approvePost('{{ p.id }}')" 
-                                class="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all">
-                            Approve
-                        </button>
-                        <button onclick="rejectPostModal('{{ p.id }}')" 
-                                class="flex-1 sm:flex-none px-6 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">
-                            Reject
-                        </button>
-                        {% else %}
                         <button onclick="warnUserModal('{{ p.user_id }}', '{{ p.id }}')" 
                                 class="flex-1 sm:flex-none px-6 py-2.5 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all">
                             Warn Author
@@ -164,7 +220,6 @@
                                 class="flex-1 sm:flex-none px-6 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">
                             Remove Post
                         </button>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -182,8 +237,18 @@
         <!-- Account Reports View -->
         {% if accounts %}
             {% for a in accounts %}
-            <div class="report-card group flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div class="flex items-center gap-5">
+            <div class="report-card group relative flex flex-col md:flex-row md:items-center justify-between gap-6" data-admin-user-id="{{ a.id }}">
+                 <!-- Selection Checkbox -->
+                 <div class="absolute top-8 left-6 z-10">
+                    <label class="cursor-pointer">
+                        <input type="checkbox" name="report-select" value="{{ a.id }}" onchange="updateBulkUI()" class="hidden">
+                        <div class="tick-circle shadow-sm border-2">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.4" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex items-center gap-5 pl-12">
                     <div class="relative">
                         <img src="{{ a.avatar_url if a.avatar_url else url_for('static', filename='images/Logo.png') }}" 
                              class="w-16 h-16 rounded-[1.5rem] object-cover border-2 border-slate-50 shadow-sm">
@@ -226,7 +291,7 @@
 
 <!-- Warning Modal -->
 <div id="warningModal" class="fixed inset-0 z-[130] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-modal-up">
+    <div class="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl animate-modal-up" style="z-index: 100000;">
         <form id="warningForm" onsubmit="sendWarning(event)" class="p-8">
             <input type="hidden" id="warnUserId">
             <input type="hidden" id="warnPostId">
@@ -284,6 +349,90 @@
     // Embed data for JS
     window.allPosts = {{ (posts if posts else [])|tojson|safe }};
     window.currentUser = { id: '{{ user.id }}', role: '{{ user.role }}' };
+
+    function toggleAllReports(source) {
+        document.querySelectorAll('input[name="report-select"]').forEach(cb => {
+            cb.checked = source.checked;
+        });
+        updateBulkUI();
+    }
+
+    function deselectAll() {
+        const selectAllCb = document.getElementById('selectAllReports');
+        if (selectAllCb) selectAllCb.checked = false;
+        document.querySelectorAll('input[name="report-select"]').forEach(cb => cb.checked = false);
+        updateBulkUI();
+    }
+
+    function updateBulkUI() {
+        const selected = document.querySelectorAll('input[name="report-select"]:checked');
+        const headerActions = document.getElementById('headerBulkActions');
+        const countDisplay = document.getElementById('headerSelectedCount');
+        
+        if (selected.length > 0) {
+            headerActions.classList.remove('hidden');
+            countDisplay.textContent = `${selected.length} Selected`;
+        } else {
+            headerActions.classList.add('hidden');
+        }
+    }
+
+    async function bulkDismissReports() {
+        const selected = Array.from(document.querySelectorAll('input[name="report-select"]:checked')).map(cb => cb.value);
+        if (!selected.length) return;
+        
+        if (!confirm(`Dismiss all flags for these ${selected.length} items? This will not delete the content.`)) return;
+
+        const reportType = '{{ report_type }}';
+        const payload = {
+            post_ids: reportType === 'posts' ? selected : [],
+            user_ids: reportType === 'accounts' ? selected : []
+        };
+
+        try {
+            const res = await fetch('/admin/reports/bulk-dismiss', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                showToast(`Dismissed flags for ${selected.length} items`, 'success');
+                selected.forEach(id => {
+                    document.querySelector(`[data-admin-post-id="${id}"]`)?.remove();
+                    document.querySelector(`[data-admin-user-id="${id}"]`)?.remove();
+                });
+                deselectAll();
+            }
+        } catch (e) { showToast('Bulk action failed', 'error'); }
+    }
+
+    async function bulkRemovePosts() {
+        const selected = Array.from(document.querySelectorAll('input[name="report-select"]:checked')).map(cb => cb.value);
+        if (!selected.length) return;
+
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal(`Remove ${selected.length} Posts?`, 'This will permanently delete these posts and archive them:', async (payload = {}) => {
+                try {
+                    const res = await fetch('/admin/posts/bulk-delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+                        body: JSON.stringify({ ids: selected, reason: payload.reason || 'Multiple community violations' })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showToast(`Removed ${selected.length} posts`, 'success');
+                        selected.forEach(id => document.querySelector(`[data-admin-post-id="${id}"]`)?.remove());
+                        deselectAll();
+                    }
+                } catch (e) { showToast('Bulk action failed', 'error'); }
+            }, { 
+                reasons: ['Harassment', 'Spam', 'Misinformation', 'Other'], 
+                requireReason: true,
+                confirmText: 'Remove All Selected'
+            });
+        }
+    }
 
     function openAdminPostView(postId, imgIdx = 0) {
         const post = window.allPosts.find(p => p.id === postId);
@@ -366,52 +515,6 @@
                 closeWarningModal();
             } else showToast(data.message, 'error');
         } catch (e) { showToast('Request failed', 'error'); }
-    }
-
-    async function approvePost(postId) {
-        try {
-            const res = await fetch(`/admin/posts/${postId}/approve`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken(),
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                showToast('Post approved and live', 'success');
-                document.querySelector(`[data-admin-post-id="${postId}"]`)?.remove();
-            } else {
-                showToast(data.message, 'error');
-            }
-        } catch (e) {
-            showToast('Failed to approve post', 'error');
-        }
-    }
-
-    function rejectPostModal(postId) {
-        if (typeof showConfirmModal === 'function') {
-            showConfirmModal('Reject Media?', 'State why this content was rejected:', async (payload = {}) => {
-                const res = await fetch(`/admin/posts/${postId}/reject`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCSRFToken(),
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ reason: payload.reason || 'Media policy violation' })
-                });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    showToast('Post rejected', 'success');
-                    document.querySelector(`[data-admin-post-id="${postId}"]`)?.remove();
-                }
-            }, { 
-                reasons: ['Inappropriate Image', 'Low Quality/Spam', 'Copyright Violation', 'Other'], 
-                requireReason: true 
-            });
-        }
     }
 
     function confirmRemovePost(postId) {

@@ -267,7 +267,9 @@ function updateModalContent() {
     const profileLink = document.getElementById('modalUserProfileLink');
     const profile = currentPost.profiles || {};
     avatar.src = profile.avatar_url || "/static/images/Logo.png";
-    document.getElementById('modalUserName').innerText = profile.full_name || 'Heron';
+    
+    // Ensure actual full_name is used if present in the profile object
+    document.getElementById('modalUserName').innerText = profile.full_name || currentPost.full_name || 'Heron';
     document.getElementById('modalPostTime').innerText = formatPostTime(currentPost.created_at);
     document.getElementById('modalPostText').innerText = currentPost.content;
 
@@ -276,7 +278,9 @@ function updateModalContent() {
         profileProgram.innerText = profileBits.length ? profileBits.join(' • ') : 'UMak community member';
         const ownerId = currentPost.user_id || '';
         if (ownerId) {
-            profileLink.href = `/profile/${encodeURIComponent(ownerId)}`;
+            // Admin Hub Redirect logic
+            const isAdminHub = window.location.pathname.startsWith('/admin/');
+            profileLink.href = isAdminHub ? `/admin/users/${ownerId}/manage` : `/profile/${encodeURIComponent(ownerId)}`;
             profileLink.classList.remove('pointer-events-none', 'opacity-50');
         } else {
             profileLink.href = '#';

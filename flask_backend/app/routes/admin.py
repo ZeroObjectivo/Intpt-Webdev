@@ -435,15 +435,19 @@ def user_management(user_id):
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
-    posts_res = client.table('posts').select("*").eq("user_id", user_id).execute()
+    
+    # Include profiles in the select for the modal to have names
+    posts_res = client.table('posts').select("*, profiles(full_name, avatar_url)").eq("user_id", user_id).order('created_at', desc=True).limit(50).execute()
+    comments_res = client.table('comments').select("*, posts(content, category), profiles(full_name, avatar_url)").eq("user_id", user_id).order('created_at', desc=True).limit(50).execute()
+    
     warnings_res = client.table('warnings').select("*").eq("user_id", user_id).execute()
-    return render_template('admin/user_manage.html', 
-                           target_user=profile_res.data, 
-                           posts=posts_res.data, 
+    return render_template('admin/user_manage.html',
+                           target_user=profile_res.data,
+                           posts=posts_res.data,
+                           comments=comments_res.data,
                            warnings=warnings_res.data,
                            user=session.get('user'),
                            permissions=permissions)
-
 @admin.route('/admin/users/<user_id>/update-role', methods=['POST'])
 @login_required
 @account_access_required
@@ -688,6 +692,154 @@ def content_management(category):
 
         return render_template('admin/content_manage.html', posts=posts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
 
+@admin.route('/admin/posts/bulk-approve', methods=['POST'])
+@login_required
+@content_access_required
+def bulk_approve_posts():
+    data = request.get_json() or {}
+    post_ids = data.get('ids', [])
+    
+    if not post_ids:
+        return jsonify({"status": "error", "message": "No posts selected"}), 400
+        
+    try:
+        admin_client = get_service_client()
+        
+        # 1. Update status
+        admin_client.table('posts').update({"status": "approved"}).in_("id", post_ids).execute()
+        
+        # 2. Notify all owners (simplified for bulk)
+        posts_res = admin_client.table('posts').select("user_id").in_("id", post_ids).execute()
+        owner_ids = list(set(p['user_id'] for p in posts_res.data if p.get('user_id')))
+        
+        for owner_id in owner_ids:
+            push_notification(
+                admin_client, owner_id,
+                title="Post Approved!",
+                message="One or more of your posts have been approved by moderators.",
+                notif_type="system"
+            )
+            
+        # 3. Log action
+        admin_client.table('admin_logs').insert({
+            "admin_id": session.get('user', {}).get('id'),
+            "action_type": "bulk_approve_posts",
+            "details": f"Bulk approved {len(post_ids)} posts."
+        }).execute()
+        
+        return jsonify({"status": "success", "count": len(post_ids)})
+    except Exception as e:
+        logger.error("Bulk approval failed: %s", e)
+        return jsonify({"status": "error", "message": "Bulk action failed"}), 500
+
+@admin.route('/admin/posts/bulk-reject', methods=['POST'])
+@login_required
+@content_access_required
+def bulk_reject_posts():
+    data = request.get_json() or {}
+    post_ids = data.get('ids', [])
+    reason = data.get('reason', 'Media policy violation')
+    
+    if not post_ids:
+        return jsonify({"status": "error", "message": "No posts selected"}), 400
+        
+    try:
+        admin_client = get_service_client()
+        admin_client.table('posts').update({"status": "rejected"}).in_("id", post_ids).execute()
+        
+        # Notify owners
+        posts_res = admin_client.table('posts').select("user_id").in_("id", post_ids).execute()
+        owner_ids = list(set(p['user_id'] for p in posts_res.data if p.get('user_id')))
+        for owner_id in owner_ids:
+            push_notification(
+                admin_client, owner_id,
+                title="Post Rejected",
+                message=f"One or more posts were rejected. Reason: {reason}",
+                notif_type="warning"
+            )
+            
+        admin_client.table('admin_logs').insert({
+            "admin_id": session.get('user', {}).get('id'),
+            "action_type": "bulk_reject_posts",
+            "details": f"Bulk rejected {len(post_ids)} posts. Reason: {reason}"
+        }).execute()
+        
+        return jsonify({"status": "success", "count": len(post_ids)})
+    except Exception as e:
+        logger.error("Bulk rejection failed: %s", e)
+        return jsonify({"status": "error", "message": "Bulk action failed"}), 500
+
+@admin.route('/admin/posts/bulk-delete', methods=['POST'])
+@login_required
+@content_access_required
+def bulk_delete_posts():
+    data = request.get_json() or {}
+    post_ids = data.get('ids', [])
+    reason = data.get('reason', 'Policy violation')
+    
+    if not post_ids:
+        return jsonify({"status": "error", "message": "No posts selected"}), 400
+        
+    try:
+        admin_client = get_service_client()
+        
+        # 1. Fetch info for notifications
+        posts_res = admin_client.table('posts').select("id, user_id").in_("id", post_ids).execute()
+        
+        for p in posts_res.data:
+            pid = p['id']
+            owner_id = p.get('user_id')
+            
+            # Archive and cleanup
+            archive_post_snapshot(admin_client, pid, deleted_by=session['user']['id'], deleted_by_role='admin', source='bulk_admin', reason=reason)
+            delete_post_dependencies(admin_client, pid)
+            admin_client.table('posts').delete().eq("id", pid).execute()
+            
+            if owner_id:
+                push_notification(admin_client, owner_id, title="Post Removed", message=f"Your post was removed during bulk moderation. Reason: {reason}", notif_type="warning")
+
+        admin_client.table('admin_logs').insert({
+            "admin_id": session.get('user', {}).get('id'),
+            "action_type": "bulk_delete_posts",
+            "details": f"Bulk deleted {len(post_ids)} posts. Reason: {reason}"
+        }).execute()
+        
+        return jsonify({"status": "success", "count": len(post_ids)})
+    except Exception as e:
+        logger.error("Bulk deletion failed: %s", e)
+        return jsonify({"status": "error", "message": "Bulk action failed"}), 500
+
+@admin.route('/admin/reports/bulk-dismiss', methods=['POST'])
+@login_required
+@content_access_required
+def bulk_dismiss_reports():
+    data = request.get_json() or {}
+    post_ids = data.get('post_ids', [])
+    user_ids = data.get('user_ids', [])
+    
+    try:
+        admin_client = get_service_client()
+        count = 0
+        
+        if post_ids:
+            admin_client.table('reports').update({"status": "resolved"}).in_("post_id", post_ids).eq("status", "pending").execute()
+            count += len(post_ids)
+            
+        if user_ids:
+            admin_client.table('reports').update({"status": "resolved"}).in_("reported_user_id", user_ids).eq("status", "pending").execute()
+            count += len(user_ids)
+
+        admin_client.table('admin_logs').insert({
+            "admin_id": session.get('user', {}).get('id'),
+            "action_type": "bulk_dismiss_reports",
+            "details": f"Bulk dismissed flags for {len(post_ids)} posts and {len(user_ids)} accounts."
+        }).execute()
+        
+        return jsonify({"status": "success", "count": count})
+    except Exception as e:
+        logger.error("Bulk dismissal failed: %s", e)
+        return jsonify({"status": "error", "message": "Bulk action failed"}), 500
+
 @admin.route('/admin/posts/<post_id>/approve', methods=['POST'])
 @login_required
 @content_access_required
@@ -767,6 +919,26 @@ def reject_post(post_id):
     except Exception as e:
         logger.error("Error rejecting post: %s", e)
         return jsonify({"status": "error", "message": "Failed to reject post."}), 500
+
+@admin.route('/admin/posts/<post_id>/details')
+@login_required
+@content_access_required
+def admin_get_post_details(post_id):
+    client = get_admin_read_client()
+    try:
+        # Fetch post with author profile
+        res = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)").eq("id", post_id).single().execute()
+        if not res.data:
+            return jsonify({"status": "error", "message": "Post not found"}), 404
+            
+        post = res.data
+        # Ensure likes/comments counts are current
+        # (Though we trust the DB columns for now, we can calculate if needed)
+        
+        return jsonify({"post": post})
+    except Exception as e:
+        logger.error("Error fetching post details for admin: %s", e)
+        return jsonify({"status": "error", "message": "Failed to load post details"}), 500
 
 @admin.route('/admin/posts/<post_id>/likers')
 @login_required
@@ -873,6 +1045,7 @@ def warn_user():
             "user_id": user_id,
             "admin_id": session['user']['id'],
             "reason": reason,
+            "message": message,
             "post_id": post_id
         }).execute()
 

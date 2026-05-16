@@ -8,6 +8,13 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 ## [Unreleased] - 2026-05-14
 
 ### Added
+- **Bulk Moderation Tools:**
+    *   Implemented batch processing in **Approvals** and **Reports** queues.
+    *   Added bulk selection (checkboxes + Select All) and floating action bars.
+    *   New backend routes for bulk approval, rejection, deletion, and flag dismissal.
+- **Refined User Reporting:**
+    *   Replaced standard prompts with uniform system modals for reporting accounts.
+    *   Simplified the reporting flow to a dropdown reason without mandatory messages.
 - **Unified Reporting & Moderation:**
     - Updated `reports` table to support reporting user accounts (`reported_user_id`).
     - Implemented **Account Reporting** on the user side (profile page) with a new route `/profiles/<id>/report`.
