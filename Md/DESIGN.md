@@ -51,6 +51,28 @@ Status colors (alerts only):
 - Warning: `#b8860b`
 - Error: `#c0392b`
 
+## 4.1) Contrast Standards (Font vs Background)
+Accessibility target:
+
+- Body and control text: minimum `4.5:1`
+- Large text (`>=24px` regular or `>=19px` bold): minimum `3:1`
+- Critical actions, nav, badges: prefer `>=7:1` where possible
+
+Approved text/background pairs:
+
+| Use Case | Text | Background | Contrast |
+|---|---|---|---:|
+| Default body text | `#111111` | `#ffffff` | 18.88:1 |
+| Body text on app surface | `#111111` | `#f4f6f8` | 17.43:1 |
+| Primary nav text | `#ffffff` | `#111c4e` | 16.15:1 |
+| Active filter chip text | `#ffffff` | `#1d4ed8` | 6.70:1 |
+| Footer contact heading | `#334155` | `#e5e7eb` | 8.36:1 |
+| Footer contact link | `#001035` | `#e5e7eb` | 15.07:1 |
+
+Disallowed pair in UI controls:
+
+- `#111111` text on `#1d4ed8` background (`2.82:1`) -> fails body-text contrast.
+
 ## 5) Filter Chip Standard
 Dashboard filter tags use a strict two-color interaction rule:
 
