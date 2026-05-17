@@ -267,6 +267,7 @@
         font-family: 'Metropolis', 'Inter', system-ui, sans-serif !important;
     }
 
+
     .hh-navbar .hh-dashboard-chip {
         display: inline-flex;
         align-items: center;
@@ -293,7 +294,7 @@
     <div class="w-full flex items-center justify-between">
         <!-- Logo Section -->
         <div class="hh-logo py-1 shrink-0">
-            <a href="{{ '/dashboard' if session.get('user') else url_for('core.home') }}" class="block">
+            <a href="{{ url_for('core.home') }}" class="block">
                 <img src="{{ url_for('static', filename='images/Top Navigation Bar Logo.svg') }}" alt="UMak Herons Hub" class="block h-8 w-auto">
             </a>
         </div>

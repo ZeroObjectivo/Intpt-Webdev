@@ -22,6 +22,7 @@ class DashboardLayoutTest(unittest.TestCase):
         self.css = (PROJECT_ROOT / "app" / "static" / "css" / "dashboard.css").read_text()
         self.template = (PROJECT_ROOT / "app" / "templates" / "dashboard.html").read_text()
         self.core_route = (PROJECT_ROOT / "app" / "routes" / "core.py").read_text()
+        self.sidebar_include = (PROJECT_ROOT / "app" / "templates" / "includes" / "primary_sidebar.html").read_text()
 
     def test_dashboard_grid_uses_fluid_columns_instead_of_rigid_widths(self):
         container_rule = re.search(r"\.dashboard-container\s*\{(?P<body>.*?)\}", self.css, re.S)
@@ -44,7 +45,7 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn("Marketplace", self.template)
         self.assertIn("Events", self.template)
         self.assertIn("About", self.template)
-        self.assertIn("Settings", self.template)
+        self.assertNotIn("Settings", self.sidebar_include)
 
     def test_primary_nav_links_use_current_dashboard_navigation_structure(self):
         nav_rule = re.search(r"\.primary-nav-link\s*\{(?P<body>.*?)\}", self.css, re.S)
@@ -52,16 +53,54 @@ class DashboardLayoutTest(unittest.TestCase):
 
         self.assertIsNotNone(nav_rule)
         self.assertIsNotNone(active_rule)
+        self.assertIn("width: 100%", nav_rule.group("body"))
         self.assertIn("border-radius: var(--hh-radius)", nav_rule.group("body"))
+        self.assertIn("border-radius: var(--hh-radius)", self.css)
         self.assertIn("background: var(--hh-blue-500)", active_rule.group("body"))
-        self.assertEqual(self.template.count("primary-nav-link rounded-lg"), 7)
-        self.assertIn("Home Feed", self.template)
-        self.assertIn("Marketplace", self.template)
-        self.assertIn("Event Calendar", self.template)
-        self.assertIn("Scholarship", self.template)
-        self.assertIn("UMak Coop", self.template)
-        self.assertIn("About", self.template)
-        self.assertIn("Settings", self.template)
+        self.assertIn("{% include 'includes/primary_sidebar.html' %}", self.template)
+        self.assertIn("Home Feed", self.sidebar_include)
+        self.assertIn("Marketplace", self.sidebar_include)
+        self.assertIn("Event Calendar", self.sidebar_include)
+        self.assertIn("Scholarship", self.sidebar_include)
+        self.assertIn("UMak COOP", self.sidebar_include)
+        self.assertIn("About", self.sidebar_include)
+        self.assertNotIn("Settings", self.sidebar_include)
+        support_index = self.sidebar_include.index("<span>Heron Support</span>")
+        about_index = self.sidebar_include.index("<span>About</span>")
+        self.assertLess(support_index, about_index)
+
+    def test_dashboard_sidebar_keeps_about_as_last_nav_item_and_restyles_primary_actions(self):
+        self.assertIn(".primary-sidebar-shell", self.css)
+        sidebar_shell_rule = re.search(r"\.primary-sidebar-shell\s*\{(?P<body>.*?)\}", self.css, re.S)
+        self.assertIsNotNone(sidebar_shell_rule)
+        sidebar_shell_body = sidebar_shell_rule.group("body")
+        self.assertIn("background: transparent", sidebar_shell_body)
+        self.assertNotIn(".primary-nav-footer", self.css)
+        self.assertNotIn("margin-top: auto", self.css)
+        self.assertNotIn("border: 1px solid var(--hh-border)", sidebar_shell_body)
+        self.assertIn("border: 1px solid currentColor", self.css)
+        self.assertIn("font-weight: 700", self.css)
+        self.assertIn("border-current", self.template)
+        self.assertIn("font-bold", self.template)
+
+    def test_secondary_views_share_primary_sidebar_include(self):
+        event_template = (PROJECT_ROOT / "app" / "templates" / "event_calendar.html").read_text()
+        scholarship_template = (PROJECT_ROOT / "app" / "templates" / "scholarship.html").read_text()
+        coop_template = (PROJECT_ROOT / "app" / "templates" / "umak_coop.html").read_text()
+
+        for template in (event_template, scholarship_template, coop_template):
+            self.assertIn("{% include 'includes/primary_sidebar.html' %}", template)
+            self.assertNotIn(">UMak Coop<", template)
+            self.assertNotIn('class="primary-nav-link rounded-lg"', template)
+
+    def test_secondary_views_do_not_render_deprecated_settings_nav_item(self):
+        event_template = (PROJECT_ROOT / "app" / "templates" / "event_calendar.html").read_text()
+        scholarship_template = (PROJECT_ROOT / "app" / "templates" / "scholarship.html").read_text()
+        coop_template = (PROJECT_ROOT / "app" / "templates" / "umak_coop.html").read_text()
+
+        self.assertNotIn("<span>Settings</span>", self.sidebar_include)
+        for template in (event_template, scholarship_template, coop_template, self.template):
+            self.assertNotIn(">Settings<", template)
 
     def test_dashboard_category_tags_use_standard_dark_palette(self):
         post_tag_matches = re.findall(
@@ -88,10 +127,16 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertNotIn("#fef08a", self.css)
 
     def test_dashboard_state_interactions_are_client_side(self):
-        self.assertGreaterEqual(len(re.findall(r"<a[^>]+data-nav-item", self.template)), 7)
+        self.assertGreaterEqual(len(re.findall(r"(?:<a|<button)[^>]+data-nav-item", self.template)), 7)
         self.assertIn('id="mobileCategoryFilter"', self.template)
         self.assertIn("window.dashboardSyncConfig", self.template)
         self.assertIn("js/realtime_sync.js", self.template)
+
+    def test_dashboard_filter_header_uses_icon_without_helper_copy(self):
+        self.assertNotIn("Use a category tag to focus what appears in your timeline.", self.template)
+        self.assertNotIn(">Filter:<", self.template)
+        self.assertIn('class="feed-filter-title-icon"', self.template)
+        self.assertIn('class="sr-only">Filter posts</span>', self.template)
 
     def test_create_post_modal_has_dynamic_category_fields(self):
         self.assertIn('id="createPostForm"', self.template)
