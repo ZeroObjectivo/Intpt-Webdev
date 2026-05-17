@@ -1422,12 +1422,12 @@ def load_profile_data(user_id, viewer_id=None):
                 activity_timestamps.append(post.get('created_at'))
 
         likes_activity = client.table('likes')\
-            .select("created_at, posts(id, content, category)")\
+            .select("created_at, posts(id, content, category, profiles(full_name))")\
             .eq("user_id", user_id)\
             .order("created_at", desc=True).limit(12).execute()
 
         comments_activity = client.table('comments')\
-            .select("id, created_at, content, post_id, posts(id, content, category)")\
+            .select("id, created_at, content, post_id, posts(id, content, category, profiles(full_name))")\
             .eq("user_id", user_id)\
             .order("created_at", desc=True).limit(12).execute()
 
@@ -1438,6 +1438,7 @@ def load_profile_data(user_id, viewer_id=None):
                     "created_at": l['created_at'],
                     "post_id": l['posts']['id'],
                     "post_content": l['posts']['content'],
+                    "post_owner_name": ((l['posts'].get('profiles') or {}).get('full_name') or '').strip(),
                     "category": l['posts']['category'],
                     "relative_created_at": format_relative_time(l.get('created_at')),
                 })
@@ -1450,6 +1451,7 @@ def load_profile_data(user_id, viewer_id=None):
                     "content": c['content'],
                     "post_id": c['posts']['id'],
                     "post_content": c['posts']['content'],
+                    "post_owner_name": ((c['posts'].get('profiles') or {}).get('full_name') or '').strip(),
                     "category": c['posts']['category'],
                     "relative_created_at": format_relative_time(c.get('created_at')),
                 })
