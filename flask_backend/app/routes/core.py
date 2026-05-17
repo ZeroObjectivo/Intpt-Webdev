@@ -102,26 +102,21 @@ def load_forbidden_terms():
     return normalized_terms
 
 def find_profanity_match(content):
-    """Check content for forbidden terms using substring matching.
+    """Smart multi-layer profanity and toxicity detection.
 
-    Performs two passes:
-    1. Substring match on normalized text (catches 'bullshit', 'fuckoff', etc.)
-    2. Stripped-space match (catches 'f u c k', 's h i t', etc.)
+    Layers:
+    1. Exact/substring match
+    2. Elongation collapsing (tanginamoooo → tanginamo)
+    3. Leetspeak normalization (f*ck → fuck, sh1t → shit)
+    4. Fuzzy matching (misspellings within edit distance)
+    5. Toxic phrase detection (threats, harassment, slurs)
     """
-    normalized_text = normalize_text_for_moderation(content)
-    if not normalized_text:
-        return None
-    stripped_text = _strip_spaces(normalized_text)
-    for term in load_forbidden_terms():
-        if not term:
-            continue
-        # Pass 1: substring match on normalized text
-        if term in normalized_text:
-            return term
-        # Pass 2: stripped spaces match (catches spaced-out evasion)
-        stripped_term = _strip_spaces(term)
-        if stripped_term and stripped_term in stripped_text:
-            return term
+    from app.utils.content_moderation import smart_profanity_check
+    terms = load_forbidden_terms()
+    matched, layer = smart_profanity_check(content, terms)
+    if matched:
+        logger.debug("Profanity matched: '%s' via %s layer", matched, layer)
+        return matched
     return None
 
 def _safe_int(value, default=0):
