@@ -61,29 +61,33 @@ _FUZZY_WHITELIST = frozenset({
     'put', 'puts', 'pull', 'push', 'pulse', 'pure', 'punt',
     'tang', 'tango', 'tank', 'tanks',
     'ago', 'sage', 'page', 'cage', 'wage',
+    # Filipino common words that false-match against Hindi/other profanity
+    'ganda', 'maganda', 'gandang', 'kagandahan', 'pagkaganda',
+    'andi', 'randi', 'grandi', 'branding', 'randim',
+    'lorem', 'ipsum', 'dolor', 'amet', 'adipi', 'consectetur',
 })
 
 
-def is_fuzzy_match(text, term, threshold=0.80):
-    """Check if any window of text fuzzy-matches the term.
+def is_fuzzy_match(text, term, threshold=0.88):
+    """Check if any word in text fuzzy-matches the term.
     Uses SequenceMatcher ratio. Skips matches that hit whitelisted words.
+    Only matches against individual words to avoid false positives from
+    substring windows across word boundaries.
     """
     term_len = len(term)
-    if term_len < 4:
-        return False  # too short for fuzzy matching
-    text_len = len(text)
-    if text_len < term_len - 1:
-        return False
+    if term_len < 5:
+        return False  # too short for fuzzy matching — high false-positive rate
 
-    # Slide a window over the text
-    for window in range(term_len, term_len + 2):
-        for i in range(max(1, text_len - window + 1)):
-            chunk = text[i:i + window]
-            if chunk in _FUZZY_WHITELIST:
-                continue
-            ratio = SequenceMatcher(None, chunk, term).ratio()
-            if ratio >= threshold:
-                return True
+    # Split into words and check each word individually
+    words = text.split() if ' ' in text else [text]
+    for word in words:
+        if word in _FUZZY_WHITELIST:
+            continue
+        if len(word) < term_len - 1 or len(word) > term_len + 2:
+            continue
+        ratio = SequenceMatcher(None, word, term).ratio()
+        if ratio >= threshold:
+            return True
     return False
 
 
@@ -182,22 +186,13 @@ def smart_profanity_check(content, forbidden_terms):
         if term_collapsed in leet_collapsed or term_stripped_collapsed in leet_collapsed:
             return term, 'leetspeak'
 
-        # Layer 4: Fuzzy — catch misspellings and transpositions (terms >= 4 chars)
-        if len(term_stripped) >= 4:
-            if is_fuzzy_match(aggressive_stripped, term_stripped_collapsed):
+        # Layer 4: Fuzzy — catch misspellings (terms >= 5 chars only)
+        if len(term_stripped) >= 5:
+            if is_fuzzy_match(aggressive_collapsed, term_stripped_collapsed):
                 return term, 'fuzzy'
             # Also fuzzy-match against leetspeak-normalized text
             if is_fuzzy_match(leet_collapsed, term_stripped_collapsed):
                 return term, 'fuzzy'
-            # Check for character transpositions (sorted chars match)
-            sorted_term = ''.join(sorted(term_stripped_collapsed))
-            tlen = len(sorted_term)
-            for i in range(len(aggressive_stripped) - tlen + 1):
-                chunk = aggressive_stripped[i:i + tlen]
-                if chunk in _FUZZY_WHITELIST:
-                    continue
-                if ''.join(sorted(chunk)) == sorted_term:
-                    return term, 'fuzzy'
 
     # Layer 5: Toxic phrase patterns (language-level toxicity)
     toxic_match = detect_toxic_pattern(normalized)
