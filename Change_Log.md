@@ -21,6 +21,9 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Post Card UI Enhancements:** Updated `includes/post_card.html` with improved styling (rounded corners on images and overlays) to match the latest design standards.
 
 ### Fixed
+- **Onboarding Completion (500 Error):** Fixed a critical 500 Internal Server Error on `/onboarding/complete` caused by a missing `flash` import in `auth.py`. 
+- **Profile Saving Logic:** Corrected the onboarding flow to save social links to the dedicated `profile_social_links` table instead of the non-existent `social_links` column in the `profiles` table.
+- **Metadata Safety:** Added safety checks for user metadata during onboarding to prevent crashes if metadata is missing.
 - **Profile Settings Save Button:** Fixed a JavaScript typo where an undefined variable was preventing the "Save Changes" button from enabling when changes were made. (References: `flask_backend/app/templates/profile_settings.html`)
 - **Admin Dashboard Layout:** Fixed a `jinja2.exceptions.UndefinedError` by removing the experimental storage analytics card and reverting related backend logic while preserving the requested user breakdown statistics.
 - **Database Connection Issues:** Removed SQL-based storage size fetching which was causing DNS resolution errors on some environments.

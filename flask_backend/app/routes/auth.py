@@ -1,6 +1,6 @@
 import logging
 import os
-from flask import Blueprint, request, redirect, session, url_for, jsonify, render_template
+from flask import Blueprint, request, redirect, session, url_for, jsonify, render_template, flash
 from services.supabase_client import (
     supabase,
     supabase_service,
@@ -425,21 +425,33 @@ def complete_onboarding():
         
         normalized_social_links = normalize_social_links_input(social_links_raw, social_visibility_raw)
 
+        metadata = user.get('user_metadata') or {}
         profile_data = {
             "id": str(user['id']),
             "email": user['email'],
-            "full_name": user['user_metadata'].get('full_name'),
-            "avatar_url": user['user_metadata'].get('avatar_url'),
+            "full_name": metadata.get('full_name'),
+            "avatar_url": metadata.get('avatar_url'),
             "college": college,
             "course": course,
             "level": level,
             "bio": bio,
             "contact_number": contact_number,
-            "contact_privacy": contact_privacy,
-            "social_links": normalized_social_links
+            "contact_privacy": contact_privacy
         }
 
         user_client.table('profiles').upsert(profile_data).execute()
+
+        # 1b. Create social links separately in the correct table
+        if normalized_social_links:
+            user_client.table('profile_social_links').delete().eq('profile_id', str(user['id'])).execute()
+            for link in normalized_social_links:
+                user_client.table('profile_social_links').insert({
+                    "profile_id": str(user['id']),
+                    "platform": link["platform"],
+                    "url": link["url"],
+                    "visibility": link["visibility"],
+                    "position": link["position"],
+                }).execute()
         
         # 2. Move from temp_user to full user session
         session['user'] = session.pop('temp_user')
