@@ -510,9 +510,9 @@
                     const hasUnread = unreadCount > 0;
 
                     if (dot) dot.classList.toggle('hidden', !hasUnread);
+                    // Remove the number from the badge as requested (keeping only the dot visible if there are unread)
                     if (count) {
-                        count.classList.toggle('hidden', !hasUnread);
-                        count.textContent = String(unreadCount);
+                        count.classList.add('hidden');
                     }
                     if (mobileCount) {
                         mobileCount.classList.toggle('hidden', !hasUnread);

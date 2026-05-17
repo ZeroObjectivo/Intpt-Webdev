@@ -131,6 +131,11 @@ ADMIN_NOTIFICATION_ROLES = {'super_admin', 'superadmin', 'admin', 'content_moder
 def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None):
     if not user_id:
         return
+    
+    # 0. Don't notify a user about their own actions (e.g. if an admin approves their own post)
+    if actor_id and str(actor_id) == str(user_id):
+        return
+
     sender_client = supabase_service or client
     try:
         # 1. Implement Like Merging logic
@@ -1024,14 +1029,14 @@ def load_home_metrics():
 
     try:
         metrics["members_count"] = _safe_exact_count(
-            client.table('profiles').select("id", count='exact', head=True).execute()
+            client.table('profiles').select("id", count='exact').limit(1).execute()
         )
     except Exception as e:
         logger.warning("Home metrics: profiles count unavailable: %s", e)
 
     try:
         metrics["posts_count"] = _safe_exact_count(
-            client.table('posts').select("id", count='exact', head=True).execute()
+            client.table('posts').select("id", count='exact').limit(1).execute()
         )
     except Exception as e:
         logger.warning("Home metrics: posts count unavailable: %s", e)
@@ -1039,9 +1044,10 @@ def load_home_metrics():
     try:
         metrics["upcoming_events_count"] = _safe_exact_count(
             client.table('posts')
-                .select("id", count='exact', head=True)
+                .select("id", count='exact')
                 .eq("category", "Events")
                 .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")
+                .limit(1)
                 .execute()
         )
     except Exception as e:
@@ -1049,14 +1055,14 @@ def load_home_metrics():
 
     try:
         metrics["scholarship_count"] = _safe_exact_count(
-            client.table('scholarship_catalog').select("id", count='exact', head=True).execute()
+            client.table('scholarship_catalog').select("id", count='exact').limit(1).execute()
         )
     except Exception as e:
         logger.warning("Home metrics: scholarship count unavailable: %s", e)
 
     try:
         metrics["coop_count"] = _safe_exact_count(
-            client.table('umak_coop_items').select("id", count='exact', head=True).execute()
+            client.table('umak_coop_items').select("id", count='exact').limit(1).execute()
         )
     except Exception as e:
         logger.warning("Home metrics: coop count unavailable: %s", e)
@@ -1713,9 +1719,10 @@ def build_notification_payload(client, user_id):
 
     try:
         unread_res = client.table('notifications')\
-            .select("id", count='exact', head=True)\
+            .select("id", count='exact')\
             .eq('user_id', user_id)\
             .eq('is_read', False)\
+            .limit(1)\
             .execute()
         unread_count = int(unread_res.count or 0)
     except Exception:

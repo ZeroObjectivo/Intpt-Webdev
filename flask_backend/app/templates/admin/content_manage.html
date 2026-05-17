@@ -70,14 +70,13 @@
             </a>
             
             <div class="h-6 w-px bg-slate-200"></div>
-            
-            <!-- View/Sort Dropdown -->
+
+            <!-- Sort Dropdown -->
             <div class="relative">
-                <select onchange="window.location.href='{{ url_for('admin.content_management', category=category) }}?view=' + this.value" 
-                        class="pl-4 pr-10 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:ring-2 focus:ring-umak-blue/20 transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]">
-                    <option value="recent" {% if view_filter == 'recent' %}selected{% endif %}>Recent Posts</option>
-                    <option value="oldest" {% if view_filter == 'oldest' %}selected{% endif %}>Older Posts</option>
-                    <option value="pending" {% if view_filter == 'pending' %}selected{% endif %}>Pending Posts</option>
+                <select onchange="window.location.href='{{ url_for('admin.content_management', category=category) }}?view={{ view_filter }}&sort=' + this.value" 
+                        class="pl-4 pr-10 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:ring-2 focus:ring-umak-blue/20 transition-all appearance-none cursor-pointer shadow-sm min-w-[140px]">
+                    <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recent Posts</option>
+                    <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Older Posts</option>
                 </select>
                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
@@ -153,15 +152,39 @@
         </div>
     </div>
 
-    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {% set base_url_func = 'admin.reports_queue' if is_reports_queue else 'admin.content_management' %}
-        {% for cat in ['All', 'General', 'Buy & Sell', 'Lost & Found', 'Question', 'Events'] %}
-        <a href="{{ url_for(base_url_func, category=cat) }}{% if is_reports_queue %}?type={{ report_type }}&sort={{ sort }}{% else %}?view={{ view_filter }}{% endif %}" 
-           class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border
-           {% if category == cat %} bg-umak-blue text-white border-umak-blue shadow-lg shadow-blue-900/20 {% else %} bg-white text-slate-400 border-slate-100 hover:border-slate-200 hover:text-slate-600 {% endif %}">
-            {{ cat }}
-        </a>
-        {% endfor %}
+    <div class="flex items-center justify-between gap-4 pb-4">
+        <!-- Categories (Left) -->
+        <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            {% set base_url_func = 'admin.reports_queue' if is_reports_queue else 'admin.content_management' %}
+            {% for cat in ['All', 'General', 'Buy & Sell', 'Lost & Found', 'Question', 'Events'] %}
+            <a href="{{ url_for(base_url_func, category=cat) }}{% if is_reports_queue %}?type={{ report_type }}&sort={{ sort }}{% else %}?view={{ view_filter }}&sort={{ sort }}{% endif %}" 
+               class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border
+               {% if category == cat %} bg-umak-blue text-white border-umak-blue shadow-lg shadow-blue-900/20 {% else %} bg-white text-slate-400 border-slate-100 hover:border-slate-200 hover:text-slate-600 {% endif %}">
+                {{ cat }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Status Toggle (Right) -->
+        {% if not is_reports_queue %}
+        <div class="flex items-center gap-1 bg-slate-100/50 p-1 rounded-2xl border border-slate-100 shadow-sm ml-auto">
+            <a href="{{ url_for('admin.content_management', category=category) }}?view=approved&sort={{ sort }}" 
+               class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all
+               {% if view_filter != 'pending' %} bg-white text-umak-blue shadow-sm border border-slate-100 {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
+                All Posts
+            </a>
+            <a href="{{ url_for('admin.content_management', category=category) }}?view=pending&sort={{ sort }}" 
+               class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2
+               {% if view_filter == 'pending' %} bg-white text-amber-600 shadow-sm border border-slate-100 {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
+                Pending
+                {% if pending_count and pending_count > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] font-black {% if view_filter == 'pending' %} bg-amber-500 text-white {% else %} bg-slate-200 text-slate-500 {% endif %}">
+                    {{ pending_count }}
+                </span>
+                {% endif %}
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 
