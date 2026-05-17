@@ -49,26 +49,19 @@ def create_app():
     def inject_notifications():
         from flask import session
         from services.supabase_client import get_user_client
+        from app.routes.core import build_notification_payload
         
         user = session.get('user')
         if not user:
             return {'notifications': [], 'unread_notifications_count': 0}
             
         try:
-            # Use the current user's token-backed client so this works even without service key.
             client = get_user_client()
-            res = client.table('notifications')\
-                .select("*")\
-                .eq('user_id', user['id'])\
-                .order('created_at', desc=True)\
-                .limit(5).execute()
-            
-            notifications = res.data
-            unread_count = len([n for n in notifications if not n.get('is_read')])
+            payload = build_notification_payload(client, user['id'])
             
             return {
-                'notifications': notifications,
-                'unread_notifications_count': unread_count
+                'notifications': payload['items'],
+                'unread_notifications_count': payload['unread_count']
             }
         except Exception as e:
             logger.error("Error injecting notifications: %s", e)

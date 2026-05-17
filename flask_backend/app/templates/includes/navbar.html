@@ -307,24 +307,39 @@
                         <!-- Notification Dropdown -->
                         <div id="notification-menu" class="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden hidden z-[60] border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
                             <div id="notification-header" class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                                <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
-                                <span id="notification-unread-count" class="notification-count-badge px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">
-                                    {{ unread_notifications_count }} New
-                                </span>
+                                <div class="flex items-center gap-3">
+                                    <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
+                                    <span id="notification-unread-count" class="notification-count-badge px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">
+                                        {{ unread_notifications_count }} New
+                                    </span>
+                                </div>
+                                <button onclick="markAllAsRead(event)" class="text-[11px] font-black text-umak-blue uppercase tracking-wider hover:text-umak-blue/80 transition-colors">Mark all read</button>
                             </div>
 
                             <div id="notification-list-container" class="max-h-[32rem] overflow-y-auto custom-scrollbar">
                                 <div id="notification-items-container">
                                 {% if notifications %}
                                     {% for n in notifications %}
-                                        <div class="notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                        <div class="notification-item px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group flex gap-4"
+                                             id="notif-{{ n.id }}"
                                              data-notification-id="{{ n.id }}"
                                              onclick="handleNotificationClick('{{ n.id }}', '{{ n.reference_id or '' }}', '{{ n.type or '' }}', this)">
-                                            <div class="flex justify-between items-start mb-2">
-                                                <h4 class="text-[15px] font-black {% if not n.is_read %}text-umak-blue{% else %}text-slate-600{% endif %}">{{ n.title }}</h4>
-                                                <span class="text-[11px] font-bold text-slate-300 uppercase">{{ n.created_at[:10] }}</span>
+                                            <div class="flex-shrink-0">
+                                                <img src="{{ n.actor_avatar if n.actor_avatar else url_for('static', filename='images/Logo.png') }}" 
+                                                     class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm"
+                                                     alt="Actor Photo">
                                             </div>
-                                            <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">{{ n.message }}</p>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex justify-between items-baseline mb-0.5">
+                                                    <h4 class="text-[14px] {% if not n.is_read %}font-black text-slate-900{% else %}font-bold text-slate-500{% endif %} truncate">{{ n.title }}</h4>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    {% if n.message %}
+                                                    <p class="text-[12px] {% if not n.is_read %}font-bold text-slate-700{% else %}font-medium text-slate-400{% endif %} leading-snug line-clamp-1 flex-1">{{ n.message }}</p>
+                                                    {% endif %}
+                                                    <span class="text-[10px] font-bold text-slate-300 uppercase whitespace-nowrap">{{ n.relative_time }}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     {% endfor %}
                                 {% endif %}
@@ -446,10 +461,9 @@
                 window.renderNotificationMenu = function(notifications, unreadCount) {
                     const list = document.getElementById('notification-items-container');
                     const empty = document.getElementById('notification-empty-state');
-                    const footer = document.getElementById('notification-footer');
-                    const items = Array.isArray(notifications) ? notifications : [];
+                    let items = Array.isArray(notifications) ? notifications : [];
 
-                    if (!list || !empty || !footer) return;
+                    if (!list || !empty) return;
 
                     // Deduplicate items just in case
                     const uniqueItems = [];
@@ -464,72 +478,102 @@
                     if (uniqueItems.length === 0) {
                         list.innerHTML = '';
                         empty.classList.remove('hidden');
-                        footer.classList.add('hidden');
                         updateNotificationBadge(0);
                         return;
                     }
 
                     const newListHtml = uniqueItems.map((n) => {
-                        const titleClass = n.is_read ? 'text-slate-600' : 'text-umak-blue';
-                        const createdAt = (n.created_at || '').slice(0, 10);
+                        const isRead = !!n.is_read;
+                        const titleClass = isRead ? 'font-bold text-slate-500' : 'font-black text-slate-900';
+                        const msgClass = isRead ? 'font-medium text-slate-400' : 'font-bold text-slate-700';
+                        const avatarUrl = n.actor_avatar || defaultAvatar;
+                        const relativeTime = n.relative_time || 'Just now';
                         const refId = escapeNotifHtml(n.reference_id || '');
                         const type = escapeNotifHtml(n.type || '');
                         
                         return `
-                            <div class="notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                            <div class="notification-item px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group flex gap-4"
                                  id="notif-${escapeNotifHtml(n.id)}"
                                  data-notification-id="${escapeNotifHtml(n.id)}"
                                  onclick="handleNotificationClick('${escapeNotifHtml(n.id)}', '${refId}', '${type}', this)">
-                                <div class="flex justify-between items-start mb-2">
-                                    <h4 class="text-[15px] font-black ${titleClass}">${escapeNotifHtml(n.title || 'Notification')}</h4>
-                                    <span class="text-[11px] font-bold text-slate-300 uppercase">${escapeNotifHtml(createdAt)}</span>
+                                <div class="flex-shrink-0">
+                                    <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" alt="">
                                 </div>
-                                <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">${escapeNotifHtml(n.message || '')}</p>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-baseline mb-0.5">
+                                        <h4 class="text-[14px] ${titleClass} truncate">${escapeNotifHtml(n.title || 'Notification')}</h4>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        ${n.message ? `<p class="text-[12px] ${msgClass} leading-snug line-clamp-1 flex-1">${escapeNotifHtml(n.message)}</p>` : ''}
+                                        <span class="text-[10px] font-bold text-slate-300 uppercase whitespace-nowrap">${escapeNotifHtml(relativeTime)}</span>
+                                    </div>
+                                </div>
                             </div>
                         `;
                     }).join('');
 
-                    // Only update DOM if HTML changed to prevent "flickering" or scroll jumps
                     if (list.innerHTML !== newListHtml) {
                         list.innerHTML = newListHtml;
                     }
 
                     empty.classList.add('hidden');
-                    footer.classList.remove('hidden');
                     updateNotificationBadge(unreadCount);
                 };
 
+                window.markAllAsRead = async function(e) {
+                    if (e) e.stopPropagation();
+                    
+                    // 1. Optimistic UI
+                    const items = document.querySelectorAll('.notification-item');
+                    items.forEach(el => {
+                        const h4 = el.querySelector('h4');
+                        const p = el.querySelector('p');
+                        if (h4) {
+                            h4.classList.remove('font-black', 'text-slate-900', 'text-umak-blue');
+                            h4.classList.add('font-bold', 'text-slate-500');
+                        }
+                        if (p) {
+                            p.classList.remove('font-bold', 'text-slate-700');
+                            p.classList.add('font-medium', 'text-slate-400');
+                        }
+                    });
+                    updateNotificationBadge(0);
+
+                    // 2. Server Sync
+                    try {
+                        await fetch('/notifications/mark-all-read', {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': getCSRFToken() }
+                        });
+                    } catch (err) { console.error(err); }
+                };
+
+                // Remove clearAllNotifications local JS as button is removed from UI
+
                 window.handleNotificationClick = async function(id, referenceId, type, el) {
-                    // 1. Mark as read
+                    // 1. Mark as read (Optimistic)
                     await markAsRead(id, el);
 
                     // 2. Navigate if applicable
                     if (referenceId && referenceId !== 'null' && referenceId !== '') {
-                        // Check if the post is already in window.allPosts
                         let post = (window.allPosts || []).find(p => p.id === referenceId);
                         
                         if (post) {
-                            if (typeof openCommentModal === 'function') {
-                                openCommentModal(post);
-                            }
+                            if (typeof openCommentModal === 'function') openCommentModal(post);
                         } else {
-                            // Fetch post details from our new route
                             try {
                                 const res = await fetch(`/posts/${referenceId}`);
                                 if (!res.ok) throw new Error('Post not found');
                                 const data = await res.json();
                                 if (data.post && typeof openCommentModal === 'function') {
-                                    // Add to allPosts so modal logic works (e.g. likers/comments)
                                     if (window.allPosts) window.allPosts.push(data.post);
                                     openCommentModal(data.post);
                                 }
                             } catch (e) { 
-                                console.error('Error fetching post for notification:', e);
+                                console.error('Error fetching post:', e);
                                 if (window.createToast) window.createToast('Post no longer exists.', 'error');
                             }
                         }
-                        
-                        // Close notification menu
                         const notifMenu = document.getElementById('notification-menu');
                         if (notifMenu) notifMenu.classList.add('hidden');
                     }
@@ -558,7 +602,6 @@
                         notifTrigger.addEventListener('click', function(e) {
                             e.stopPropagation();
                             notifMenu.classList.toggle('hidden');
-                            // Close profile menu if open
                             if (menu) menu.classList.add('hidden');
                         });
                         document.addEventListener('click', function(e) {
@@ -626,8 +669,28 @@
                         });
                     }
 
-                    // Notification click handling
+                    // Notification click handling (Optimistic UI)
                     window.markAsRead = async function(id, el) {
+                        // 1. Immediate UI Feedback (Optimistic)
+                        if (el) {
+                            const h4 = el.querySelector('h4');
+                            const p = el.querySelector('p');
+                            if (h4 && (h4.classList.contains('text-slate-900') || h4.classList.contains('text-umak-blue'))) {
+                                h4.classList.remove('font-black', 'text-slate-900', 'text-umak-blue');
+                                h4.classList.add('font-bold', 'text-slate-500');
+                                
+                                if (p) {
+                                    p.classList.remove('font-bold', 'text-slate-700');
+                                    p.classList.add('font-medium', 'text-slate-400');
+                                }
+
+                                const badge = document.getElementById('notification-unread-count');
+                                const current = badge && badge.textContent ? parseInt(badge.textContent, 10) || 0 : 0;
+                                updateNotificationBadge(Math.max(0, current - 1));
+                            }
+                        }
+
+                        // 2. Server Sync
                         try {
                             const res = await fetch(`/notifications/${id}/read`, {
                                 method: 'POST',
@@ -637,18 +700,7 @@
                                 window.location.href = '/login';
                                 return;
                             }
-                            const data = await res.json();
-                            if (data.status === 'success') {
-                                const title = el ? el.querySelector('h4') : null;
-                                if (title && title.classList.contains('text-umak-blue')) {
-                                    title.classList.remove('text-umak-blue');
-                                    title.classList.add('text-slate-600');
-                                    const badge = document.getElementById('notification-unread-count');
-                                    const current = badge && badge.textContent ? parseInt(badge.textContent, 10) || 0 : 0;
-                                    updateNotificationBadge(Math.max(0, current - 1));
-                                }
-                            }
-                        } catch (e) { console.error(e); }
+                        } catch (e) { console.error('Failed to sync notification read state:', e); }
                     };
 
                     const defaultAvatar = '{{ url_for('static', filename='images/Logo.png') }}';
@@ -930,49 +982,64 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleNewNotification(notif) {
-        // Prevent duplicate prepending (especially if polling and realtime fire together)
-        if (document.getElementById(`notif-${notif.id}`)) {
-            return;
+    async function handleNewNotification(notif) {
+        if (document.getElementById(`notif-${notif.id}`)) return;
+
+        // Fetch actor details if not present (realtime payload only has IDs)
+        let actorAvatar = defaultAvatar;
+        let actorName = "Someone";
+        
+        if (notif.actor_id) {
+            try {
+                const res = await fetch(`/search/users?id=${notif.actor_id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.users && data.users[0]) {
+                        actorAvatar = data.users[0].avatar_url || defaultAvatar;
+                        actorName = data.users[0].full_name || "Someone";
+                    }
+                }
+            } catch (e) { console.error('Error fetching notif actor details:', e); }
         }
 
-        // 1-2. Update unread indicators via shared helper to avoid duplicate badge elements.
+        // 1-2. Update indicators
         const countBadge = document.getElementById('notification-unread-count');
         const currentCount = countBadge && countBadge.textContent ? (parseInt(countBadge.textContent, 10) || 0) : 0;
-        if (typeof updateNotificationBadge === 'function') {
-            updateNotificationBadge(currentCount + 1);
-        }
+        updateNotificationBadge(currentCount + 1);
         
-        // 3. Hide empty state if visible
         const emptyState = document.getElementById('notification-empty-state');
         if (emptyState) emptyState.classList.add('hidden');
-        const footer = document.getElementById('notification-footer');
-        if (footer) footer.classList.remove('hidden');
 
-        // 4. Prepend the new notification (escaped to prevent XSS)
+        // 4. Prepend with new layout
         const safeId = escapeNotifHtml(notif.id);
         const safeTitle = escapeNotifHtml(notif.title || 'Notification');
         const safeMessage = escapeNotifHtml(notif.message || '');
-        const createdDate = escapeNotifHtml(new Date(notif.created_at).toISOString().split('T')[0]);
         const refId = escapeNotifHtml(notif.reference_id || '');
         const type = escapeNotifHtml(notif.type || '');
 
         const newNotifEl = document.createElement('div');
         newNotifEl.id = `notif-${safeId}`;
-        newNotifEl.className = "notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group";
+        newNotifEl.className = "notification-item px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group flex gap-4";
         newNotifEl.setAttribute('data-notification-id', notif.id);
         newNotifEl.setAttribute('onclick', `handleNotificationClick('${safeId}', '${refId}', '${type}', this)`);
         newNotifEl.innerHTML = `
-            <div class="flex justify-between items-start mb-2">
-                <h4 class="text-[15px] font-black text-umak-blue">${safeTitle}</h4>
-                <span class="text-[11px] font-bold text-slate-300 uppercase">${createdDate}</span>
+            <div class="flex-shrink-0">
+                <img src="${actorAvatar}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" alt="">
             </div>
-            <p class="text-[13px] text-slate-500 leading-relaxed line-clamp-2 font-medium">${safeMessage}</p>
+            <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-baseline mb-0.5">
+                    <h4 class="text-[14px] font-black text-slate-900 truncate">${safeTitle}</h4>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${safeMessage ? `<p class="text-[12px] font-bold text-slate-700 leading-snug line-clamp-1 flex-1">${safeMessage}</p>` : ''}
+                    <span class="text-[10px] font-bold text-slate-300 uppercase whitespace-nowrap">Just now</span>
+                </div>
+            </div>
         `;
+        
         const listContainer = document.getElementById('notification-items-container');
         if (listContainer) listContainer.prepend(newNotifEl);
 
-        // 5. Show a toast message
         if (window.createToast) {
             window.createToast(`<strong>${safeTitle}</strong>`, 'info');
         }

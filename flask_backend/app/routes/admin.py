@@ -251,14 +251,68 @@ def build_admin_permissions(role):
         "can_modify_admin_accounts": is_super_admin,
     }
 
-def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None):
+def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None):
     if not user_id:
         return
     sender_client = supabase_service or client
     try:
-        # Prevent spamming interaction notifications (e.g. rapid like toggling)
-        if notif_type == "interaction" and reference_id:
-            existing = sender_client.table('notifications')\
+        # 1. Implement Like Merging logic
+        if notif_type == "interaction" and reference_id and "like" in title.lower():
+            try:
+                # Fetch recent likers for this post
+                likes_res = sender_client.table('likes')\
+                    .select("user_id, profiles(full_name)")\
+                    .eq("post_id", reference_id)\
+                    .order("created_at", desc=True)\
+                    .limit(3).execute()
+                
+                total_likes_res = sender_client.table('likes')\
+                    .select("id", count="exact")\
+                    .eq("post_id", reference_id).execute()
+                
+                total_count = total_likes_res.count or 0
+                likers = likes_res.data or []
+                
+                if total_count > 0 and likers:
+                    names = []
+                    for l in likers:
+                        full_name = (l.get('profiles') or {}).get('full_name') or "A user"
+                        names.append(full_name.split()[0])
+                    
+                    if total_count == 1:
+                        new_title = f"{names[0]} liked your post."
+                    elif total_count == 2:
+                        new_title = f"{names[0]} and {names[1]} liked your post."
+                    else:
+                        others_count = total_count - 2
+                        new_title = f"{names[0]}, {names[1]} and {others_count} others liked your post."
+                    
+                    existing = sender_client.table('notifications')\
+                        .select("id")\
+                        .eq("user_id", user_id)\
+                        .eq("type", "interaction")\
+                        .eq("reference_id", reference_id)\
+                        .ilike("title", "%liked your post%")\
+                        .eq("is_read", False)\
+                        .limit(1).execute()
+                    
+                    if existing.data:
+                        sender_client.table('notifications').update({
+                            "title": new_title,
+                            "message": "",
+                            "actor_id": actor_id,
+                            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        }).eq("id", existing.data[0]['id']).execute()
+                        return
+                    
+                    title = new_title
+                    message = ""
+            except Exception as e:
+                logger.warning("Like merging failed in admin: %s", e)
+
+        # 2. Prevent spamming for other interactions
+        elif notif_type == "interaction" and reference_id:
+             existing = sender_client.table('notifications')\
                 .select("id")\
                 .eq("user_id", user_id)\
                 .eq("type", "interaction")\
@@ -266,19 +320,20 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                 .eq("title", title)\
                 .eq("is_read", False)\
                 .limit(1).execute()
-            
-            if existing.data:
-                # Already have an unread notification for this specific interaction
-                # Just update the timestamp to bring it to the top
+             
+             if existing.data:
                 sender_client.table('notifications').update({
-                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "actor_id": actor_id
                 }).eq("id", existing.data[0]['id']).execute()
                 return
 
+        # 3. Standard insert
         sender_client.table('notifications').insert({
             "user_id": user_id,
             "type": notif_type,
             "reference_id": reference_id,
+            "actor_id": actor_id,
             "title": title,
             "message": message,
         }).execute()
@@ -794,17 +849,19 @@ def bulk_approve_posts():
         posts_res = admin_client.table('posts').select("user_id").in_("id", post_ids).execute()
         owner_ids = list(set(p['user_id'] for p in posts_res.data if p.get('user_id')))
         
+        admin_id = session.get('user', {}).get('id')
         for owner_id in owner_ids:
             push_notification(
                 admin_client, owner_id,
                 title="Post Approved!",
                 message="One or more of your posts have been approved by moderators.",
-                notif_type="system"
+                notif_type="system",
+                actor_id=admin_id
             )
             
         # 3. Log action
         admin_client.table('admin_logs').insert({
-            "admin_id": session.get('user', {}).get('id'),
+            "admin_id": admin_id,
             "action_type": "bulk_approve_posts",
             "details": f"Bulk approved {len(post_ids)} posts."
         }).execute()
@@ -829,7 +886,8 @@ def bulk_reject_posts():
         admin_client = get_service_client()
         admin_client.table('posts').update({"status": "rejected"}).in_("id", post_ids).execute()
         
-        # Notify owners
+        admin_id = session.get('user', {}).get('id')
+        # 3. Notify owners
         posts_res = admin_client.table('posts').select("user_id").in_("id", post_ids).execute()
         owner_ids = list(set(p['user_id'] for p in posts_res.data if p.get('user_id')))
         for owner_id in owner_ids:
@@ -837,7 +895,8 @@ def bulk_reject_posts():
                 admin_client, owner_id,
                 title="Post Rejected",
                 message=f"One or more posts were rejected. Reason: {reason}",
-                notif_type="warning"
+                notif_type="warning",
+                actor_id=admin_id
             )
             
         admin_client.table('admin_logs').insert({
@@ -878,7 +937,7 @@ def bulk_delete_posts():
             admin_client.table('posts').delete().eq("id", pid).execute()
             
             if owner_id:
-                push_notification(admin_client, owner_id, title="Post Removed", message=f"Your post was removed during bulk moderation. Reason: {reason}", notif_type="warning")
+                push_notification(admin_client, owner_id, title="Post Removed", message=f"Your post was removed during bulk moderation. Reason: {reason}", notif_type="warning", actor_id=session.get('user', {}).get('id'))
 
         admin_client.table('admin_logs').insert({
             "admin_id": session.get('user', {}).get('id'),
@@ -1065,16 +1124,14 @@ def flag_post(post_id):
         client.table('posts').update({"is_flagged": True}).eq("id", post_id).execute()
         owner_id = post.get("user_id")
         if owner_id:
-            try:
-                client.table('notifications').insert({
-                    "user_id": owner_id,
-                    "type": "warning",
-                    "reference_id": post_id,
-                    "title": "Post flagged for review",
-                    "message": "Your post was flagged by moderation and is under review.",
-                }).execute()
-            except Exception as notif_e:
-                logger.warning("Could not notify user for flagged post %s: %s", post_id, notif_e)
+            push_notification(
+                client, owner_id,
+                title="Post flagged for review",
+                message="Your post was flagged by moderation and is under review.",
+                notif_type="warning",
+                reference_id=post_id,
+                actor_id=session.get('user', {}).get('id')
+            )
         return jsonify({"status": "success", "message": "Post flagged."})
     except Exception as e:
         logger.error("Error flagging post %s: %s", post_id, e)
@@ -1093,16 +1150,14 @@ def flag_comment(comment_id):
         client.table('comments').update({"is_flagged": True}).eq("id", comment_id).execute()
         owner_id = comment.get("user_id")
         if owner_id:
-            try:
-                client.table('notifications').insert({
-                    "user_id": owner_id,
-                    "type": "warning",
-                    "reference_id": comment_id,
-                    "title": "Comment flagged for review",
-                    "message": "One of your comments was flagged by moderation and is under review.",
-                }).execute()
-            except Exception as notif_e:
-                logger.warning("Could not notify user for flagged comment %s: %s", comment_id, notif_e)
+            push_notification(
+                client, owner_id,
+                title="Comment flagged for review",
+                message="One of your comments was flagged by moderation and is under review.",
+                notif_type="warning",
+                reference_id=comment_id,
+                actor_id=session.get('user', {}).get('id')
+            )
         return jsonify({"status": "success", "message": "Comment flagged."})
     except Exception as e:
         logger.error("Error flagging comment %s: %s", comment_id, e)
@@ -1147,12 +1202,13 @@ def warn_user():
         }).execute()
 
         # 2. Insert into notifications table
-        admin_client.table('notifications').insert({
-            "user_id": user_id,
-            "title": f"Community Warning: {reason}",
-            "message": message,
-            "type": "warning"
-        }).execute()
+        push_notification(
+            admin_client, user_id,
+            title=f"Community Warning: {reason}",
+            message=message,
+            notif_type="warning",
+            actor_id=session['user']['id']
+        )
 
         # 3. Log action
         try:
@@ -1217,12 +1273,14 @@ def suspend_user(user_id):
             "suspended_until": suspended_until
         }).eq("id", user_id).execute()
 
-        admin_client.table('notifications').insert({
-            "user_id": user_id,
-            "title": "Account Suspended",
-            "message": f"Your account has been suspended for {days} day(s). Reason: {reason}",
-            "type": "warning"
-        }).execute()
+        # Notify user
+        push_notification(
+            admin_client, user_id,
+            title="Account Suspended",
+            message=f"Your account has been suspended for {days} day(s). Reason: {reason}",
+            notif_type="warning",
+            actor_id=session.get('user', {}).get('id')
+        )
 
         try:
             admin_client.table('admin_logs').insert({
@@ -1265,12 +1323,14 @@ def ban_user(user_id):
             "suspended_until": None
         }).eq("id", user_id).execute()
 
-        admin_client.table('notifications').insert({
-            "user_id": user_id,
-            "title": "Account Banned",
-            "message": f"Your account has been permanently banned. Reason: {reason}",
-            "type": "warning"
-        }).execute()
+        # Notify user
+        push_notification(
+            admin_client, user_id,
+            title="Account Banned",
+            message=f"Your account has been permanently banned. Reason: {reason}",
+            notif_type="warning",
+            actor_id=session.get('user', {}).get('id')
+        )
 
         try:
             admin_client.table('admin_logs').insert({
@@ -1347,13 +1407,15 @@ def admin_delete_post(post_id):
                 preview = (archived_post.get("content") or "").strip()
                 if len(preview) > 120:
                     preview = f"{preview[:117]}..."
-                admin_client.table('notifications').insert({
-                    "user_id": owner_id,
-                    "type": "warning",
-                    "reference_id": post_id,
-                    "title": "Post removed by moderation",
-                    "message": f"Your post was removed. Reason: {delete_reason}" + (f" | \"{preview}\"" if preview else ""),
-                }).execute()
+                
+                push_notification(
+                    admin_client, owner_id,
+                    title="Post removed by moderation",
+                    message=f"Your post was removed. Reason: {delete_reason}" + (f" | \"{preview}\"" if preview else ""),
+                    notif_type="warning",
+                    reference_id=post_id,
+                    actor_id=actor_id
+                )
             except Exception as notif_e:
                 logger.warning("Could not notify post owner for deleted post %s: %s", post_id, notif_e)
 
@@ -1398,16 +1460,18 @@ def admin_delete_comment(comment_id):
         
         delete_comment_thread(admin_client, comment_id)
         owner_id = comment.get("user_id")
+        post_id = comment.get("post_id")
         
         if owner_id:
             try:
-                admin_client.table('notifications').insert({
-                    "user_id": owner_id,
-                    "type": "warning",
-                    "reference_id": comment_id,
-                    "title": "Comment removed by moderation",
-                    "message": "One of your comments was removed by moderation due to policy enforcement.",
-                }).execute()
+                push_notification(
+                    admin_client, owner_id,
+                    title="Comment removed by moderation",
+                    message="One of your comments was removed by moderation due to policy enforcement.",
+                    notif_type="warning",
+                    reference_id=post_id,
+                    actor_id=session.get('user', {}).get('id')
+                )
             except Exception as notif_e:
                 logger.warning("Could not notify comment owner for deleted comment %s: %s", comment_id, notif_e)
 

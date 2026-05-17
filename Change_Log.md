@@ -18,6 +18,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Event Approval Workflow:** Updated post creation logic to require explicit admin approval for all "Events" category posts, ensuring calendar quality and coordination. (References: `flask_backend/app/routes/core.py`)
 - **Event Calendar UI & Validation:** Redesigned the event creation form with a modern, icon-rich interface. Implemented client-side validation to disable past dates and ensure the end date is always after the start date. (References: `flask_backend/app/templates/dashboard.html`)
 - **Clickable Notifications:** Integrated deep-linking into the notification system. Clicking on notifications for post approvals, likes, or comments now automatically opens the relevant post modal, fetching the data dynamically if it is not already loaded in the feed. (References: `flask_backend/app/routes/core.py`, `flask_backend/app/templates/includes/navbar.html`)
+- **Notification Management:** Enhanced the notification UI with visual distinction for unread items (bold text) and implemented **Optimistic UI** for instant interaction feedback. Added "Mark all as read" and "Clear All" functionality with built-in protection against "ghost" notifications reappearing after a clear action. (References: `flask_backend/app/routes/core.py`, `flask_backend/app/templates/includes/navbar.html`)
 
 ### Changed
 - **Dashboard Feed Refactor:** Refactored `dashboard.html` to use the shared `includes/post_card.html` template, reducing code duplication by ~150 lines and ensuring a unified UI.

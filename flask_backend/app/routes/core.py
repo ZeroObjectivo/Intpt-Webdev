@@ -119,14 +119,71 @@ def _safe_int(value, default=0):
 
 ADMIN_NOTIFICATION_ROLES = {'super_admin', 'superadmin', 'admin', 'content_moderator', 'account_manager'}
 
-def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None):
+def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None):
     if not user_id:
         return
     sender_client = supabase_service or client
     try:
-        # Prevent spamming interaction notifications (e.g. rapid like toggling)
-        if notif_type == "interaction" and reference_id:
-            existing = sender_client.table('notifications')\
+        # 1. Implement Like Merging logic
+        if notif_type == "interaction" and reference_id and "like" in title.lower():
+            try:
+                # Fetch recent likers for this post to build merged message
+                likes_res = sender_client.table('likes')\
+                    .select("user_id, profiles(full_name)")\
+                    .eq("post_id", reference_id)\
+                    .order("created_at", desc=True)\
+                    .limit(3).execute()
+                
+                total_likes_res = sender_client.table('likes')\
+                    .select("id", count="exact")\
+                    .eq("post_id", reference_id).execute()
+                
+                total_count = total_likes_res.count or 0
+                likers = likes_res.data or []
+                
+                if total_count > 0 and likers:
+                    # Extract first names
+                    names = []
+                    for l in likers:
+                        full_name = (l.get('profiles') or {}).get('full_name') or "A user"
+                        names.append(full_name.split()[0])
+                    
+                    if total_count == 1:
+                        new_title = f"{names[0]} liked your post."
+                    elif total_count == 2:
+                        new_title = f"{names[0]} and {names[1]} liked your post."
+                    else:
+                        others_count = total_count - 2
+                        new_title = f"{names[0]}, {names[1]} and {others_count} others liked your post."
+                    
+                    # Check for existing unread like notif to update instead of insert
+                    existing = sender_client.table('notifications')\
+                        .select("id")\
+                        .eq("user_id", user_id)\
+                        .eq("type", "interaction")\
+                        .eq("reference_id", reference_id)\
+                        .ilike("title", "%liked your post%")\
+                        .eq("is_read", False)\
+                        .limit(1).execute()
+                    
+                    if existing.data:
+                        sender_client.table('notifications').update({
+                            "title": new_title,
+                            "message": "", # Content moved to title
+                            "actor_id": actor_id, # Latest actor for photo
+                            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                        }).eq("id", existing.data[0]['id']).execute()
+                        return
+                    
+                    # No existing unread notif, use the merged title for the new insert
+                    title = new_title
+                    message = ""
+            except Exception as e:
+                logger.warning("Like merging failed: %s", e)
+
+        # 2. Prevent spamming for non-like interactions (e.g. comment notifications)
+        elif notif_type == "interaction" and reference_id:
+             existing = sender_client.table('notifications')\
                 .select("id")\
                 .eq("user_id", user_id)\
                 .eq("type", "interaction")\
@@ -134,19 +191,20 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                 .eq("title", title)\
                 .eq("is_read", False)\
                 .limit(1).execute()
-            
-            if existing.data:
-                # Already have an unread notification for this specific interaction
-                # Just update the timestamp to bring it to the top
+             
+             if existing.data:
                 sender_client.table('notifications').update({
-                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "actor_id": actor_id
                 }).eq("id", existing.data[0]['id']).execute()
                 return
 
+        # 3. Standard insert
         sender_client.table('notifications').insert({
             "user_id": user_id,
             "type": notif_type,
             "reference_id": reference_id,
+            "actor_id": actor_id,
             "title": title,
             "message": message,
         }).execute()
@@ -1208,9 +1266,8 @@ def profile_settings():
 @login_required
 def search_users():
     query_text = (request.args.get('q') or '').strip()
-    if not query_text:
-        return jsonify({"status": "ok", "users": []})
-
+    target_id = request.args.get('id')
+    
     limit_raw = request.args.get('limit', '8')
     try:
         limit = int(limit_raw)
@@ -1222,6 +1279,16 @@ def search_users():
 
     def run_search():
         client = get_user_client()
+        
+        if target_id:
+            res = client.table('profiles')\
+                .select("id, full_name, avatar_url, college, course")\
+                .eq('id', target_id).execute()
+            return res.data or []
+
+        if not query_text:
+            return []
+
         query = client.table('profiles')\
             .select("id, full_name, avatar_url, college, course")\
             .ilike('full_name', f'%{query_text}%')
@@ -1605,13 +1672,28 @@ def build_dashboard_sync_state(client, category=None):
     return state
 
 def build_notification_payload(client, user_id):
+    # Fetch notifications with actor profile info
     notifications_res = client.table('notifications')\
-        .select("id, title, message, type, is_read, created_at, reference_id")\
+        .select("id, title, message, type, is_read, created_at, reference_id, actor_id, actor:profiles(full_name, avatar_url)")\
         .eq('user_id', user_id)\
         .order('created_at', desc=True)\
-        .limit(5).execute()
+        .limit(15).execute()
 
     items = notifications_res.data or []
+    for n in items:
+        # Add relative time
+        n['relative_time'] = format_relative_time(n.get('created_at'))
+        # Flatten actor details
+        actor = n.get('actor')
+        if actor:
+            n['actor_name'] = actor.get('full_name')
+            n['actor_avatar'] = actor.get('avatar_url')
+        else:
+            n['actor_name'] = "System"
+            n['actor_avatar'] = None
+        # Cleanup
+        if 'actor' in n: del n['actor']
+
     try:
         unread_res = client.table('notifications')\
             .select("id", count='exact', head=True)\
@@ -1853,6 +1935,7 @@ def toggle_like(post_id):
                             message=f"{liker_name} liked your post.",
                             notif_type="interaction",
                             reference_id=post_id,
+                            actor_id=user_id,
                         )
                 except Exception as notif_e:
                     logger.warning("Like notification skipped for post %s: %s", post_id, notif_e)
@@ -1937,6 +2020,7 @@ def add_comment(post_id):
                     message=f"{commenter_name} commented on your post.",
                     notif_type="interaction",
                     reference_id=post_id,
+                    actor_id=user_id,
                 )
         except Exception as notif_e:
             logger.warning("Post owner comment notification skipped for post %s: %s", post_id, notif_e)
@@ -1953,6 +2037,7 @@ def add_comment(post_id):
                         message=f"{commenter_name} replied to your comment.",
                         notif_type="interaction",
                         reference_id=post_id,
+                        actor_id=user_id,
                     )
             except Exception as notif_e:
                 logger.warning("Reply notification skipped for parent comment %s: %s", parent_id, notif_e)
@@ -2444,6 +2529,36 @@ def mark_notification_read(notification_id):
         if is_jwt_error(e):
             return jsonify({"status": "error", "reason": "session_expired"}), 401
         return jsonify({"status": "error", "reason": "mark_read_failed"}), 500
+
+@core.route('/notifications/mark-all-read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    user_id = session.get('user', {}).get('id')
+    client = get_user_client()
+    try:
+        client.table('notifications')\
+            .update({"is_read": True})\
+            .eq("user_id", user_id)\
+            .execute()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        logger.error("Failed to mark all notifications as read: %s", e)
+        return jsonify({"status": "error"}), 500
+
+@core.route('/notifications/clear-all', methods=['POST'])
+@login_required
+def clear_all_notifications():
+    user_id = session.get('user', {}).get('id')
+    client = get_user_client()
+    try:
+        client.table('notifications')\
+            .delete()\
+            .eq("user_id", user_id)\
+            .execute()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        logger.error("Failed to clear all notifications: %s", e)
+        return jsonify({"status": "error"}), 500
 
 @core.route('/login')
 def login():
