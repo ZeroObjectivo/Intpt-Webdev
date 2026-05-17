@@ -76,6 +76,10 @@ def normalize_text_for_moderation(text):
     collapsed = re.sub(r"[^\w]+", " ", lowered, flags=re.UNICODE)
     return re.sub(r"\s+", " ", collapsed).strip()
 
+def _strip_spaces(text):
+    """Remove all spaces — catches evasion like 'f u c k'."""
+    return re.sub(r"\s+", "", (text or ""))
+
 def load_forbidden_terms():
     now_ts = time.time()
     if _PROFANITY_TERM_CACHE["terms"] and (now_ts - float(_PROFANITY_TERM_CACHE["fetched_at"] or 0) < PROFANITY_TERM_CACHE_SECONDS):
@@ -98,15 +102,25 @@ def load_forbidden_terms():
     return normalized_terms
 
 def find_profanity_match(content):
+    """Check content for forbidden terms using substring matching.
+
+    Performs two passes:
+    1. Substring match on normalized text (catches 'bullshit', 'fuckoff', etc.)
+    2. Stripped-space match (catches 'f u c k', 's h i t', etc.)
+    """
     normalized_text = normalize_text_for_moderation(content)
     if not normalized_text:
         return None
-    padded_text = f" {normalized_text} "
+    stripped_text = _strip_spaces(normalized_text)
     for term in load_forbidden_terms():
         if not term:
             continue
-        token = f" {term} "
-        if token in padded_text:
+        # Pass 1: substring match on normalized text
+        if term in normalized_text:
+            return term
+        # Pass 2: stripped spaces match (catches spaced-out evasion)
+        stripped_term = _strip_spaces(term)
+        if stripped_term and stripped_term in stripped_text:
             return term
     return None
 
