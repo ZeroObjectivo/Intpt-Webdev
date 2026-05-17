@@ -117,6 +117,25 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
         return
     sender_client = supabase_service or client
     try:
+        # Prevent spamming interaction notifications (e.g. rapid like toggling)
+        if notif_type == "interaction" and reference_id:
+            existing = sender_client.table('notifications')\
+                .select("id")\
+                .eq("user_id", user_id)\
+                .eq("type", "interaction")\
+                .eq("reference_id", reference_id)\
+                .eq("title", title)\
+                .eq("is_read", False)\
+                .limit(1).execute()
+            
+            if existing.data:
+                # Already have an unread notification for this specific interaction
+                # Just update the timestamp to bring it to the top
+                sender_client.table('notifications').update({
+                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                }).eq("id", existing.data[0]['id']).execute()
+                return
+
         sender_client.table('notifications').insert({
             "user_id": user_id,
             "type": notif_type,
@@ -1466,7 +1485,7 @@ def build_dashboard_sync_state(client, category=None):
 
 def build_notification_payload(client, user_id):
     notifications_res = client.table('notifications')\
-        .select("id, title, message, type, is_read, created_at")\
+        .select("id, title, message, type, is_read, created_at, reference_id")\
         .eq('user_id', user_id)\
         .order('created_at', desc=True)\
         .limit(5).execute()
@@ -1619,6 +1638,35 @@ def sync_realtime():
     response = jsonify(payload)
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return response
+
+@core.route('/posts/<post_id>')
+@login_required
+def get_post_details(post_id):
+    client = get_user_client()
+    user_id = session.get('user', {}).get('id')
+    try:
+        post_res = client.table('posts')\
+            .select("*, profiles(full_name, avatar_url, college, course, level)")\
+            .eq("id", post_id)\
+            .single().execute()
+        
+        post = post_res.data
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Add interaction state
+        like_check = client.table('likes').select("id").eq("post_id", post_id).eq("user_id", user_id).execute()
+        post['user_has_liked'] = len(like_check.data) > 0
+        
+        count_map = build_comment_count_map(client, [post_id])
+        post['comments_count'] = count_map.get(post_id, 0)
+        post['relative_created_at'] = format_relative_time(post.get('created_at'))
+        attach_embed_metadata(post)
+        
+        return jsonify({"post": post})
+    except Exception as e:
+        logger.error("Error fetching post details: %s", e)
+        return jsonify({"error": "Failed to load post"}), 500
 
 @core.route('/posts/fetch')
 @login_required
@@ -2135,8 +2183,9 @@ def create_post():
 
     try:
         # Determine Approval Status
-        # Rule: Posts with images REQUIRE admin approval. Text-only posts are approved by default.
-        post_status = 'pending' if image_urls else 'approved'
+        # Rule: Posts with images OR 'Events' category REQUIRE admin approval.
+        # Text-only non-event posts are approved by default.
+        post_status = 'pending' if (image_urls or category == 'Events') else 'approved'
 
         post_data = {
             "user_id": user_id,
@@ -2156,7 +2205,10 @@ def create_post():
         session['last_post_time'] = current_time
 
         if post_status == 'pending':
-            flash("Post submitted! Since it contains media, it will be visible after admin approval.", "success")
+            if category == 'Events':
+                flash("Event post submitted! It will be visible after admin approval.", "success")
+            else:
+                flash("Post submitted! Since it contains media, it will be visible after admin approval.", "success")
         else:
             flash("Post created successfully!", "success")
     except Exception as e:

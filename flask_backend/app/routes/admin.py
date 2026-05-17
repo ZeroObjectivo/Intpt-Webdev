@@ -256,6 +256,25 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
         return
     sender_client = supabase_service or client
     try:
+        # Prevent spamming interaction notifications (e.g. rapid like toggling)
+        if notif_type == "interaction" and reference_id:
+            existing = sender_client.table('notifications')\
+                .select("id")\
+                .eq("user_id", user_id)\
+                .eq("type", "interaction")\
+                .eq("reference_id", reference_id)\
+                .eq("title", title)\
+                .eq("is_read", False)\
+                .limit(1).execute()
+            
+            if existing.data:
+                # Already have an unread notification for this specific interaction
+                # Just update the timestamp to bring it to the top
+                sender_client.table('notifications').update({
+                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                }).eq("id", existing.data[0]['id']).execute()
+                return
+
         sender_client.table('notifications').insert({
             "user_id": user_id,
             "type": notif_type,

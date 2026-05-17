@@ -319,7 +319,7 @@
                                     {% for n in notifications %}
                                         <div class="notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
                                              data-notification-id="{{ n.id }}"
-                                             onclick="markAsRead('{{ n.id }}', this)">
+                                             onclick="handleNotificationClick('{{ n.id }}', '{{ n.reference_id or '' }}', '{{ n.type or '' }}', this)">
                                             <div class="flex justify-between items-start mb-2">
                                                 <h4 class="text-[15px] font-black {% if not n.is_read %}text-umak-blue{% else %}text-slate-600{% endif %}">{{ n.title }}</h4>
                                                 <span class="text-[11px] font-bold text-slate-300 uppercase">{{ n.created_at[:10] }}</span>
@@ -451,7 +451,17 @@
 
                     if (!list || !empty || !footer) return;
 
-                    if (items.length === 0) {
+                    // Deduplicate items just in case
+                    const uniqueItems = [];
+                    const seenIds = new Set();
+                    for (const item of items) {
+                        if (!seenIds.has(item.id)) {
+                            seenIds.add(item.id);
+                            uniqueItems.push(item);
+                        }
+                    }
+
+                    if (uniqueItems.length === 0) {
                         list.innerHTML = '';
                         empty.classList.remove('hidden');
                         footer.classList.add('hidden');
@@ -459,13 +469,17 @@
                         return;
                     }
 
-                    list.innerHTML = items.map((n) => {
+                    const newListHtml = uniqueItems.map((n) => {
                         const titleClass = n.is_read ? 'text-slate-600' : 'text-umak-blue';
                         const createdAt = (n.created_at || '').slice(0, 10);
+                        const refId = escapeNotifHtml(n.reference_id || '');
+                        const type = escapeNotifHtml(n.type || '');
+                        
                         return `
                             <div class="notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                                 id="notif-${escapeNotifHtml(n.id)}"
                                  data-notification-id="${escapeNotifHtml(n.id)}"
-                                 onclick="markAsRead('${escapeNotifHtml(n.id)}', this)">
+                                 onclick="handleNotificationClick('${escapeNotifHtml(n.id)}', '${refId}', '${type}', this)">
                                 <div class="flex justify-between items-start mb-2">
                                     <h4 class="text-[15px] font-black ${titleClass}">${escapeNotifHtml(n.title || 'Notification')}</h4>
                                     <span class="text-[11px] font-bold text-slate-300 uppercase">${escapeNotifHtml(createdAt)}</span>
@@ -475,9 +489,50 @@
                         `;
                     }).join('');
 
+                    // Only update DOM if HTML changed to prevent "flickering" or scroll jumps
+                    if (list.innerHTML !== newListHtml) {
+                        list.innerHTML = newListHtml;
+                    }
+
                     empty.classList.add('hidden');
                     footer.classList.remove('hidden');
                     updateNotificationBadge(unreadCount);
+                };
+
+                window.handleNotificationClick = async function(id, referenceId, type, el) {
+                    // 1. Mark as read
+                    await markAsRead(id, el);
+
+                    // 2. Navigate if applicable
+                    if (referenceId && referenceId !== 'null' && referenceId !== '') {
+                        // Check if the post is already in window.allPosts
+                        let post = (window.allPosts || []).find(p => p.id === referenceId);
+                        
+                        if (post) {
+                            if (typeof openCommentModal === 'function') {
+                                openCommentModal(post);
+                            }
+                        } else {
+                            // Fetch post details from our new route
+                            try {
+                                const res = await fetch(`/posts/${referenceId}`);
+                                if (!res.ok) throw new Error('Post not found');
+                                const data = await res.json();
+                                if (data.post && typeof openCommentModal === 'function') {
+                                    // Add to allPosts so modal logic works (e.g. likers/comments)
+                                    if (window.allPosts) window.allPosts.push(data.post);
+                                    openCommentModal(data.post);
+                                }
+                            } catch (e) { 
+                                console.error('Error fetching post for notification:', e);
+                                if (window.createToast) window.createToast('Post no longer exists.', 'error');
+                            }
+                        }
+                        
+                        // Close notification menu
+                        const notifMenu = document.getElementById('notification-menu');
+                        if (notifMenu) notifMenu.classList.add('hidden');
+                    }
                 };
 
                 document.addEventListener('DOMContentLoaded', function() {
@@ -880,6 +935,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleNewNotification(notif) {
+        // Prevent duplicate prepending (especially if polling and realtime fire together)
+        if (document.getElementById(`notif-${notif.id}`)) {
+            return;
+        }
+
         // 1-2. Update unread indicators via shared helper to avoid duplicate badge elements.
         const countBadge = document.getElementById('notification-unread-count');
         const currentCount = countBadge && countBadge.textContent ? (parseInt(countBadge.textContent, 10) || 0) : 0;
@@ -898,11 +958,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const safeTitle = escapeNotifHtml(notif.title || 'Notification');
         const safeMessage = escapeNotifHtml(notif.message || '');
         const createdDate = escapeNotifHtml(new Date(notif.created_at).toISOString().split('T')[0]);
+        const refId = escapeNotifHtml(notif.reference_id || '');
+        const type = escapeNotifHtml(notif.type || '');
 
         const newNotifEl = document.createElement('div');
+        newNotifEl.id = `notif-${safeId}`;
         newNotifEl.className = "notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group";
         newNotifEl.setAttribute('data-notification-id', notif.id);
-        newNotifEl.setAttribute('onclick', `markAsRead('${safeId}', this)`);
+        newNotifEl.setAttribute('onclick', `handleNotificationClick('${safeId}', '${refId}', '${type}', this)`);
         newNotifEl.innerHTML = `
             <div class="flex justify-between items-start mb-2">
                 <h4 class="text-[15px] font-black text-umak-blue">${safeTitle}</h4>
