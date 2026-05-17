@@ -528,11 +528,18 @@ def manage_users():
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     search = request.args.get('search', '')
+    
     query = client.table('profiles').select("*")
     if search:
-        query = query.ilike('full_name', f'%{search}%')
+        query = query.or_(f"full_name.ilike.%{search}%,email.ilike.%{search}%")
+    
     res = query.order('full_name').execute()
-    return render_template('admin/users.html', users=res.data, user=session.get('user'), search=search, permissions=permissions)
+    users = res.data or []
+
+    if wants_json_response():
+        return jsonify({"status": "ok", "users": users})
+        
+    return render_template('admin/users.html', users=users, user=session.get('user'), search=search, permissions=permissions)
 
 @admin.route('/admin/users/<user_id>/manage')
 @login_required
@@ -687,6 +694,7 @@ def content_management(category):
     
     view_filter = request.args.get('view', 'approved') # 'pending', 'approved'
     sort_method = request.args.get('sort', 'recent') # 'recent', 'oldest'
+    search = request.args.get('search', '')
     
     query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
     
@@ -700,8 +708,12 @@ def content_management(category):
     # 2. Filter by Category
     if category != 'All':
         query = query.eq('category', category)
+
+    # 3. Filter by Search
+    if search:
+        query = query.ilike('content', f'%{search}%')
         
-    # 3. Execution & Sorting
+    # 4. Execution & Sorting
     desc_order = (sort_method == 'recent')
     res = query.order('created_at', desc=desc_order).execute()
     
@@ -732,6 +744,7 @@ def reports_queue(category='All'):
     
     report_type = request.args.get('type', 'posts') # 'posts' or 'accounts'
     sort_method = request.args.get('sort', 'recent_reports')
+    search = request.args.get('search', '')
     
     if report_type == 'accounts':
         # 1. Fetch all pending user reports
@@ -758,7 +771,12 @@ def reports_queue(category='All'):
         res = client.table('profiles').select("*").in_('id', user_ids).execute()
         accounts = res.data or []
 
-        # 4. Attach stats and Sort
+        # 4. Filter by Search
+        if search:
+            search_lower = search.lower()
+            accounts = [a for a in accounts if search_lower in (a.get('full_name') or '').lower() or search_lower in (a.get('email') or '').lower()]
+
+        # 5. Attach stats and Sort
         for a in accounts:
             stats = report_stats.get(a['id'], {"total": 0, "latest_report": "", "earliest_report": ""})
             a['report_count'] = stats["total"]
@@ -802,7 +820,12 @@ def reports_queue(category='All'):
         res = query.execute()
         posts = res.data or []
 
-        # 4. Attach stats and Sort
+        # 4. Filter by Search
+        if search:
+            search_lower = search.lower()
+            posts = [p for p in posts if search_lower in (p.get('content') or '').lower()]
+
+        # 5. Attach stats and Sort
         for p in posts:
             stats = report_stats.get(p['id'], {"total": 0, "latest_report": "", "earliest_report": ""})
             p['report_count'] = stats["total"]
@@ -1652,6 +1675,55 @@ def view_logs():
                            search=search,
                            action_filter=action_filter,
                            action_types=action_types)
+
+@admin.route('/admin/search/global')
+@login_required
+@admin_required
+def global_search():
+    query_text = (request.args.get('q') or '').strip().lower()
+    if not query_text:
+        return jsonify({"status": "ok", "profiles": [], "posts": [], "nav": []})
+
+    client = get_admin_read_client()
+    
+    # Smart Navigation Mapping
+    navigation_items = [
+        {"title": "User Management", "url": "/admin/users", "keywords": ["users", "accounts", "profiles", "manage users", "members"], "icon": "users"},
+        {"title": "Verification Disputes", "url": "/admin/disputes", "keywords": ["disputes", "verification", "id verify", "appeals"], "icon": "shield"},
+        {"title": "Reports Queue", "url": "/admin/reports", "keywords": ["reports", "flagged", "reported", "moderation", "violations"], "icon": "flag"},
+        {"title": "Content Management", "url": "/admin/content/All", "keywords": ["posts", "content", "feed", "manage posts"], "icon": "document"},
+        {"title": "Scholarship Catalog", "url": "/admin/catalog/scholarship", "keywords": ["scholarships", "grants", "scholarship cards"], "icon": "academic"},
+        {"title": "UMak Coop Catalog", "url": "/admin/catalog/umak-coop", "keywords": ["coop", "items", "products", "store", "shop"], "icon": "shopping"},
+        {"title": "Colleges & Institutes", "url": "/admin/colleges", "keywords": ["colleges", "institutes", "academic units", "departments"], "icon": "office"},
+        {"title": "Profanity Filter", "url": "/admin/forbidden-words", "keywords": ["profanity", "forbidden", "filter", "words", "banned words"], "icon": "chat"},
+        {"title": "Support Inbox", "url": "/admin/support", "keywords": ["support", "inbox", "tickets", "help", "messages"], "icon": "mail"},
+        {"title": "System Logs", "url": "/admin/logs", "keywords": ["logs", "audit", "history", "activity"], "icon": "clipboard"}
+    ]
+
+    matched_nav = []
+    for item in navigation_items:
+        if any(kw in query_text for kw in item['keywords']) or query_text in item['title'].lower():
+            matched_nav.append(item)
+
+    try:
+        # Search Dynamic Entities (Profiles and Posts)
+        profiles_res = client.table('profiles').select("id, full_name, avatar_url, role, email")\
+            .or_(f"full_name.ilike.%{query_text}%,email.ilike.%{query_text}%")\
+            .limit(5).execute()
+        
+        posts_res = client.table('posts').select("id, content, status, profiles(full_name)")\
+            .ilike('content', f'%{query_text}%')\
+            .limit(5).execute()
+        
+        return jsonify({
+            "status": "ok",
+            "profiles": profiles_res.data or [],
+            "posts": posts_res.data or [],
+            "nav": matched_nav
+        })
+    except Exception as e:
+        logger.error("Global admin search failed: %s", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @admin.route('/admin/colleges')
 @login_required
