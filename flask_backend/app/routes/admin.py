@@ -1562,10 +1562,14 @@ def add_forbidden_word():
     
     try:
         client.table('forbidden_words').insert({"word": word}).execute()
+        # Invalidate profanity cache so new word takes effect immediately
+        from .core import _PROFANITY_TERM_CACHE
+        _PROFANITY_TERM_CACHE["terms"] = []
+        _PROFANITY_TERM_CACHE["fetched_at"] = 0
         flash(f"Added '{word}' to forbidden words.", "success")
     except Exception as e:
         flash("Error adding word.", "error")
-    
+
     return redirect(url_for('admin.manage_forbidden_words'))
 
 @admin.route('/admin/forbidden-words/<word>/delete', methods=['POST'])
@@ -1575,10 +1579,14 @@ def delete_forbidden_word(word):
     client = get_admin_read_client()
     try:
         client.table('forbidden_words').delete().eq('word', word).execute()
+        # Invalidate profanity cache so removal takes effect immediately
+        from .core import _PROFANITY_TERM_CACHE
+        _PROFANITY_TERM_CACHE["terms"] = []
+        _PROFANITY_TERM_CACHE["fetched_at"] = 0
         flash(f"Removed '{word}' from forbidden words.", "success")
     except Exception as e:
         flash("Error removing word.", "error")
-    
+
     return redirect(url_for('admin.manage_forbidden_words'))
 
 def _parse_catalog_price(raw_value):

@@ -1481,6 +1481,13 @@ def update_profile():
         request.form.get('social_link_visibility_3', 'public'),
     ]
 
+    # Profanity check on bio
+    if bio:
+        bio_match = find_profanity_match(bio)
+        if bio_match:
+            flash("Your bio contains inappropriate language. Please revise it.", "error")
+            return redirect(url_for('core.profile_settings'))
+
     client = get_user_client()
 
     try:

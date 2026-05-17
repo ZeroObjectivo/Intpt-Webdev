@@ -408,6 +408,17 @@ def complete_onboarding():
         flash("Please fill in all required academic information.", "error")
         return redirect(url_for('auth.onboarding'))
 
+    # Profanity check on bio and full name
+    from .core import find_profanity_match
+    metadata = user.get('user_metadata') or {}
+    full_name = metadata.get('full_name', '')
+    if full_name and find_profanity_match(full_name):
+        flash("Your display name contains inappropriate language. Please update your Google account name.", "error")
+        return redirect(url_for('auth.onboarding'))
+    if bio and find_profanity_match(bio):
+        flash("Your bio contains inappropriate language. Please revise it.", "error")
+        return redirect(url_for('auth.onboarding'))
+
     # 1. Create the profile in Supabase (using user's token to satisfy RLS)
     try:
         user_client = get_user_client()
