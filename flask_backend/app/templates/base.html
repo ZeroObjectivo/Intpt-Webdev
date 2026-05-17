@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+    // Apply theme immediately to prevent flash of wrong theme
+    (function() {
+        var pref = localStorage.getItem('theme') || 'system';
+        var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+    })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}University Social Platform{% endblock %}</title>
@@ -189,6 +197,23 @@
             }, { passive: true });
         }
     })();
+    </script>
+
+    <!-- Theme Switching -->
+    <script>
+    window.setTheme = function(pref) {
+        localStorage.setItem('theme', pref);
+        var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+        // Update any visible toggle buttons
+        document.querySelectorAll('[data-theme-active]').forEach(function(el) {
+            el.setAttribute('data-theme-active', dark ? 'dark' : 'light');
+        });
+    };
+    // Listen for system theme changes when preference is 'system'
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+        if ((localStorage.getItem('theme') || 'system') === 'system') window.setTheme('system');
+    });
     </script>
 
     <!-- Custom JS -->

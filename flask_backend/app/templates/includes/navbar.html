@@ -360,6 +360,25 @@
                         </div>
                     </div>
                     
+                    <!-- Theme Toggle -->
+                    <button type="button" id="navbar-theme-toggle" aria-label="Toggle theme"
+                        class="hh-icon-btn p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors"
+                        onclick="var cur = localStorage.getItem('theme') || 'system'; window.setTheme(cur === 'dark' ? 'light' : 'dark');">
+                        <svg id="theme-icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <svg id="theme-icon-moon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                    <script>
+                    (function(){
+                        function updateThemeIcon() {
+                            var dark = document.documentElement.classList.contains('dark');
+                            document.getElementById('theme-icon-sun').classList.toggle('hidden', !dark);
+                            document.getElementById('theme-icon-moon').classList.toggle('hidden', dark);
+                        }
+                        updateThemeIcon();
+                        new MutationObserver(updateThemeIcon).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+                    })();
+                    </script>
+
                     <!-- 3. Notification Icon with Dropdown (Desktop) -->
                     <div class="relative" id="notification-dropdown-container">
                         <button class="hh-icon-btn p-2 rounded-full text-white hover:text-umak-yellow hover:bg-white/10 transition-colors relative hidden lg:inline-flex" 
