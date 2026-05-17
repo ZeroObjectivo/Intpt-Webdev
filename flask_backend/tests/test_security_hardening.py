@@ -105,6 +105,16 @@ class SecurityHardeningTest(unittest.TestCase):
         self.assertIn("window.renderNotificationMenu", navbar_template)
         self.assertIn("/sync/realtime", realtime_js)
 
+    def test_authenticated_navbar_uses_home_feed_logo_and_single_active_dropdown_logic(self):
+        navbar_template = read_text("app/templates/includes/navbar.html")
+
+        self.assertIn("href=\"{{ '/dashboard' if session.get('user') else url_for('core.home') }}\"", navbar_template)
+        self.assertNotIn("Go to Dashboard", navbar_template)
+        self.assertIn("function closeNavbarDropdowns()", navbar_template)
+        self.assertIn("function toggleNavbarDropdown(menuToShow, triggerToShow)", navbar_template)
+        self.assertIn("overflow-hidden rounded-lg", navbar_template)
+        self.assertIn("backdrop-blur-xl", navbar_template)
+
 
 if __name__ == "__main__":
     unittest.main()
