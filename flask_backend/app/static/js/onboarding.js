@@ -191,16 +191,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateBadge(row) {
         const input = row.querySelector('[data-social-url-input]');
         const badge = row.querySelector('[data-platform-badge]');
+        const iconContainer = badge.querySelector('svg');
         const platform = detectPlatform(input.value);
         
+        // Default State (Slate)
+        badge.className = 'onboarding-social-badge bg-slate-50 text-slate-400 border border-slate-100 flex items-center justify-center rounded-xl w-10 h-10 transition-all';
+        iconContainer.innerHTML = '<path d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5m6.328-1.5a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+
         if (platform) {
-            badge.dataset.platform = platform;
-            badge.style.color = '#0D4E8B';
-            badge.style.borderColor = '#0D4E8B';
-        } else {
-            badge.dataset.platform = '';
-            badge.style.color = '';
-            badge.style.borderColor = '';
+            // Identified State (Indigo - match Profile Settings)
+            badge.className = 'onboarding-social-badge bg-indigo-50 text-[#4338ca] border border-indigo-100 flex items-center justify-center rounded-xl w-10 h-10 transition-all';
+            
+            if (platform === 'facebook') {
+                iconContainer.innerHTML = '<path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else if (platform === 'instagram') {
+                iconContainer.innerHTML = '<rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else if (platform === 'tiktok') {
+                iconContainer.innerHTML = '<path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else if (platform === 'linkedin') {
+                iconContainer.innerHTML = '<path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="4" r="2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else if (platform === 'discord') {
+                iconContainer.innerHTML = '<circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><path d="M9 7L8 3h8l-1 4h-6zM3 13v-3a10 10 0 0118 0v3c0 4-3 7-9 7s-9-3-9-7z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            }
         }
     }
 
