@@ -105,11 +105,17 @@ class SecurityHardeningTest(unittest.TestCase):
         self.assertIn("window.renderNotificationMenu", navbar_template)
         self.assertIn("/sync/realtime", realtime_js)
 
-    def test_authenticated_navbar_uses_home_feed_logo_and_single_active_dropdown_logic(self):
+    def test_authenticated_navbar_uses_about_logo_and_route_specific_dashboard_link(self):
         navbar_template = read_text("app/templates/includes/navbar.html")
+        home_template = read_text("app/templates/home.html")
 
-        self.assertIn("href=\"{{ '/dashboard' if session.get('user') else url_for('core.home') }}\"", navbar_template)
-        self.assertNotIn("Go to Dashboard", navbar_template)
+        self.assertIn("href=\"{{ url_for('core.home') }}\"", navbar_template)
+        self.assertIn("{% if request.endpoint not in ['core.dashboard', 'core.home'] %}", navbar_template)
+        self.assertIn("Go to Dashboard", navbar_template)
+        self.assertIn("{{ navbar_display_name }}", navbar_template)
+        self.assertIn("navbar_full_name | title", navbar_template)
+        self.assertIn("hero-dashboard-cta", home_template)
+        self.assertIn("{% if session.get('user') %}", home_template)
         self.assertIn("function closeNavbarDropdowns()", navbar_template)
         self.assertIn("function toggleNavbarDropdown(menuToShow, triggerToShow)", navbar_template)
         self.assertIn("overflow-hidden rounded-lg", navbar_template)

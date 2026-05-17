@@ -204,13 +204,34 @@
         color: #64748b;
         font-weight: 600;
     }
+
+    .hh-navbar .hh-dashboard-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: white;
+        white-space: nowrap;
+        transition: background-color 0.18s ease, color 0.18s ease;
+    }
+
+    .hh-navbar .hh-dashboard-chip:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+    }
+
 </style>
 
 <nav class="hh-navbar bg-umak-blue text-white py-4 px-6 fixed top-0 left-0 w-full z-50 font-sans shadow-md" style="background-color: #001035;">
     <div class="w-full flex items-center justify-between">
         <!-- Logo Section -->
         <div class="hh-logo py-1 shrink-0">
-            <a href="{{ '/dashboard' if session.get('user') else url_for('core.home') }}" class="block">
+            <a href="{{ url_for('core.home') }}" class="block">
                 <img src="{{ url_for('static', filename='images/Top Navigation Bar Logo.svg') }}" alt="UMak Herons Hub" class="block h-8 w-auto">
             </a>
         </div>
@@ -250,12 +271,15 @@
                 <!-- User Profile & Controls Group -->
                 <div class="hh-main-group flex items-center gap-4">
                     {% set navbar_full_name = (session.get('user', {}).get('user_metadata', {}).get('full_name', 'Name') | trim) %}
-                    {% set navbar_name_parts = navbar_full_name.split() %}
-                    {% set navbar_first_name = navbar_name_parts[0] if navbar_name_parts else 'Name' %}
-                    {% set navbar_last_initial = navbar_name_parts[-1][0] ~ '.' if navbar_name_parts|length > 1 else '' %}
+                    {% set navbar_display_name = navbar_full_name | title %}
+                    {% if request.endpoint not in ['core.dashboard', 'core.home'] %}
+                    <a href="{{ url_for('core.dashboard') }}" class="hh-dashboard-chip hidden lg:inline-flex">
+                        Go to Dashboard
+                    </a>
+                    {% endif %}
                     <!-- 1. Name -->
                     <span class="hh-user-name text-sm font-medium text-white whitespace-nowrap">
-                        {{ navbar_first_name | title }}{% if navbar_last_initial %} {{ navbar_last_initial | upper }}{% endif %}
+                        {{ navbar_display_name }}
                     </span>
                     
                     <!-- 2. Profile Icon with Dropdown -->
