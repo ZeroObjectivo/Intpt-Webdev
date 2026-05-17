@@ -889,32 +889,6 @@
                     <h3 class="text-lg font-black text-slate-800 mb-5">Bio / About Me</h3>
                     <textarea name="bio" rows="5" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white" placeholder="Tell the Heron community something about yourself...">{{ user.bio or '' }}</textarea>
                 </section>
-
-                <section class="px-6 py-6 sm:px-8 sm:py-7 border-t border-slate-100">
-                    <h3 class="text-lg font-black text-slate-800 mb-5">Preferences</h3>
-
-                    <!-- Theme -->
-                    <div class="mb-6">
-                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Appearance</label>
-                        <div class="flex gap-2" id="theme-selector">
-                            <button type="button" onclick="window.setTheme('light')" data-theme-value="light"
-                                class="theme-option flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-bold transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                                Light
-                            </button>
-                            <button type="button" onclick="window.setTheme('dark')" data-theme-value="dark"
-                                class="theme-option flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-bold transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                                Dark
-                            </button>
-                            <button type="button" onclick="window.setTheme('system')" data-theme-value="system"
-                                class="theme-option flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-bold transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                System
-                            </button>
-                        </div>
-                    </div>
-                </section>
             </div>
 
             <div class="profile-modal-sticky border-t border-slate-100 bg-slate-50 px-6 py-5 sm:px-8 sm:py-6">
@@ -1354,24 +1328,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderContactValidation(validatePhilippineMobile(contactNumberInput?.value || ''));
         checkChanges();
     }
-
-    // Theme selector highlighting
-    function updateThemeSelector() {
-        var pref = localStorage.getItem('theme') || 'system';
-        document.querySelectorAll('.theme-option').forEach(function(btn) {
-            var val = btn.getAttribute('data-theme-value');
-            var active = val === pref;
-            btn.className = 'theme-option flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-bold transition-all '
-                + (active ? 'border-umak-blue bg-umak-blue text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300');
-        });
-    }
-    updateThemeSelector();
-    // Re-highlight after theme switch
-    var origSetTheme = window.setTheme;
-    window.setTheme = function(pref) {
-        origSetTheme(pref);
-        updateThemeSelector();
-    };
 });
 </script>
 {% endblock %}
