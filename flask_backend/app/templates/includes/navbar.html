@@ -333,7 +333,8 @@
                 <div class="hh-main-group flex items-center gap-4">
                     {% set navbar_full_name = (session.get('user', {}).get('user_metadata', {}).get('full_name', 'Name') | trim) %}
                     {% set navbar_display_name = navbar_full_name | title %}
-                    {% if request.endpoint not in ['core.dashboard', 'core.home'] %}
+                    {% set dashboard_parent_endpoints = ['core.dashboard', 'core.event_calendar', 'core.scholarship', 'core.umak_coop'] %}
+                    {% if request.endpoint not in dashboard_parent_endpoints + ['core.home'] %}
                     <a href="{{ url_for('core.dashboard') }}" class="hh-dashboard-chip hidden lg:inline-flex">
                         Go to Dashboard
                     </a>
