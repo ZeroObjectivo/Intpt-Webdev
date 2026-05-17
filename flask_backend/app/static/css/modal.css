@@ -518,3 +518,91 @@
 .image-modal.modal-visible .modal-container {
     transform: scale(1);
 }
+
+/* ===== Dark Mode Overrides ===== */
+html.dark .modal-side-panel {
+    background: #1e293b !important;
+    border-left-color: #334155 !important;
+}
+html.dark .modal-close {
+    background: #334155 !important;
+    color: #94a3b8 !important;
+}
+html.dark .modal-close:hover {
+    background: #475569 !important;
+    color: #e2e8f0 !important;
+}
+html.dark .modal-post-header h4 {
+    color: #e2e8f0 !important;
+}
+html.dark .modal-post-content {
+    color: #cbd5e1 !important;
+}
+html.dark .modal-post-content p {
+    color: #cbd5e1 !important;
+}
+html.dark .modal-post-actions {
+    border-top-color: #334155 !important;
+    border-bottom-color: #334155 !important;
+}
+html.dark .modal-action-btn {
+    color: #94a3b8 !important;
+}
+html.dark .modal-action-btn:hover {
+    background: #273549 !important;
+}
+html.dark .modal-comments-section {
+    background: #1e293b !important;
+}
+html.dark .modal-comment-input {
+    background: #1e293b !important;
+    border-top-color: #334155 !important;
+}
+html.dark .modal-comment-composer {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+html.dark .modal-comment-field {
+    background: #0f172a !important;
+}
+html.dark #commentTextarea {
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+html.dark #commentTextarea:focus {
+    border-color: #475569 !important;
+}
+html.dark .modal-comment-submit {
+    color: #94a3b8 !important;
+}
+html.dark .modal-embed {
+    border-color: #334155 !important;
+    background: #0f172a !important;
+}
+html.dark .view-replies-btn {
+    color: #94a3b8 !important;
+}
+html.dark .view-replies-btn:hover {
+    background: #273549 !important;
+}
+html.dark .confirm-content {
+    background: #1e293b !important;
+}
+html.dark .confirm-content h3 {
+    color: #e2e8f0 !important;
+}
+html.dark .confirm-content p {
+    color: #94a3b8 !important;
+}
+html.dark .modal-comments-section::-webkit-scrollbar-thumb {
+    background: #334155 !important;
+}
+html.dark .modal-comments-section::-webkit-scrollbar-thumb:hover {
+    background: #475569 !important;
+}
+@media (max-width: 768px) {
+    html.dark .modal-side-panel {
+        border-top-color: #334155 !important;
+    }
+}

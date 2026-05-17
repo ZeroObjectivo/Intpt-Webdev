@@ -8,7 +8,7 @@
     const realtimeConfig = window.realtimeConfig || {};
     const activeCategory = syncConfig.activeCategory || '';
     const interactionApplyDelayMs = 200;
-    const notificationApplyDelayMs = 300;
+    const notificationApplyDelayMs = 50;
     const inactivityThresholdMs = 10 * 60 * 1000; // 10 minutes
     const sidebarSyncIntervalMs = 5 * 60 * 1000;  // 5 minutes — trending & events
     const skeletonRevealDelayMs = 420;
