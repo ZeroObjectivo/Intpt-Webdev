@@ -193,6 +193,10 @@
 
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Global Data Injection
+        window.collegeColors = {{ college_colors|tojson|safe }};
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

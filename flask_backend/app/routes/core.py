@@ -4,6 +4,7 @@ from .auth import (
     is_jwt_error,
     login_required,
     refresh_supabase_auth,
+    wants_json_response,
 )
 from services.supabase_client import get_user_client, supabase_service
 from app.utils.post_archive import archive_post_snapshot, maybe_purge_expired_archived_posts, purge_expired_archived_posts
@@ -812,16 +813,50 @@ def load_college_institute_options():
         })
     return options
 
+def load_course_options(college_name=None):
+    if not college_name:
+        return []
+        
+    client = supabase_service or get_user_client()
+    try:
+        query = client.table('courses')\
+            .select("name, program_type, colleges_institutes!inner(name)")\
+            .eq("colleges_institutes.name", college_name)
+        
+        response = query.order("name").execute()
+    except Exception as exc:
+        logger.warning("Unable to load courses options: %s", exc)
+        return []
+
+    options = []
+    seen = set()
+    for row in (response.data or []):
+        name = (row.get('name') or '').strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        program_type = (row.get('program_type') or 'Other').strip()
+        options.append({
+            "value": name,
+            "label": name,
+            "group": program_type
+        })
+    return options
+
 def parse_catalog_multiline(value):
     if not value:
         return []
     lines = [line.strip(" \t-•") for line in str(value).splitlines()]
     return [line for line in lines if line]
 
-def load_catalog_page_data(user_id, catalog_kind):
+def load_catalog_page_data(user_id, catalog_kind, skip_profile=False):
     client = get_user_client()
-    profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
-    profile = profile_res.data
+    profile = None
+    if not skip_profile:
+        profile_res = client.table('profiles').select("*").eq("id", user_id).single().execute()
+        profile = profile_res.data
+        
+    filters = {"search": "", "category": "All", "availability": "All", "sort": "recent"}
 
     if catalog_kind == 'scholarship':
         cards_res = client.table('scholarship_catalog')\
@@ -833,12 +868,37 @@ def load_catalog_page_data(user_id, catalog_kind):
             card['relative_created_at'] = format_relative_time(card.get('created_at'))
             card['qualification_items'] = parse_catalog_multiline(card.get('qualifications'))
             card['requirement_items'] = parse_catalog_multiline(card.get('requirements'))
-        return profile, cards
+        return profile, cards, filters
 
-    cards_res = client.table('umak_coop_items')\
-        .select("id, name, details, price, availability, image_url, created_at")\
-        .order("created_at", desc=True)\
-        .limit(60).execute()
+    # UMak Coop Catalog logic with filtering
+    search = (request.args.get('search') or '').strip()
+    category = (request.args.get('category') or 'All').strip()
+    availability = (request.args.get('availability') or 'All').strip()
+    sort = (request.args.get('sort') or 'recent').strip()
+    filters = {"search": search, "category": category, "availability": availability, "sort": sort}
+
+    query = client.table('umak_coop_items').select("id, name, details, price, availability, image_url, created_at, category")
+    
+    if search:
+        # Search item name or category
+        query = query.or_(f"name.ilike.%{search}%,category.ilike.%{search}%")
+    if category != 'All':
+        query = query.eq('category', category)
+    if availability != 'All':
+        query = query.eq('availability', availability)
+
+    if sort == 'price_high':
+        query = query.order('price', desc=True)
+    elif sort == 'price_low':
+        query = query.order('price', desc=False)
+    elif sort == 'az':
+        query = query.order('name', desc=False)
+    elif sort == 'za':
+        query = query.order('name', desc=True)
+    else:
+        query = query.order('created_at', desc=True)
+
+    cards_res = query.limit(100).execute()
     cards = cards_res.data or []
     for card in cards:
         card['relative_created_at'] = format_relative_time(card.get('created_at'))
@@ -847,7 +907,8 @@ def load_catalog_page_data(user_id, catalog_kind):
         except (TypeError, ValueError):
             numeric_price = None
         card['price_label'] = f"PHP {numeric_price:,.2f}" if numeric_price is not None else "N/A"
-    return profile, cards
+    
+    return profile, cards, filters
 
 def normalize_calendar_month(month_param):
     now_local = datetime.datetime.now(DISPLAY_TIMEZONE)
@@ -895,7 +956,7 @@ def load_event_calendar_page_data(user_id, month_param=None):
     window_end_utc = (month_end_local + datetime.timedelta(days=31)).astimezone(datetime.timezone.utc).isoformat()
 
     events_res = client.table('posts')\
-        .select("id, content, event_title, event_date, event_end_date, location")\
+        .select("*, profiles(full_name, avatar_url, college, course, level)")\
         .eq("category", "Events")\
         .gte("event_date", window_start_utc)\
         .lt("event_date", window_end_utc)\
@@ -905,8 +966,9 @@ def load_event_calendar_page_data(user_id, month_param=None):
     now_local = datetime.datetime.now(DISPLAY_TIMEZONE)
     events_by_day = {}
     month_events = []
+    full_posts = events_res.data or []
 
-    for event in (events_res.data or []):
+    for event in full_posts:
         try:
             start_dt = parse_post_datetime(event.get('event_date'))
             if not start_dt:
@@ -939,6 +1001,7 @@ def load_event_calendar_page_data(user_id, month_param=None):
                 "time_display": format_calendar_time_range(start_local, end_local),
                 "day_label": start_local.strftime('%b %d'),
                 "start_iso": start_local.isoformat(),
+                "day": start_local.day
             }
             month_events.append(event_item)
 
@@ -987,6 +1050,7 @@ def load_event_calendar_page_data(user_id, month_param=None):
         "weekday_labels": weekday_labels,
         "calendar_cells": calendar_cells,
         "month_events": month_events,
+        "full_posts": full_posts
     }
 
 def build_comment_count_map(client, post_ids):
@@ -1130,10 +1194,10 @@ def scholarship():
     user_id = user_session.get('id')
 
     try:
-        profile, cards = load_catalog_page_data(user_id, 'scholarship')
+        profile, cards, filters = load_catalog_page_data(user_id, 'scholarship')
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
-            profile, cards = load_catalog_page_data(user_id, 'scholarship')
+            profile, cards, filters = load_catalog_page_data(user_id, 'scholarship')
         elif is_jwt_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
@@ -1142,11 +1206,13 @@ def scholarship():
             logger.error("Error loading scholarship catalog: %s", e)
             profile = user_session or {}
             cards = []
+            filters = {"search": "", "category": "All", "availability": "All", "sort": "recent"}
 
     response = make_response(render_template(
         'scholarship.html',
         user=profile,
-        cards=cards
+        cards=cards,
+        **filters
     ))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
@@ -1160,10 +1226,10 @@ def umak_coop():
     user_id = user_session.get('id')
 
     try:
-        profile, cards = load_catalog_page_data(user_id, 'umak_coop')
+        profile, cards, filters = load_catalog_page_data(user_id, 'umak_coop')
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
-            profile, cards = load_catalog_page_data(user_id, 'umak_coop')
+            profile, cards, filters = load_catalog_page_data(user_id, 'umak_coop')
         elif is_jwt_error(e):
             session.clear()
             flash("Your login session expired. Please sign in again.", "error")
@@ -1172,11 +1238,16 @@ def umak_coop():
             logger.error("Error loading UMak Coop catalog: %s", e)
             profile = user_session or {}
             cards = []
+            filters = {"search": "", "category": "All", "availability": "All", "sort": "recent"}
+
+    if wants_json_response():
+        return jsonify({"status": "ok", "cards": cards})
 
     response = make_response(render_template(
         'umak_coop.html',
         user=profile,
-        cards=cards
+        cards=cards,
+        **filters
     ))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
@@ -1350,33 +1421,47 @@ def get_courses():
         
     college_name = request.args.get('college')
     if not college_name:
-        return jsonify([])
+        return jsonify({"courses": []})
     
-    # Use service client since user client might not be fully established yet
-    client = supabase_service
+    client = supabase_service or get_user_client()
     try:
-        # Get college ID first
-        col_res = client.table('colleges_institutes').select('id').eq('name', college_name).execute()
-        if not col_res.data:
-            return jsonify([])
-            
-        college_id = col_res.data[0]['id']
+        # Join with colleges_institutes to filter by name
+        response = client.table('courses')\
+            .select("name, program_type, colleges_institutes!inner(name)")\
+            .eq("colleges_institutes.name", college_name)\
+            .order("name")\
+            .execute()
         
-        # Get courses for this college
-        courses_res = client.table('courses').select('name, program_type').eq('college_id', college_id).order('name').execute()
-        return jsonify(courses_res.data or [])
-    except Exception as e:
-        logger.error("Error fetching courses for API: %s", e)
-        return jsonify([]), 500
+        options = []
+        seen = set()
+        for row in (response.data or []):
+            name = (row.get('name') or '').strip()
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            program_type = (row.get('program_type') or 'Other').strip()
+            options.append({
+                "value": name,
+                "label": name,
+                "group": program_type
+            })
+        return jsonify({"courses": options})
+    except Exception as exc:
+        logger.warning("API error fetching courses for %s: %s", college_name, exc)
+        return jsonify({"courses": []}), 500
 
 def load_profile_data(user_id, viewer_id=None):
     client = get_user_client()
     college_options = load_college_institute_options()
-    social_links = load_profile_social_links(client, user_id)
-    public_social_links = [link for link in social_links if link.get("visibility") == "public"]
-
+    
     profile_response = client.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
+    
+    current_college_name = (profile.get('college') or '').strip() if profile else None
+    course_options = load_course_options(current_college_name)
+    
+    social_links = load_profile_social_links(client, user_id)
+    public_social_links = [link for link in social_links if link.get("visibility") == "public"]
 
     activity_timestamps = []
     if profile:
@@ -1417,8 +1502,9 @@ def load_profile_data(user_id, viewer_id=None):
         if post.get('created_at'):
             activity_timestamps.append(post.get('created_at'))
 
-    likes_count_res = client.table('likes').select("post_id", count="exact").eq("user_id", user_id).execute()
-    comments_count_res = client.table('comments').select("id", count="exact").eq("user_id", user_id).execute()
+    # Count total likes and comments received on posts authored by this user
+    likes_count_res = client.table('likes').select("id, posts!inner(user_id)", count="exact").eq("posts.user_id", user_id).execute()
+    comments_count_res = client.table('comments').select("id, posts!inner(user_id)", count="exact").eq("posts.user_id", user_id).execute()
 
     interactions = {
         "stats": {

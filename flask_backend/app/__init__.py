@@ -68,6 +68,21 @@ def create_app():
             return {'notifications': [], 'unread_notifications_count': 0}
 
     @app.context_processor
+    def inject_college_colors():
+        from services.supabase_client import supabase_service
+        try:
+            if not supabase_service:
+                return {'college_colors': {}}
+            
+            # This is cached per-request by Flask usually, but we could add a simple TTL if needed
+            res = supabase_service.table('colleges_institutes').select("name, color").execute()
+            color_map = {c['name']: c['color'] for c in (res.data or [])}
+            return {'college_colors': color_map}
+        except Exception as e:
+            logger.error("Error injecting college colors: %s", e)
+            return {'college_colors': {}}
+
+    @app.context_processor
     def inject_now():
         return {'now': datetime.now(timezone.utc)}
 

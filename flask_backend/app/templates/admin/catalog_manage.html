@@ -58,129 +58,121 @@
         color: #0f172a;
     }
 
-    .catalog-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.9rem;
-    }
-
     .catalog-item-card {
-        padding: 1rem;
+        padding: 0.65rem;
         display: flex;
         flex-direction: column;
         min-height: 100%;
+        border-radius: 1rem;
     }
 
-    .catalog-meta {
-        margin: 0 0 0.75rem;
-        font-size: 0.68rem;
-        font-weight: 800;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+    .catalog-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.65rem;
+    }
+
+    .catalog-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+        padding: 0.6rem;
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .catalog-filter-bar select,
+    .catalog-filter-bar input {
+        border-radius: 0.65rem;
+        border: 1px solid #dbe1ea;
+        background: #ffffff;
+        padding: 0.35rem 0.55rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #1e293b;
+        outline: none;
+    }
+
+    .catalog-filter-bar input {
+        flex: 1;
+        min-width: 120px;
     }
 
     .catalog-fields {
         display: grid;
-        gap: 0.6rem;
+        gap: 0.4rem;
     }
 
     .catalog-fields input,
     .catalog-fields textarea,
     .catalog-fields select {
         width: 100%;
-        border-radius: 0.85rem;
+        border-radius: 0.65rem;
         border: 1px solid #dbe1ea;
         background: #f8fafc;
-        padding: 0.55rem 0.75rem;
-        font-size: 0.78rem;
+        padding: 0.35rem 0.55rem;
+        font-size: 0.7rem;
         font-weight: 700;
         color: #1e293b;
         outline: none;
     }
 
     .catalog-fields textarea {
-        min-height: 82px;
+        min-height: 50px;
         resize: vertical;
     }
 
     .catalog-actions {
-        margin-top: 0.8rem;
+        margin-top: 0.4rem;
         display: flex;
-        gap: 0.5rem;
+        gap: 0.3rem;
     }
 
-    .btn-primary {
+    .btn-primary, .btn-danger, .btn-muted {
         border: 0;
-        border-radius: 0.85rem;
-        padding: 0.55rem 0.9rem;
-        background: #0038a8;
-        color: #ffffff;
-        font-size: 0.68rem;
+        border-radius: 0.65rem;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.6rem;
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         cursor: pointer;
+        text-align: center;
     }
 
-    .btn-danger {
-        border: 0;
-        border-radius: 0.85rem;
-        padding: 0.55rem 0.9rem;
-        background: #ef4444;
-        color: #ffffff;
-        font-size: 0.68rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        cursor: pointer;
-    }
-
-    .btn-muted {
-        border-radius: 0.85rem;
-        padding: 0.55rem 0.9rem;
-        background: #e2e8f0;
-        color: #334155;
-        font-size: 0.68rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
+    .btn-primary { background: #0038a8; color: #ffffff; }
+    .btn-danger { background: #ef4444; color: #ffffff; }
+    .btn-muted { background: #e2e8f0; color: #334155; }
 
     .item-image {
         width: 100%;
-        aspect-ratio: 16 / 9;
-        border-radius: 0.85rem;
-        border: 1px solid #dbe1ea;
+        aspect-ratio: 16 / 10;
+        margin-bottom: 0.4rem;
+        border-radius: 0.65rem;
         object-fit: cover;
-        margin-bottom: 0.65rem;
+        border: 1px solid #dbe1ea;
     }
 
-    @media (max-width: 1080px) {
+    .catalog-meta {
+        margin: 0;
+        font-size: 0.6rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    @media (max-width: 1280px) {
+        .catalog-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
         .catalog-grid {
             grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 767px) {
-        .catalog-switch {
-            flex-wrap: wrap;
-        }
-
-        .catalog-switch-link {
-            flex: 1 1 140px;
-            text-align: center;
-        }
-
-        .catalog-actions {
-            flex-direction: column;
-        }
-
-        .btn-primary,
-        .btn-danger,
-        .btn-muted {
-            width: 100%;
-            text-align: center;
         }
     }
 </style>
@@ -194,14 +186,43 @@
     <a href="{{ url_for('admin.manage_umak_coop_catalog') }}" class="catalog-switch-link {% if catalog_type == 'umak_coop' %}active{% endif %}">UMak Coop</a>
 </div>
 
+{% if catalog_type == 'umak_coop' %}
+<form method="GET" action="{{ url_for('admin.manage_umak_coop_catalog') }}" class="catalog-filter-bar">
+    <input type="text" name="search" value="{{ search or '' }}" placeholder="Search items...">
+    <select name="category" onchange="this.form.submit()">
+        <option value="All" {% if category == 'All' %}selected{% endif %}>All Categories</option>
+        <option value="Books" {% if category == 'Books' %}selected{% endif %}>Books</option>
+        <option value="Uniforms" {% if category == 'Uniforms' %}selected{% endif %}>Uniforms</option>
+        <option value="Patches" {% if category == 'Patches' %}selected{% endif %}>Patches</option>
+        <option value="ID Laces" {% if category == 'ID Laces' %}selected{% endif %}>ID Laces</option>
+        <option value="Other" {% if category == 'Other' %}selected{% endif %}>Other</option>
+    </select>
+    <select name="availability" onchange="this.form.submit()">
+        <option value="All" {% if availability == 'All' %}selected{% endif %}>All Stock</option>
+        <option value="Available" {% if availability == 'Available' %}selected{% endif %}>Available</option>
+        <option value="Low Stock" {% if availability == 'Low Stock' %}selected{% endif %}>Low Stock</option>
+        <option value="Out of Stock" {% if availability == 'Out of Stock' %}selected{% endif %}>Out of Stock</option>
+    </select>
+    <select name="sort" onchange="this.form.submit()">
+        <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recent First</option>
+        <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+        <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+        <option value="az" {% if sort == 'az' %}selected{% endif %}>Name: A-Z</option>
+        <option value="za" {% if sort == 'za' %}selected{% endif %}>Name: Z-A</option>
+    </select>
+</form>
+{% endif %}
+
 {% if can_edit %}
 <section class="catalog-create-card">
     <h3>Create New Card</h3>
     {% if catalog_type == 'scholarship' %}
     <form method="POST" action="{{ url_for('admin.create_scholarship_catalog_item') }}" class="catalog-fields">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input name="scholarship_type" type="text" placeholder="Type/Category of Scholarship" required>
-        <input name="name" type="text" placeholder="Name of Scholarship" required>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input name="scholarship_type" type="text" placeholder="Type/Category" required>
+            <input name="name" type="text" placeholder="Name of Scholarship" required>
+        </div>
         <textarea name="details" placeholder="Details" required></textarea>
         <textarea name="qualifications" placeholder="Qualifications (one per line)"></textarea>
         <textarea name="requirements" placeholder="Requirements (one per line)"></textarea>
@@ -212,16 +233,36 @@
     {% else %}
     <form method="POST" action="{{ url_for('admin.create_umak_coop_item') }}" class="catalog-fields" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input name="name" type="text" placeholder="Item Name" required>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input name="name" type="text" placeholder="Item Name" required>
+            <select name="category" required>
+                <option value="Other">Select Category</option>
+                <option value="Books">Books</option>
+                <option value="Uniforms">Uniforms</option>
+                <option value="Patches">Patches</option>
+                <option value="ID Laces">ID Laces</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
         <textarea name="details" placeholder="Details" required></textarea>
-        <input name="price" type="number" min="0" step="0.01" placeholder="Price" required>
-        <input name="image_file" type="file" accept="image/*">
-        <input name="image_url" type="url" placeholder="Picture URL (optional)">
-        <select name="availability">
-            <option value="Available">Available</option>
-            <option value="Low Stock">Low Stock</option>
-            <option value="Out of Stock">Out of Stock</option>
-        </select>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input name="price" type="number" min="0.01" step="0.01" placeholder="Price (Greater than 0)" required>
+            <select name="availability">
+                <option value="Available">Available</option>
+                <option value="Low Stock">Low Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+            </select>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="flex flex-col">
+                <label class="text-[9px] font-black uppercase text-slate-400 mb-1 ml-2">Upload Image</label>
+                <input name="image_file" type="file" accept="image/*">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[9px] font-black uppercase text-slate-400 mb-1 ml-2">Or Image URL</label>
+                <input name="image_url" type="url" placeholder="https://...">
+            </div>
+        </div>
         <div class="catalog-actions">
             <button type="submit" class="btn-primary">Create UMak Coop Card</button>
         </div>
@@ -234,25 +275,28 @@
 <section class="catalog-grid">
     {% for item in items %}
     <article class="catalog-item-card">
-        <p class="catalog-meta">Created {{ (item.created_at or '')[:10] }}</p>
+        <div class="flex justify-between items-center mb-2">
+            <p class="catalog-meta">Created {{ (item.created_at or '')[:10] }}</p>
+            {% if item.category %}
+            <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full text-[8px] font-black uppercase tracking-tighter">{{ item.category }}</span>
+            {% endif %}
+        </div>
         {% if catalog_type == 'scholarship' %}
             {% if can_edit %}
             <form method="POST" action="{{ url_for('admin.update_scholarship_catalog_item', item_id=item.id) }}" class="catalog-fields">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input name="scholarship_type" type="text" value="{{ item.scholarship_type or '' }}" required>
-                <input name="name" type="text" value="{{ item.name or '' }}" required>
-                <textarea name="details" required>{{ item.details or '' }}</textarea>
-                <textarea name="qualifications">{{ item.qualifications or '' }}</textarea>
-                <textarea name="requirements">{{ item.requirements or '' }}</textarea>
+                <input name="scholarship_type" type="text" value="{{ item.scholarship_type or '' }}" required placeholder="Type">
+                <input name="name" type="text" value="{{ item.name or '' }}" required placeholder="Name">
+                <textarea name="details" required placeholder="Details">{{ item.details or '' }}</textarea>
+                <textarea name="qualifications" placeholder="Qualifications">{{ item.qualifications or '' }}</textarea>
+                <textarea name="requirements" placeholder="Requirements">{{ item.requirements or '' }}</textarea>
                 <div class="catalog-actions">
                     <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" class="btn-danger" onclick="if(confirm('Delete this card?')) this.form.nextElementSibling.submit()">Delete</button>
                 </div>
             </form>
-            <form method="POST" action="{{ url_for('admin.delete_scholarship_catalog_item', item_id=item.id) }}" onsubmit="return confirm('Delete this scholarship card?')">
+            <form method="POST" action="{{ url_for('admin.delete_scholarship_catalog_item', item_id=item.id) }}" class="hidden">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="catalog-actions">
-                    <button type="submit" class="btn-danger">Delete</button>
-                </div>
             </form>
             {% else %}
             <div class="catalog-fields">
@@ -271,25 +315,31 @@
             {% if can_edit %}
             <form method="POST" action="{{ url_for('admin.update_umak_coop_item', item_id=item.id) }}" class="catalog-fields" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input name="name" type="text" value="{{ item.name or '' }}" required>
-                <textarea name="details" required>{{ item.details or '' }}</textarea>
-                <input name="price" type="number" min="0" step="0.01" value="{{ item.price if item.price is not none else '' }}" required>
-                <input name="image_file" type="file" accept="image/*">
-                <input name="image_url" type="url" value="{{ item.image_url or '' }}">
-                <select name="availability">
-                    <option value="Available" {% if item.availability == 'Available' %}selected{% endif %}>Available</option>
-                    <option value="Low Stock" {% if item.availability == 'Low Stock' %}selected{% endif %}>Low Stock</option>
-                    <option value="Out of Stock" {% if item.availability == 'Out of Stock' %}selected{% endif %}>Out of Stock</option>
+                <input name="name" type="text" value="{{ item.name or '' }}" required placeholder="Name">
+                <select name="category" required>
+                    <option value="Books" {% if item.category == 'Books' %}selected{% endif %}>Books</option>
+                    <option value="Uniforms" {% if item.category == 'Uniforms' %}selected{% endif %}>Uniforms</option>
+                    <option value="Patches" {% if item.category == 'Patches' %}selected{% endif %}>Patches</option>
+                    <option value="ID Laces" {% if item.category == 'ID Laces' %}selected{% endif %}>ID Laces</option>
+                    <option value="Other" {% if item.category == 'Other' or not item.category %}selected{% endif %}>Other</option>
                 </select>
+                <textarea name="details" required placeholder="Details">{{ item.details or '' }}</textarea>
+                <div class="grid grid-cols-2 gap-2">
+                    <input name="price" type="number" min="0.01" step="0.01" value="{{ item.price if item.price is not none else '' }}" required placeholder="Price">
+                    <select name="availability">
+                        <option value="Available" {% if item.availability == 'Available' %}selected{% endif %}>Available</option>
+                        <option value="Low Stock" {% if item.availability == 'Low Stock' %}selected{% endif %}>Low Stock</option>
+                        <option value="Out of Stock" {% if item.availability == 'Out of Stock' %}selected{% endif %}>Out of Stock</option>
+                    </select>
+                </div>
+                <input name="image_url" type="url" value="{{ item.image_url or '' }}" placeholder="Image URL">
                 <div class="catalog-actions">
                     <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" class="btn-danger" onclick="if(confirm('Delete this item?')) this.form.nextElementSibling.submit()">Delete</button>
                 </div>
             </form>
-            <form method="POST" action="{{ url_for('admin.delete_umak_coop_item', item_id=item.id) }}" onsubmit="return confirm('Delete this UMak Coop item?')">
+            <form method="POST" action="{{ url_for('admin.delete_umak_coop_item', item_id=item.id) }}" class="hidden">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="catalog-actions">
-                    <button type="submit" class="btn-danger">Delete</button>
-                </div>
             </form>
             {% else %}
             <div class="catalog-fields">
@@ -297,7 +347,6 @@
                 <textarea disabled>{{ item.details or '' }}</textarea>
                 <input type="text" value="{{ item.price if item.price is not none else '' }}" disabled>
                 <input type="text" value="{{ item.availability or '' }}" disabled>
-                <input type="text" value="{{ item.image_url or '' }}" disabled>
                 <span class="btn-muted">Read Only</span>
             </div>
             {% endif %}
@@ -306,8 +355,8 @@
     {% endfor %}
 </section>
 {% else %}
-<div class="catalog-item-card">
-    <p class="text-sm font-bold text-slate-500">No catalog cards yet.</p>
+<div class="catalog-item-card p-6 text-center">
+    <p class="text-sm font-bold text-slate-400">No items found matching your filters.</p>
 </div>
 {% endif %}
 {% endblock %}

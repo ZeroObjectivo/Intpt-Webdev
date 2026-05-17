@@ -4,6 +4,7 @@
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
 <style>
     .calendar-hero {
         display: flex;
@@ -71,6 +72,20 @@
         display: flex;
         flex-direction: column;
         gap: 7px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-day:hover {
+        background: #ffffff;
+        border-color: #111942;
+        transform: translateY(-2px);
+    }
+
+    .calendar-day.selected {
+        border-color: #2563eb;
+        background: #eff6ff;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
     }
 
     .calendar-day-empty {
@@ -157,6 +172,14 @@
         background: rgba(246, 247, 249, 0.88);
         box-shadow: 0 2px 7px rgba(7, 10, 18, 0.07);
         padding: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-side-card:hover {
+        background: #ffffff;
+        border-color: #111942;
+        transform: scale(1.02);
     }
 
     .calendar-status-pill {
@@ -175,6 +198,39 @@
     .calendar-status-pill.ongoing {
         background: #fef3c7;
         color: #92400e;
+    }
+
+    .daily-preview-header {
+        margin-top: 24px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .daily-preview-title {
+        font-size: 0.75rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #111942;
+    }
+
+    .daily-preview-line {
+        flex: 1;
+        height: 1px;
+        background: #e2e8f0;
+    }
+
+    .daily-preview-empty {
+        padding: 24px;
+        text-align: center;
+        background: rgba(248, 250, 252, 0.5);
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-weight: 700;
     }
 
     @media (max-width: 1024px) {
@@ -234,7 +290,7 @@
 
                         {% for cell in calendar_cells %}
                             {% if cell %}
-                            <article class="calendar-day {% if cell.is_today %}is-today{% endif %}">
+                            <article class="calendar-day {% if cell.is_today %}is-today{% endif %}" data-day="{{ cell.day }}">
                                 <div class="calendar-day-head">
                                     <span class="calendar-day-number">{{ cell.day }}</span>
                                     {% if cell.event_count %}
@@ -267,7 +323,7 @@
                     <div class="calendar-side-list">
                         {% if month_events %}
                             {% for event in month_events[:8] %}
-                            <article class="calendar-side-card">
+                            <article class="calendar-side-card" onclick="openPostModal('{{ event.id }}')">
                                 <div class="flex items-start justify-between gap-3 mb-1.5">
                                     <h4 class="text-sm font-black text-[#111942] leading-tight">{{ event.title }}</h4>
                                     <span class="calendar-status-pill {% if event.status == 'Ongoing' %}ongoing{% endif %}">{{ event.status }}</span>
@@ -280,9 +336,91 @@
                             <p class="text-sm text-slate-500 font-medium">No event posts found for this month.</p>
                         {% endif %}
                     </div>
+
+                    <div id="dailyPreviewSection" class="hidden">
+                        <div class="daily-preview-header">
+                            <h3 class="daily-preview-title" id="dailyPreviewDate">May 18</h3>
+                            <div class="daily-preview-line"></div>
+                        </div>
+                        <div class="calendar-side-list" id="dailyPreviewList">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
                 </div>
             </aside>
         </div>
     </div>
 </div>
+
+{% include 'includes/modal.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.allPosts = {{ full_posts|tojson|safe }};
+    const monthEvents = {{ month_events|tojson|safe }};
+    const monthLabel = "{{ month_label }}".split(' ')[0];
+</script>
+<script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+<script>
+    function openPostModal(postId) {
+        const post = window.allPosts.find(p => p.id === postId);
+        if (post) {
+            // openCommentModal intelligently handles both image and text-only posts
+            openCommentModal(post);
+        }
+    }
+    // ... rest of script
+    document.addEventListener('DOMContentLoaded', () => {
+        const days = document.querySelectorAll('.calendar-day');
+        const previewSection = document.getElementById('dailyPreviewSection');
+        const previewDate = document.getElementById('dailyPreviewDate');
+        const previewList = document.getElementById('dailyPreviewList');
+
+        days.forEach(dayEl => {
+            dayEl.addEventListener('click', () => {
+                const isAlreadySelected = dayEl.classList.contains('selected');
+                
+                // Clear all selected states first
+                days.forEach(d => d.classList.remove('selected'));
+                
+                if (isAlreadySelected) {
+                    previewSection.classList.add('hidden');
+                    return;
+                }
+
+                dayEl.classList.add('selected');
+                const day = parseInt(dayEl.dataset.day);
+                const events = monthEvents.filter(e => e.day === day);
+
+                previewSection.classList.remove('hidden');
+                previewDate.textContent = `${monthLabel} ${day}`;
+                
+                if (events.length > 0) {
+                    previewList.innerHTML = events.map(event => `
+                        <article class="calendar-side-card" onclick="openPostModal('${event.id}')">
+                            <div class="flex items-start justify-between gap-3 mb-1.5">
+                                <h4 class="text-sm font-black text-[#111942] leading-tight">${event.title}</h4>
+                                <span class="calendar-status-pill ${event.status === 'Ongoing' ? 'ongoing' : ''}">${event.status}</span>
+                            </div>
+                            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">${event.day_label} · ${event.time_display}</p>
+                            <p class="text-xs font-semibold text-slate-600 mt-1">${event.location}</p>
+                        </article>
+                    `).join('');
+                } else {
+                    previewList.innerHTML = `
+                        <div class="daily-preview-empty">
+                            No events on this day
+                        </div>
+                    `;
+                }
+
+                // Scroll preview into view if on mobile
+                if (window.innerWidth < 768) {
+                    previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

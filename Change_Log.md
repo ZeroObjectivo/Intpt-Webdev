@@ -29,6 +29,23 @@ This document summarizes the recent major updates, bug fixes, and feature implem
     - Implemented real-time dependency: Course options now automatically filter based on the selected College/Institute.
     - Added `/api/courses` backend endpoint for high-performance course retrieval.
     - Populated the `courses` database table with over 60 verified UMak programs across all colleges. (References: `flask_backend/app/routes/core.py`, `flask_backend/app/templates/profile_settings.html`, `flask_backend/app/templates/onboarding.html`, `flask_backend/setup_courses.py`)
+- **Academic Unit Management:**
+    - Implemented **Edit functionality** for Colleges and Institutes, allowing admins to update abbreviations, full names, types, and identification colors.
+    - Added a responsive **Edit Modal** powered by Alpine.js for a seamless administrative experience.
+    - Integrated backend validation and audit logging for all academic unit updates. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/templates/admin/colleges_manage.html`)
+- **Unified Dynamic College Colors:**
+    - Migrated college and institute brand colors from hardcoded CSS/Python to the database.
+    - Implemented a **Color Picker** in the Admin Hub for creating and managing academic unit identification colors.
+    - Harmonized visual identity by syncing the **Admin Dashboard Breakdown Chart** and the **User Side College Badges** to the same database-driven color palette.
+    - Updated the post card and modal logic to dynamically style badges using real-time hex codes with optimized background opacity. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/__init__.py`, `flask_backend/app/templates/includes/post_card.html`, `flask_backend/app/static/js/modal.js`)
+- **UMak Coop Catalog Overhaul:**
+    - **Advanced Search & Filtering:** Added a real-time search bar and multi-dimensional filters (Category, Availability, Sorting) for both students and admins.
+    - **Smart Categorization:** Introduced standardized categories: **Books, Uniforms, Patches, and ID Laces**.
+    - **Admin Moderation Tools:**
+        - Refined the item creation flow with mandatory category selection and price validation (> 0).
+        - Optimized the management grid with high-density item cards for easier bulk review.
+        - Integrated backend filtering for large catalog management.
+    - **UI/UX Polishing:** Improved visual hierarchy with category pills, availability indicators, and better price labels. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/routes/core.py`, `flask_backend/app/templates/umak_coop.html`, `flask_backend/app/templates/admin/catalog_manage.html`)
 - **User Management UX Improvements:**
     - **Real-time Directory Search:** Implemented live, debounce-powered search in the Full User Directory for instant profile discovery without page reloads.
     - **Dynamic Activity Status:** Replaced static status text with live activity indicators. Users now show "Online" with a glowing green dot if active within 5 minutes, or "Offline" with a "time ago" relative timestamp (e.g., "3h ago").
@@ -47,6 +64,8 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Post Card UI Enhancements:** Updated `includes/post_card.html` with improved styling (rounded corners on images and overlays) to match the latest design standards.
 
 ### Fixed
+- **Mobile Navigation:** Restored the unresponsive hamburger menu on mobile breakpoints and consolidated the Top Nav Profile dropdown (Account name and My Profile link) into the mobile menu drawer for a cleaner interface.
+- **Profile Engagement Metrics:** Fixed profile 'Like' and 'Comment' counter metrics to accurately aggregate interactions received on authored posts via joined queries, rather than counting sent interactions.
 - **Onboarding Completion (500 Error):** Fixed a critical 500 Internal Server Error on `/onboarding/complete` caused by a missing `flash` import in `auth.py`. 
 - **Profile Saving Logic:** Corrected the onboarding flow to save social links to the dedicated `profile_social_links` table instead of the non-existent `social_links` column in the `profiles` table.
 - **Metadata Safety:** Added safety checks for user metadata during onboarding to prevent crashes if metadata is missing.
