@@ -70,13 +70,13 @@
             </a>
             
             <div class="h-6 w-px bg-slate-200"></div>
-            
+
             <!-- Sort Dropdown -->
             <div class="relative">
-                <select onchange="window.location.href='{{ url_for('admin.content_management', category=category) }}?sort=' + this.value" 
+                <select onchange="window.location.href='{{ url_for('admin.content_management', category=category) }}?view={{ view_filter }}&sort=' + this.value" 
                         class="pl-4 pr-10 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:ring-2 focus:ring-umak-blue/20 transition-all appearance-none cursor-pointer shadow-sm min-w-[140px]">
                     <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recent Posts</option>
-                    <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest Posts</option>
+                    <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Older Posts</option>
                 </select>
                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
@@ -97,6 +97,14 @@
 
                 <div id="headerBulkActions" class="hidden flex items-center gap-2 border-l border-slate-200 pl-4 py-1 pr-2">
                     <span id="headerSelectedCount" class="text-[10px] font-black text-umak-blue uppercase mr-2">0 Selected</span>
+                    {% if view_filter == 'pending' %}
+                    <button onclick="bulkApprove()" class="px-4 py-2 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-sm active:scale-95">
+                        Approve
+                    </button>
+                    <button onclick="bulkRejectModal()" class="px-4 py-2 bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all active:scale-95">
+                        Reject
+                    </button>
+                    {% else %}
                     {% if not is_reports_queue or report_type == 'posts' %}
                     <button onclick="bulkRemovePosts()" class="px-4 py-2 bg-rose-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm active:scale-95">
                         Remove
@@ -106,6 +114,7 @@
                     <button onclick="bulkDismissReports()" class="px-4 py-2 bg-slate-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95">
                         Dismiss
                     </button>
+                    {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -127,7 +136,7 @@
                 </a>
             </div>
 
-            <!-- Sort Dropdown -->
+            <!-- Sort Dropdown (Reports) -->
             <div class="relative">
                 <select onchange="window.location.href='{{ url_for('admin.reports_queue', category=category) }}?type={{ report_type }}&sort=' + this.value" 
                         class="pl-4 pr-10 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:ring-2 focus:ring-umak-blue/20 transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]">
@@ -143,15 +152,39 @@
         </div>
     </div>
 
-    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {% set base_url_func = 'admin.reports_queue' if is_reports_queue else 'admin.content_management' %}
-        {% for cat in ['All', 'General', 'Buy & Sell', 'Lost & Found', 'Question', 'Events'] %}
-        <a href="{{ url_for(base_url_func, category=cat) }}{% if is_reports_queue %}?type={{ report_type }}&sort={{ sort }}{% endif %}" 
-           class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border
-           {% if category == cat %} bg-umak-blue text-white border-umak-blue shadow-lg shadow-blue-900/20 {% else %} bg-white text-slate-400 border-slate-100 hover:border-slate-200 hover:text-slate-600 {% endif %}">
-            {{ cat }}
-        </a>
-        {% endfor %}
+    <div class="flex items-center justify-between gap-4 pb-4">
+        <!-- Categories (Left) -->
+        <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            {% set base_url_func = 'admin.reports_queue' if is_reports_queue else 'admin.content_management' %}
+            {% for cat in ['All', 'General', 'Buy & Sell', 'Lost & Found', 'Question', 'Events'] %}
+            <a href="{{ url_for(base_url_func, category=cat) }}{% if is_reports_queue %}?type={{ report_type }}&sort={{ sort }}{% else %}?view={{ view_filter }}&sort={{ sort }}{% endif %}" 
+               class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border
+               {% if category == cat %} bg-umak-blue text-white border-umak-blue shadow-lg shadow-blue-900/20 {% else %} bg-white text-slate-400 border-slate-100 hover:border-slate-200 hover:text-slate-600 {% endif %}">
+                {{ cat }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Status Toggle (Right) -->
+        {% if not is_reports_queue %}
+        <div class="flex items-center gap-1 bg-slate-100/50 p-1 rounded-2xl border border-slate-100 shadow-sm ml-auto">
+            <a href="{{ url_for('admin.content_management', category=category) }}?view=approved&sort={{ sort }}" 
+               class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all
+               {% if view_filter != 'pending' %} bg-white text-umak-blue shadow-sm border border-slate-100 {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
+                All Posts
+            </a>
+            <a href="{{ url_for('admin.content_management', category=category) }}?view=pending&sort={{ sort }}" 
+               class="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2
+               {% if view_filter == 'pending' %} bg-white text-amber-600 shadow-sm border border-slate-100 {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
+                Pending
+                {% if pending_count and pending_count > 0 %}
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] font-black {% if view_filter == 'pending' %} bg-amber-500 text-white {% else %} bg-slate-200 text-slate-500 {% endif %}">
+                    {{ pending_count }}
+                </span>
+                {% endif %}
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -189,6 +222,10 @@
                                 <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ p.category }}</span>
                                 <span class="w-1 h-1 bg-slate-200 rounded-full"></span>
                                 <span class="text-[9px] font-bold text-slate-300 uppercase">{{ p.created_at[:16].replace('T', ' ') }}</span>
+                                {% if p.status == 'pending' %}
+                                <span class="w-1 h-1 bg-amber-200 rounded-full"></span>
+                                <span class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Awaiting Approval</span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -237,6 +274,16 @@
                     </div>
                     
                     <div class="flex items-center gap-2">
+                        {% if p.status == 'pending' %}
+                        <button onclick="approvePost('{{ p.id }}')" 
+                                class="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all">
+                            Approve
+                        </button>
+                        <button onclick="rejectPostModal('{{ p.id }}')" 
+                                class="flex-1 sm:flex-none px-6 py-2.5 bg-white text-rose-500 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition-all">
+                            Reject
+                        </button>
+                        {% else %}
                         <button onclick="warnUserModal('{{ p.user_id }}', '{{ p.id }}')" 
                                 class="flex-1 sm:flex-none px-6 py-2.5 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all">
                             Warn Author
@@ -245,6 +292,7 @@
                                 class="flex-1 sm:flex-none px-6 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">
                             Remove Post
                         </button>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -255,7 +303,7 @@
                     <svg class="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <h3 class="text-slate-800 font-black text-base uppercase tracking-tight">Queue is Clean</h3>
-                <p class="text-slate-400 text-xs font-bold mt-2 uppercase tracking-widest">No posts in this category</p>
+                <p class="text-slate-400 text-xs font-bold mt-2 uppercase tracking-widest">No posts found for this view</p>
             </div>
         {% endif %}
     {% endif %}
@@ -554,6 +602,85 @@
 
     function showToast(message, type = 'success') {
         window.dispatchEvent(new CustomEvent('flash-message', { detail: { message, type } }));
+    }
+
+    async function approvePost(postId) {
+        try {
+            const res = await fetch(`/admin/posts/${postId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                showToast('Post approved', 'success');
+                document.querySelector(`[data-admin-post-id="${postId}"]`)?.remove();
+            }
+        } catch (e) { showToast('Request failed', 'error'); }
+    }
+
+    function rejectPostModal(postId) {
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal('Reject Media?', 'State why this content was rejected:', async (payload = {}) => {
+                const res = await fetch(`/admin/posts/${postId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' },
+                    body: JSON.stringify({ reason: payload.reason || 'Media policy violation' })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast('Post rejected', 'success');
+                    document.querySelector(`[data-admin-post-id="${postId}"]`)?.remove();
+                }
+            }, { reasons: ['Inappropriate Image', 'Low Quality', 'Spam', 'Other'], requireReason: true });
+        }
+    }
+
+    async function bulkApprove() {
+        const selected = Array.from(document.querySelectorAll('input[name="report-select"]:checked')).map(cb => cb.value);
+        if (!selected.length) return;
+        
+        if (!confirm(`Are you sure you want to approve ${selected.length} posts?`)) return;
+
+        try {
+            const res = await fetch('/admin/posts/bulk-approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' },
+                body: JSON.stringify({ ids: selected })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                showToast(`Approved ${selected.length} posts`, 'success');
+                selected.forEach(id => document.querySelector(`[data-admin-post-id="${id}"]`)?.remove());
+                deselectAll();
+            }
+        } catch (e) { showToast('Bulk action failed', 'error'); }
+    }
+
+    function bulkRejectModal() {
+        const selected = Array.from(document.querySelectorAll('input[name="report-select"]:checked')).map(cb => cb.value);
+        if (!selected.length) return;
+
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal(`Reject ${selected.length} Posts?`, 'State why these items are being rejected:', async (payload = {}) => {
+                try {
+                    const res = await fetch('/admin/posts/bulk-reject', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' },
+                        body: JSON.stringify({ ids: selected, reason: payload.reason || 'Media policy violation' })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showToast(`Rejected ${selected.length} posts`, 'success');
+                        selected.forEach(id => document.querySelector(`[data-admin-post-id="${id}"]`)?.remove());
+                        deselectAll();
+                    }
+                } catch (e) { showToast('Bulk action failed', 'error'); }
+            }, { 
+                reasons: ['Inappropriate Image', 'Low Quality', 'Spam', 'Other'], 
+                requireReason: true,
+                confirmText: 'Reject All Selected'
+            });
+        }
     }
 </script>
 <script src="{{ url_for('static', filename='js/modal.js') }}"></script>

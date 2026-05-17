@@ -76,6 +76,10 @@ def normalize_text_for_moderation(text):
     collapsed = re.sub(r"[^\w]+", " ", lowered, flags=re.UNICODE)
     return re.sub(r"\s+", " ", collapsed).strip()
 
+def _strip_spaces(text):
+    """Remove all spaces — catches evasion like 'f u c k'."""
+    return re.sub(r"\s+", "", (text or ""))
+
 def load_forbidden_terms():
     now_ts = time.time()
     if _PROFANITY_TERM_CACHE["terms"] and (now_ts - float(_PROFANITY_TERM_CACHE["fetched_at"] or 0) < PROFANITY_TERM_CACHE_SECONDS):
@@ -98,16 +102,21 @@ def load_forbidden_terms():
     return normalized_terms
 
 def find_profanity_match(content):
-    normalized_text = normalize_text_for_moderation(content)
-    if not normalized_text:
-        return None
-    padded_text = f" {normalized_text} "
-    for term in load_forbidden_terms():
-        if not term:
-            continue
-        token = f" {term} "
-        if token in padded_text:
-            return term
+    """Smart multi-layer profanity and toxicity detection.
+
+    Layers:
+    1. Exact/substring match
+    2. Elongation collapsing (tanginamoooo → tanginamo)
+    3. Leetspeak normalization (f*ck → fuck, sh1t → shit)
+    4. Fuzzy matching (misspellings within edit distance)
+    5. Toxic phrase detection (threats, harassment, slurs)
+    """
+    from app.utils.content_moderation import smart_profanity_check
+    terms = load_forbidden_terms()
+    matched, layer = smart_profanity_check(content, terms)
+    if matched:
+        logger.debug("Profanity matched: '%s' via %s layer", matched, layer)
+        return matched
     return None
 
 def _safe_int(value, default=0):
@@ -122,6 +131,11 @@ ADMIN_NOTIFICATION_ROLES = {'super_admin', 'superadmin', 'admin', 'content_moder
 def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None):
     if not user_id:
         return
+    
+    # 0. Don't notify a user about their own actions (e.g. if an admin approves their own post)
+    if actor_id and str(actor_id) == str(user_id):
+        return
+
     sender_client = supabase_service or client
     try:
         # 1. Implement Like Merging logic
@@ -1015,14 +1029,14 @@ def load_home_metrics():
 
     try:
         metrics["members_count"] = _safe_exact_count(
-            client.table('profiles').select("id", count='exact', head=True).execute()
+            client.table('profiles').select("id", count='exact').limit(1).execute()
         )
     except Exception as e:
         logger.warning("Home metrics: profiles count unavailable: %s", e)
 
     try:
         metrics["posts_count"] = _safe_exact_count(
-            client.table('posts').select("id", count='exact', head=True).execute()
+            client.table('posts').select("id", count='exact').limit(1).execute()
         )
     except Exception as e:
         logger.warning("Home metrics: posts count unavailable: %s", e)
@@ -1030,9 +1044,10 @@ def load_home_metrics():
     try:
         metrics["upcoming_events_count"] = _safe_exact_count(
             client.table('posts')
-                .select("id", count='exact', head=True)
+                .select("id", count='exact')
                 .eq("category", "Events")
                 .or_(f"event_date.gte.{now_iso},event_end_date.gte.{now_iso}")
+                .limit(1)
                 .execute()
         )
     except Exception as e:
@@ -1040,14 +1055,14 @@ def load_home_metrics():
 
     try:
         metrics["scholarship_count"] = _safe_exact_count(
-            client.table('scholarship_catalog').select("id", count='exact', head=True).execute()
+            client.table('scholarship_catalog').select("id", count='exact').limit(1).execute()
         )
     except Exception as e:
         logger.warning("Home metrics: scholarship count unavailable: %s", e)
 
     try:
         metrics["coop_count"] = _safe_exact_count(
-            client.table('umak_coop_items').select("id", count='exact', head=True).execute()
+            client.table('umak_coop_items').select("id", count='exact').limit(1).execute()
         )
     except Exception as e:
         logger.warning("Home metrics: coop count unavailable: %s", e)
@@ -1483,6 +1498,13 @@ def update_profile():
         request.form.get('social_link_visibility_3', 'public'),
     ]
 
+    # Profanity check on bio
+    if bio:
+        bio_match = find_profanity_match(bio)
+        if bio_match:
+            flash("Your bio contains inappropriate language. Please revise it.", "error")
+            return redirect(url_for('core.profile_settings'))
+
     client = get_user_client()
 
     try:
@@ -1675,8 +1697,9 @@ def build_dashboard_sync_state(client, category=None):
 
 def build_notification_payload(client, user_id):
     # Fetch notifications with actor profile info
+    # Explicitly name the FK because we have two relations to profiles (user_id and actor_id)
     notifications_res = client.table('notifications')\
-        .select("id, title, message, type, is_read, created_at, reference_id, actor_id, actor:profiles(full_name, avatar_url)")\
+        .select("id, title, message, type, is_read, created_at, reference_id, actor_id, actor:profiles!notifications_actor_id_fkey(full_name, avatar_url)")\
         .eq('user_id', user_id)\
         .order('created_at', desc=True)\
         .limit(15).execute()
@@ -1698,9 +1721,10 @@ def build_notification_payload(client, user_id):
 
     try:
         unread_res = client.table('notifications')\
-            .select("id", count='exact', head=True)\
+            .select("id", count='exact')\
             .eq('user_id', user_id)\
             .eq('is_read', False)\
+            .limit(1)\
             .execute()
         unread_count = int(unread_res.count or 0)
     except Exception:
@@ -1933,8 +1957,8 @@ def toggle_like(post_id):
                         push_notification(
                             client,
                             post_owner_id,
-                            title="New like on your post",
-                            message=f"{liker_name} liked your post.",
+                            title=f"{liker_name} liked your post.",
+                            message="",
                             notif_type="interaction",
                             reference_id=post_id,
                             actor_id=user_id,
@@ -2018,8 +2042,8 @@ def add_comment(post_id):
                 push_notification(
                     client,
                     post_owner_id,
-                    title="New comment on your post",
-                    message=f"{commenter_name} commented on your post.",
+                    title=f"{commenter_name} commented.",
+                    message="",
                     notif_type="interaction",
                     reference_id=post_id,
                     actor_id=user_id,
@@ -2035,8 +2059,8 @@ def add_comment(post_id):
                     push_notification(
                         client,
                         parent_owner_id,
-                        title="New reply to your comment",
-                        message=f"{commenter_name} replied to your comment.",
+                        title=f"{commenter_name} replied.",
+                        message="",
                         notif_type="interaction",
                         reference_id=post_id,
                         actor_id=user_id,

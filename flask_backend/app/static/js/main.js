@@ -4,6 +4,113 @@
  * Shared Post Management Functions
  */
 
+function ensureInlineDialog() {
+    let modal = document.getElementById('inlineActionDialog');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'inlineActionDialog';
+    modal.style.cssText = [
+        'display:none',
+        'position:fixed',
+        'inset:0',
+        'z-index:4000',
+        'align-items:center',
+        'justify-content:center',
+        'padding:16px',
+        'background:rgba(2,6,23,0.45)',
+        'backdrop-filter:blur(3px)'
+    ].join(';');
+    modal.innerHTML = `
+        <div style="width:100%;max-width:28rem;border-radius:18px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 20px 40px rgba(2,6,23,0.25);overflow:hidden;">
+            <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;">
+                <h3 id="inlineActionDialogTitle" style="margin:0;font-size:16px;line-height:1.2;font-weight:800;color:#0f172a;">Confirm Action</h3>
+                <p id="inlineActionDialogMessage" style="margin:8px 0 0;font-size:14px;line-height:1.45;font-weight:600;color:#475569;"></p>
+            </div>
+            <div id="inlineActionDialogInputWrap" style="display:none;padding:14px 20px 8px;">
+                <label id="inlineActionDialogInputLabel" for="inlineActionDialogInput" style="display:block;margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;">Reason</label>
+                <input id="inlineActionDialogInput" type="text" style="width:100%;border:1px solid #dbe3ef;border-radius:12px;background:#f8fafc;padding:10px 12px;font-size:14px;font-weight:600;color:#334155;outline:none;" />
+            </div>
+            <div style="padding:12px 20px 18px;display:flex;align-items:center;justify-content:flex-end;gap:10px;">
+                <button id="inlineActionDialogCancel" type="button" style="padding:9px 14px;border:none;border-radius:12px;background:#f1f5f9;color:#475569;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+                <button id="inlineActionDialogConfirm" type="button" style="padding:9px 16px;border:none;border-radius:12px;background:#111942;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">Confirm</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
+
+function showInlineDialog(options = {}) {
+    const {
+        title = 'Confirm Action',
+        message = 'Are you sure you want to continue?',
+        confirmText = 'Confirm',
+        cancelText = 'Cancel',
+        requireInput = false,
+        inputLabel = 'Reason',
+        inputPlaceholder = 'Type here...',
+        defaultValue = '',
+    } = options;
+
+    const modal = ensureInlineDialog();
+    const titleEl = document.getElementById('inlineActionDialogTitle');
+    const messageEl = document.getElementById('inlineActionDialogMessage');
+    const inputWrap = document.getElementById('inlineActionDialogInputWrap');
+    const inputLabelEl = document.getElementById('inlineActionDialogInputLabel');
+    const inputEl = document.getElementById('inlineActionDialogInput');
+    const cancelBtn = document.getElementById('inlineActionDialogCancel');
+    const confirmBtn = document.getElementById('inlineActionDialogConfirm');
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    cancelBtn.textContent = cancelText;
+    confirmBtn.textContent = confirmText;
+
+    if (requireInput) {
+        inputWrap.style.display = 'block';
+        inputLabelEl.textContent = inputLabel;
+        inputEl.value = defaultValue;
+        inputEl.placeholder = inputPlaceholder;
+    } else {
+        inputWrap.style.display = 'none';
+        inputEl.value = '';
+    }
+
+    modal.style.display = 'flex';
+
+    if (requireInput) {
+        setTimeout(() => inputEl.focus(), 0);
+    } else {
+        setTimeout(() => confirmBtn.focus(), 0);
+    }
+
+    return new Promise((resolve) => {
+        let settled = false;
+        const finish = (confirmed) => {
+            if (settled) return;
+            settled = true;
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', escHandler);
+            resolve({
+                confirmed,
+                value: requireInput ? (inputEl.value || '') : ''
+            });
+        };
+
+        const escHandler = (event) => {
+            if (event.key === 'Escape') finish(false);
+        };
+
+        document.addEventListener('keydown', escHandler);
+        modal.onclick = (event) => {
+            if (event.target === modal) finish(false);
+        };
+        cancelBtn.onclick = () => finish(false);
+        confirmBtn.onclick = () => finish(true);
+    });
+}
+
 function togglePostMenu(postId, event) {
     if (event) {
         event.preventDefault();
@@ -48,7 +155,13 @@ function hideEditForm(postId) {
 
 async function confirmDeletePost(postId) {
     if (typeof showConfirmModal !== 'function') {
-        if (!confirm('Are you sure you want to delete this post?')) return;
+        const decision = await showInlineDialog({
+            title: 'Delete Post?',
+            message: 'Are you sure you want to delete this post? This action cannot be undone.',
+            confirmText: 'Delete',
+            cancelText: 'Cancel'
+        });
+        if (!decision.confirmed) return;
         executeDelete(postId);
         return;
     }
@@ -86,13 +199,19 @@ async function executeDelete(postId) {
 }
 
 async function reportPost(postId) {
-    const reason = window.prompt(
-        'Why are you reporting this post? (e.g., Harassment, Spam, Misinformation)',
-        'Inappropriate content'
-    );
+    const decision = await showInlineDialog({
+        title: 'Report Post',
+        message: 'Why are you reporting this post? (e.g., Harassment, Spam, Misinformation)',
+        confirmText: 'Submit',
+        cancelText: 'Cancel',
+        requireInput: true,
+        inputLabel: 'Report Reason',
+        inputPlaceholder: 'Describe the reason for your report',
+        defaultValue: 'Inappropriate content'
+    });
+    if (!decision.confirmed) return;
 
-    if (reason === null) return;
-    const trimmedReason = reason.trim();
+    const trimmedReason = (decision.value || '').trim();
     if (!trimmedReason) {
         if (window.createToast) window.createToast('Report reason is required.', 'error');
         return;
@@ -130,7 +249,21 @@ async function reportPost(postId) {
  */
 
 async function flagPost(postId) {
-    if (!confirm('Flag this post for further review?')) return;
+    if (typeof showConfirmModal === 'function') {
+        showConfirmModal('Flag Post?', 'Flag this post for further review?', async () => executeFlagPost(postId));
+        return;
+    }
+    const decision = await showInlineDialog({
+        title: 'Flag Post?',
+        message: 'Flag this post for further review?',
+        confirmText: 'Flag',
+        cancelText: 'Cancel'
+    });
+    if (!decision.confirmed) return;
+    await executeFlagPost(postId);
+}
+
+async function executeFlagPost(postId) {
     try {
         const res = await fetch(`/admin/posts/${postId}/flag`, {
             method: 'POST',
@@ -146,7 +279,21 @@ async function flagPost(postId) {
 }
 
 async function flagComment(commentId) {
-    if (!confirm('Flag this comment for further review?')) return;
+    if (typeof showConfirmModal === 'function') {
+        showConfirmModal('Flag Comment?', 'Flag this comment for further review?', async () => executeFlagComment(commentId));
+        return;
+    }
+    const decision = await showInlineDialog({
+        title: 'Flag Comment?',
+        message: 'Flag this comment for further review?',
+        confirmText: 'Flag',
+        cancelText: 'Cancel'
+    });
+    if (!decision.confirmed) return;
+    await executeFlagComment(commentId);
+}
+
+async function executeFlagComment(commentId) {
     try {
         const res = await fetch(`/admin/comments/${commentId}/flag`, {
             method: 'POST',

@@ -38,9 +38,9 @@ class AdminDeleteArchivingTest(unittest.TestCase):
     def test_core_interaction_notifications_added(self):
         core_routes = read_text("app/routes/core.py")
         self.assertIn("def push_notification(", core_routes)
-        self.assertIn("New like on your post", core_routes)
-        self.assertIn("New comment on your post", core_routes)
-        self.assertIn("New reply to your comment", core_routes)
+        self.assertIn("liked your post", core_routes)
+        self.assertIn("commented.", core_routes)
+        self.assertIn("replied.", core_routes)
 
 
 if __name__ == "__main__":

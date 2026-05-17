@@ -677,35 +677,47 @@ def lift_user_suspension(user_id):
 
     return redirect(url_for('admin.user_management', user_id=user_id))
 
-@admin.route('/admin/approvals')
+@admin.route('/admin/content/<category>')
 @login_required
 @content_access_required
-def approvals_queue():
+def content_management(category):
     client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     
-    category = request.args.get('category', 'All')
-    sort_method = request.args.get('sort', 'recent')
+    view_filter = request.args.get('view', 'approved') # 'pending', 'approved'
+    sort_method = request.args.get('sort', 'recent') # 'recent', 'oldest'
     
-    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)").eq('status', 'pending')
+    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
     
+    # 1. Filter by Status
+    if view_filter == 'pending':
+        query = query.eq('status', 'pending')
+    else:
+        # Default to showing approved/flagged but not pending
+        query = query.neq('status', 'pending')
+
+    # 2. Filter by Category
     if category != 'All':
         query = query.eq('category', category)
         
-    res = query.execute()
-    posts = res.data or []
+    # 3. Execution & Sorting
+    desc_order = (sort_method == 'recent')
+    res = query.order('created_at', desc=desc_order).execute()
     
-    # Sort
-    if sort_method == 'oldest':
-        posts.sort(key=lambda x: x.get('created_at', ''))
-    else:
-        posts.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-        
-    return render_template('admin/approvals.html', 
-                           posts=posts, 
+    # 4. Fetch Pending Count for the indicator
+    pending_count = 0
+    try:
+        pending_res = client.table('posts').select("id", count='exact').eq('status', 'pending').limit(1).execute()
+        pending_count = int(pending_res.count or 0)
+    except: pass
+    
+    return render_template('admin/content_manage.html', 
+                           posts=res.data, 
                            category=category, 
+                           view_filter=view_filter,
                            sort=sort_method,
+                           pending_count=pending_count,
                            user=session.get('user'), 
                            permissions=permissions)
 
@@ -806,28 +818,6 @@ def reports_queue(category='All'):
 
         return render_template('admin/reports_queue.html', posts=posts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
 
-@admin.route('/admin/content/<category>')
-@login_required
-@content_access_required
-def content_management(category):
-    client = get_admin_read_client()
-    current_role = get_current_role()
-    permissions = build_admin_permissions(current_role)
-    
-    sort_method = request.args.get('sort', 'recent')
-    
-    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
-    if category != 'All':
-        query = query.eq('category', category)
-        
-    res = query.order('created_at', desc=(sort_method == 'recent')).execute()
-    
-    return render_template('admin/content_manage.html', 
-                           posts=res.data, 
-                           category=category, 
-                           sort=sort_method,
-                           user=session.get('user'), 
-                           permissions=permissions)
 
 @admin.route('/admin/posts/bulk-approve', methods=['POST'])
 @login_required
@@ -1226,6 +1216,7 @@ def warn_user():
         flash("Warning sent successfully.", "success")
         return redirect(request.referrer or url_for('admin.dashboard'))
     except Exception as e:
+        logger.error("CRITICAL error in warn_user: %s", e, exc_info=True)
         if is_json:
             return jsonify({"status": "error", "message": "An error occurred."}), 500
         flash("Failed to send warning.", "error")
@@ -1562,10 +1553,14 @@ def add_forbidden_word():
     
     try:
         client.table('forbidden_words').insert({"word": word}).execute()
+        # Invalidate profanity cache so new word takes effect immediately
+        from .core import _PROFANITY_TERM_CACHE
+        _PROFANITY_TERM_CACHE["terms"] = []
+        _PROFANITY_TERM_CACHE["fetched_at"] = 0
         flash(f"Added '{word}' to forbidden words.", "success")
     except Exception as e:
         flash("Error adding word.", "error")
-    
+
     return redirect(url_for('admin.manage_forbidden_words'))
 
 @admin.route('/admin/forbidden-words/<word>/delete', methods=['POST'])
@@ -1575,10 +1570,14 @@ def delete_forbidden_word(word):
     client = get_admin_read_client()
     try:
         client.table('forbidden_words').delete().eq('word', word).execute()
+        # Invalidate profanity cache so removal takes effect immediately
+        from .core import _PROFANITY_TERM_CACHE
+        _PROFANITY_TERM_CACHE["terms"] = []
+        _PROFANITY_TERM_CACHE["fetched_at"] = 0
         flash(f"Removed '{word}' from forbidden words.", "success")
     except Exception as e:
         flash("Error removing word.", "error")
-    
+
     return redirect(url_for('admin.manage_forbidden_words'))
 
 def _parse_catalog_price(raw_value):

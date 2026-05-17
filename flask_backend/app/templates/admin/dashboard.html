@@ -111,7 +111,7 @@
             <div class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                 {% if stats.pending_list %}
                     {% for p in stats.pending_list %}
-                    <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100/50 cursor-pointer hover:bg-amber-50 transition-colors" onclick="window.location.href='{{ url_for('admin.approvals_queue') }}'">
+                    <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100/50 cursor-pointer hover:bg-amber-50 transition-colors" onclick="window.location.href='{{ url_for('admin.content_management', category='All') }}?view=pending'">
                         <div class="flex justify-between items-start mb-1">
                             <p class="text-[10px] font-black text-amber-700 uppercase tracking-tight">{{ p.profiles.full_name }}</p>
                             <span class="text-[8px] font-bold text-slate-400">{{ p.created_at[:10] }}</span>
@@ -123,7 +123,7 @@
                     <p class="text-xs text-slate-400 font-bold italic text-center py-4">No posts awaiting review.</p>
                 {% endif %}
             </div>
-            <button onclick="window.location.href='{{ url_for('admin.approvals_queue') }}'" class="mt-6 w-full py-2 bg-amber-600 text-[10px] font-black uppercase text-white rounded-xl shadow-lg shadow-amber-200">Go to Approvals</button>
+            <button onclick="window.location.href='{{ url_for('admin.content_management', category='All') }}?view=pending'" class="mt-6 w-full py-2 bg-amber-600 text-[10px] font-black uppercase text-white rounded-xl shadow-lg shadow-amber-200">Go to Approvals</button>
         </div>
     </div>
 

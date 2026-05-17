@@ -225,6 +225,67 @@
         color: white;
     }
 
+    /* Notification Wrap & Alignment Fixes - Robust Grid Layout */
+    .hh-navbar .notification-item {
+        display: grid !important;
+        grid-template-columns: 40px 1fr !important;
+        gap: 12px !important;
+        align-items: start !important;
+        width: 100% !important;
+        padding: 12px 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    .hh-navbar .notification-item .notif-avatar-wrap {
+        grid-column: 1 !important;
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .hh-navbar .notification-item .notif-content-wrap {
+        grid-column: 2 !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+    }
+
+    .hh-navbar .notification-item h4 {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        line-height: 1.3 !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        font-family: 'Metropolis', 'Inter', system-ui, sans-serif !important;
+        font-size: 14px !important;
+    }
+
+    .hh-navbar .notification-item p {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        line-height: 1.4 !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        font-family: 'Metropolis', 'Inter', system-ui, sans-serif !important;
+        font-size: 12px !important;
+    }
+
+    .hh-navbar .notification-item .notif-time {
+        margin-top: 2px !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        color: #94a3b8 !important;
+        text-transform: uppercase !important;
+        font-family: 'Metropolis', 'Inter', system-ui, sans-serif !important;
+    }
 </style>
 
 <nav class="hh-navbar bg-umak-blue text-white py-4 px-6 fixed top-0 left-0 w-full z-50 font-sans shadow-md" style="background-color: #001035;">
@@ -352,21 +413,21 @@
                                              id="notif-{{ n.id }}"
                                              data-notification-id="{{ n.id }}"
                                              onclick="handleNotificationClick('{{ n.id }}', '{{ n.reference_id or '' }}', '{{ n.type or '' }}', this)">
-                                            <div class="flex-shrink-0">
+                                            <div class="notif-avatar-wrap">
                                                 <img src="{{ n.actor_avatar if n.actor_avatar else url_for('static', filename='images/Logo.png') }}" 
                                                      class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm"
-                                                     alt="Actor Photo">
+                                                     alt="">
                                             </div>
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex justify-between items-baseline mb-0.5">
-                                                    <h4 class="text-[14px] {% if not n.is_read %}font-black text-slate-900{% else %}font-bold text-slate-500{% endif %} truncate">{{ n.title }}</h4>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    {% if n.message %}
-                                                    <p class="text-[12px] {% if not n.is_read %}font-bold text-slate-700{% else %}font-medium text-slate-400{% endif %} leading-snug line-clamp-1 flex-1">{{ n.message }}</p>
-                                                    {% endif %}
-                                                    <span class="text-[10px] font-bold text-slate-300 uppercase whitespace-nowrap">{{ n.relative_time }}</span>
-                                                </div>
+                                            <div class="notif-content-wrap">
+                                                <h4 class="{% if not n.is_read %}font-black text-slate-900{% else %}font-bold text-slate-500{% endif %}">
+                                                    {{ n.title }}
+                                                </h4>
+                                                {% if n.message %}
+                                                <p class="{% if not n.is_read %}font-bold text-slate-700{% else %}font-medium text-slate-400{% endif %}">
+                                                    {{ n.message }}
+                                                </p>
+                                                {% endif %}
+                                                <span class="notif-time">{{ n.relative_time }}</span>
                                             </div>
                                         </div>
                                     {% endfor %}
@@ -413,7 +474,7 @@
                             <a href="{{ url_for('core.notifications_page') }}" class="w-full flex items-center justify-between px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors text-left">
                                 <span>Notifications</span>
                                 <span id="mobile-notification-count" class="hh-mobile-menu-badge px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-600 {% if unread_notifications_count <= 0 %}hidden{% endif %}">
-                                    {{ unread_notifications_count }}
+                                    New
                                 </span>
                             </a>
                             <a href="{{ url_for('core.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Home Feed</a>
@@ -482,13 +543,12 @@
                     const hasUnread = unreadCount > 0;
 
                     if (dot) dot.classList.toggle('hidden', !hasUnread);
+                    // Remove the number from the badge as requested (keeping only the dot visible if there are unread)
                     if (count) {
-                        count.classList.toggle('hidden', !hasUnread);
-                        count.textContent = `${unreadCount} New`;
+                        count.classList.add('hidden');
                     }
                     if (mobileCount) {
                         mobileCount.classList.toggle('hidden', !hasUnread);
-                        mobileCount.textContent = String(unreadCount);
                     }
                 }
 
@@ -530,17 +590,13 @@
                                  id="notif-${escapeNotifHtml(n.id)}"
                                  data-notification-id="${escapeNotifHtml(n.id)}"
                                  onclick="handleNotificationClick('${escapeNotifHtml(n.id)}', '${refId}', '${type}', this)">
-                                <div class="flex-shrink-0">
+                                <div class="notif-avatar-wrap">
                                     <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" alt="">
                                 </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-baseline mb-0.5">
-                                        <h4 class="text-[14px] ${titleClass} truncate">${escapeNotifHtml(n.title || 'Notification')}</h4>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        ${n.message ? `<p class="text-[12px] ${msgClass} leading-snug line-clamp-1 flex-1">${escapeNotifHtml(n.message)}</p>` : ''}
-                                        <span class="text-[10px] font-bold text-slate-300 uppercase whitespace-nowrap">${escapeNotifHtml(relativeTime)}</span>
-                                    </div>
+                                <div class="notif-content-wrap">
+                                    <h4 class="${titleClass}">${escapeNotifHtml(n.title || 'Notification')}</h4>
+                                    ${n.message ? `<p class="${msgClass}">${escapeNotifHtml(n.message)}</p>` : ''}
+                                    <span class="notif-time">${escapeNotifHtml(relativeTime)}</span>
                                 </div>
                             </div>
                         `;
@@ -612,6 +668,8 @@
                         if (notifMenu) notifMenu.classList.add('hidden');
                     }
                 };
+
+                const defaultAvatar = '{{ url_for('static', filename='images/Logo.png') }}';
 
                 document.addEventListener('DOMContentLoaded', function() {
                     const trigger = document.getElementById('profile-dropdown-trigger');
@@ -1074,21 +1132,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newNotifEl = document.createElement('div');
         newNotifEl.id = `notif-${safeId}`;
-        newNotifEl.className = "notification-item px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group flex gap-4";
+        newNotifEl.className = "notification-item border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group";
         newNotifEl.setAttribute('data-notification-id', notif.id);
         newNotifEl.setAttribute('onclick', `handleNotificationClick('${safeId}', '${refId}', '${type}', this)`);
         newNotifEl.innerHTML = `
-            <div class="flex-shrink-0">
+            <div class="notif-avatar-wrap">
                 <img src="${actorAvatar}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" alt="">
             </div>
-            <div class="flex-1 min-w-0">
-                <div class="flex justify-between items-baseline mb-0.5">
-                    <h4 class="text-[14px] font-black text-slate-900 truncate">${safeTitle}</h4>
-                </div>
-                <div class="flex items-center gap-2">
-                    ${safeMessage ? `<p class="text-[12px] font-bold text-slate-700 leading-snug line-clamp-1 flex-1">${safeMessage}</p>` : ''}
-                    <span class="text-[10px] font-bold text-slate-300 uppercase whitespace-nowrap">Just now</span>
-                </div>
+            <div class="notif-content-wrap">
+                <h4 class="font-black text-slate-900">${safeTitle}</h4>
+                ${safeMessage ? `<p class="font-bold text-slate-700">${safeMessage}</p>` : ''}
+                <span class="notif-time">Just now</span>
             </div>
         `;
         
@@ -1111,7 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 
             (payload) => {
                 console.log('New notification received:', payload.new);
-                setTimeout(() => handleNewNotification(payload.new), 300);
+                setTimeout(() => handleNewNotification(payload.new), 50);
             }
         )
         .subscribe((status, err) => {
