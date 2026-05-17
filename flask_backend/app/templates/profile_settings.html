@@ -21,6 +21,14 @@
         --profile-muted-surface: rgb(248 250 252);
     }
 
+    :root[data-theme="dark"] {
+        --profile-border: #334155;
+        --profile-subtle-border: #1e293b;
+        --profile-surface: #111b30;
+        --profile-muted-surface: #0f172a;
+        --profile-shadow-card: 0 24px 60px rgba(2, 6, 23, 0.35);
+    }
+
     .profile-shell {
         max-width: 1180px;
         margin: 0 auto;
@@ -210,6 +218,79 @@
     .interaction-feed {
         display: grid;
         gap: 1.15rem;
+    }
+
+    .preferences-grid {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .preference-card {
+        border: 1px solid var(--profile-border);
+        border-radius: 1rem;
+        background: var(--profile-muted-surface);
+        padding: 1rem;
+    }
+
+    .preference-option-pill {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgb(203 213 225);
+        border-radius: 9999px;
+        background: white;
+        padding: 0.5rem 1rem;
+        font-size: 0.76rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgb(71 85 105);
+        cursor: pointer;
+        transition: all 0.18s ease;
+    }
+
+    .preference-option-pill:hover {
+        border-color: rgb(100 116 139);
+        color: rgb(30 41 59);
+    }
+
+    .preference-option-pill input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        cursor: pointer;
+    }
+
+    .preference-option-pill.is-active {
+        background: rgb(30 64 175);
+        border-color: rgb(30 64 175);
+        color: white;
+        box-shadow: 0 10px 20px rgba(30, 64, 175, 0.18);
+    }
+
+    .preference-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border: 1px solid rgb(226 232 240);
+        border-radius: 0.95rem;
+        background: white;
+        padding: 0.75rem 0.9rem;
+    }
+
+    .preference-toggle input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+        accent-color: rgb(30 64 175);
+    }
+
+    @media (min-width: 768px) {
+        .preferences-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     .interaction-item {
@@ -885,6 +966,64 @@
                     </div>
                 </section>
 
+                <section class="border-b border-slate-100 px-6 py-6 sm:px-8 sm:py-7">
+                    <h3 class="text-lg font-black text-slate-800 mb-2">Preferences</h3>
+                    <p class="max-w-2xl text-sm font-medium leading-6 text-slate-500">Personalize your view settings for comfort, accessibility, and feed behavior.</p>
+                    <div class="preferences-grid mt-4">
+                        <div class="preference-card md:col-span-2">
+                            <p class="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Appearance</p>
+                            <p class="mt-1 text-sm font-medium text-slate-500">Pick how Herons' Hub should look on this device.</p>
+                            <div class="mt-3 flex flex-wrap gap-2" data-theme-choice-group>
+                                <label class="preference-option-pill" data-theme-pill>
+                                    <input type="radio" name="theme_preference" value="light">
+                                    <span>Light</span>
+                                </label>
+                                <label class="preference-option-pill" data-theme-pill>
+                                    <input type="radio" name="theme_preference" value="dark">
+                                    <span>Dark</span>
+                                </label>
+                                <label class="preference-option-pill" data-theme-pill>
+                                    <input type="radio" name="theme_preference" value="system">
+                                    <span>System</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="preference-card">
+                            <p class="text-xs font-black uppercase tracking-[0.14em] text-slate-500 mb-3">Accessibility</p>
+                            <label class="preference-toggle">
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-black text-slate-800">Reduce motion</span>
+                                    <span class="block text-xs font-semibold text-slate-500 mt-0.5">Minimize animations and transition effects.</span>
+                                </span>
+                                <input type="checkbox" id="pref_reduce_motion" name="pref_reduce_motion" value="1">
+                            </label>
+                        </div>
+
+                        <div class="preference-card">
+                            <p class="text-xs font-black uppercase tracking-[0.14em] text-slate-500 mb-3">Feed Density</p>
+                            <label class="preference-toggle">
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-black text-slate-800">Compact layout</span>
+                                    <span class="block text-xs font-semibold text-slate-500 mt-0.5">Show denser cards with tighter spacing.</span>
+                                </span>
+                                <input type="checkbox" id="pref_compact_mode" name="pref_compact_mode" value="1">
+                            </label>
+                        </div>
+
+                        <div class="preference-card md:col-span-2">
+                            <p class="text-xs font-black uppercase tracking-[0.14em] text-slate-500 mb-3">Media</p>
+                            <label class="preference-toggle">
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-black text-slate-800">Autoplay embeds</span>
+                                    <span class="block text-xs font-semibold text-slate-500 mt-0.5">Automatically play embedded media when available.</span>
+                                </span>
+                                <input type="checkbox" id="pref_autoplay_media" name="pref_autoplay_media" value="1">
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
                 <section class="px-6 py-6 sm:px-8 sm:py-7">
                     <h3 class="text-lg font-black text-slate-800 mb-5">Bio / About Me</h3>
                     <textarea name="bio" rows="5" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white" placeholder="Tell the Heron community something about yourself...">{{ user.bio or '' }}</textarea>
@@ -982,6 +1121,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const socialLinksRoot = document.querySelector('[data-social-links-root]');
     const contactNumberInput = document.getElementById('contact_number');
     const contactNumberFeedback = document.getElementById('contactNumberFeedback');
+    const themeChoiceInputs = Array.from(document.querySelectorAll('input[name="theme_preference"]'));
+    const themeChoicePills = Array.from(document.querySelectorAll('[data-theme-pill]'));
+    const reduceMotionInput = document.getElementById('pref_reduce_motion');
+    const compactModeInput = document.getElementById('pref_compact_mode');
+    const autoplayMediaInput = document.getElementById('pref_autoplay_media');
     const validPhilippinePrefixRegex = /^(?:\+639(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7}|09(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7})$/;
 
     const validatePhilippineMobile = (rawValue) => {
@@ -1269,11 +1413,58 @@ document.addEventListener('DOMContentLoaded', () => {
         syncSocialEditorState();
     }
 
+    const userSettingsApi = window.HHUserSettings || null;
+    if (userSettingsApi && themeChoiceInputs.length) {
+        const syncThemePills = () => {
+            themeChoicePills.forEach((pill) => {
+                const input = pill.querySelector('input[type="radio"]');
+                pill.classList.toggle('is-active', Boolean(input?.checked));
+            });
+        };
+
+        const currentPreference = userSettingsApi.getThemePreference();
+        themeChoiceInputs.forEach((input) => {
+            input.checked = input.value === currentPreference;
+        });
+        syncThemePills();
+
+        const currentUiPrefs = userSettingsApi.getUIPreferences();
+        if (reduceMotionInput) reduceMotionInput.checked = Boolean(currentUiPrefs.reduceMotion);
+        if (compactModeInput) compactModeInput.checked = Boolean(currentUiPrefs.compactMode);
+        if (autoplayMediaInput) autoplayMediaInput.checked = Boolean(currentUiPrefs.autoplayMedia);
+
+        themeChoiceInputs.forEach((input) => {
+            input.addEventListener('change', () => {
+                if (!input.checked) return;
+                userSettingsApi.setThemePreference(input.value);
+                syncThemePills();
+            });
+        });
+
+        reduceMotionInput?.addEventListener('change', () => {
+            userSettingsApi.setUIPreferences({ reduceMotion: reduceMotionInput.checked });
+        });
+        compactModeInput?.addEventListener('change', () => {
+            userSettingsApi.setUIPreferences({ compactMode: compactModeInput.checked });
+        });
+        autoplayMediaInput?.addEventListener('change', () => {
+            userSettingsApi.setUIPreferences({ autoplayMedia: autoplayMediaInput.checked });
+        });
+    }
+
     if (form && saveBtn) {
+        const localPreferenceFields = new Set([
+            'theme_preference',
+            'pref_reduce_motion',
+            'pref_compact_mode',
+            'pref_autoplay_media',
+        ]);
+
         const snapshotFormValues = () => {
             const entries = {};
             const data = new FormData(form);
             for (const [key, value] of data.entries()) {
+                if (localPreferenceFields.has(key)) continue;
                 entries[key] = value;
             }
             return entries;
