@@ -512,7 +512,7 @@
                     if (dot) dot.classList.toggle('hidden', !hasUnread);
                     if (count) {
                         count.classList.toggle('hidden', !hasUnread);
-                        count.textContent = `${unreadCount} New`;
+                        count.textContent = String(unreadCount);
                     }
                     if (mobileCount) {
                         mobileCount.classList.toggle('hidden', !hasUnread);
@@ -635,6 +635,8 @@
                         if (notifMenu) notifMenu.classList.add('hidden');
                     }
                 };
+
+                const defaultAvatar = '{{ url_for('static', filename='images/Logo.png') }}';
 
                 document.addEventListener('DOMContentLoaded', function() {
                     const trigger = document.getElementById('profile-dropdown-trigger');
