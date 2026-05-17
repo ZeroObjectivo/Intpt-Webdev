@@ -86,6 +86,7 @@ class ProfileSettingsTemplateTest(unittest.TestCase):
                             "created_at": "2026-05-15T00:00:00Z",
                             "post_id": "p10",
                             "post_content": "Shared a helpful guide for thesis work.",
+                            "post_owner_name": "Maya Reyes",
                             "category": "General",
                             "relative_created_at": "1 day ago",
                         }
@@ -96,6 +97,7 @@ class ProfileSettingsTemplateTest(unittest.TestCase):
                             "post_id": "p11",
                             "post_content": "How do you manage capstone timelines?",
                             "content": "Try breaking the milestones weekly.",
+                            "post_owner_name": "Maya Reyes",
                             "category": "Question",
                             "relative_created_at": "1 day ago",
                         }
@@ -152,8 +154,15 @@ class ProfileSettingsTemplateTest(unittest.TestCase):
         self.assertIn("Posts awaiting approval", html)
         self.assertNotIn("Awaiting approval", html)
         self.assertIn("Edit Profile", html)
+        self.assertIn("profile-display-name", html)
+        self.assertIn("clamp(2rem, 4vw, 54px)", html)
+        self.assertIn("profile-context-line", html)
+        self.assertIn('id="openProfileEditModalMobile"', html)
+        self.assertIn("profile-edit-trigger-mobile", html)
+        self.assertIn("profile-actions-col", html)
+        self.assertIn("profile-edit-trigger", html)
         self.assertNotIn("Last seen 1 day ago", html)
-        self.assertIn("Joined May 16, 2026", html)
+        self.assertNotIn("Joined May 16, 2026", html)
         self.assertIn('id="contactNumberFeedback"', html)
         self.assertIn('placeholder="09XXXXXXXXX"', html)
         self.assertIn("Select Unit", html)
@@ -182,6 +191,12 @@ class ProfileSettingsTemplateTest(unittest.TestCase):
         self.assertIn("hover:bg-red-50/85", html)
         self.assertIn("Recent liked posts", html)
         self.assertIn("Recent comments", html)
+        self.assertIn("You", html)
+        self.assertIn("liked a post by", html)
+        self.assertIn("commented on a post by", html)
+        self.assertIn("Maya Reyes", html)
+        self.assertIn('href="/dashboard#view-post-p10-0"', html)
+        self.assertIn('href="/dashboard#view-post-p11-0"', html)
 
 
 if __name__ == "__main__":

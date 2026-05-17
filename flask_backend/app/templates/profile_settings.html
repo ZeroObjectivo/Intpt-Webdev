@@ -48,12 +48,12 @@
     }
 
     .profile-avatar-wrap {
-        margin-top: -62px;
+        margin-top: -66px;
     }
 
     .profile-avatar {
-        width: 120px;
-        height: 120px;
+        width: 128px;
+        height: 128px;
         border-radius: 9999px;
         border: 6px solid white;
         background: white;
@@ -80,6 +80,25 @@
         flex-direction: column;
         gap: 0.35rem;
         min-width: 0;
+    }
+
+    .profile-name-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-display-name {
+        font-size: clamp(2rem, 4vw, 54px);
+        font-weight: 900;
+        line-height: 0.94;
+        letter-spacing: -0.02em;
+        color: rgb(15 23 42);
+    }
+
+    .profile-context-line {
+        margin-top: 0.7rem;
     }
 
     .profile-meta-row {
@@ -123,20 +142,57 @@
     }
 
     .profile-stat-card {
-        min-height: 108px;
+        min-height: clamp(6.6rem, 11vw, 7.5rem);
         border-radius: 1.35rem;
         border: 1px solid var(--profile-border);
         background: var(--profile-surface);
-        padding: 1rem 1.2rem;
+        padding: clamp(0.95rem, 2.2vw, 1.25rem);
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
     }
 
+    .profile-actions-col {
+        padding-top: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .profile-edit-trigger {
+        display: inline-flex;
+        min-height: 3rem;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        border: 1px solid rgb(226 232 240);
+        background: white;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.875rem;
+        font-weight: 900;
+        color: var(--umak-blue);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+        transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .profile-edit-trigger:hover {
+        transform: translateY(-2px);
+        border-color: var(--umak-blue);
+        background: rgb(239 246 255);
+    }
+
+    .profile-edit-trigger-icon {
+        flex-shrink: 0;
+    }
+
+    .profile-edit-trigger-mobile {
+        display: none;
+    }
+
     .profile-tab-nav {
         display: flex;
         align-items: center;
-        gap: 1.75rem;
+        gap: 0.5rem;
         margin-top: var(--profile-space-3);
         padding-inline: 0.1rem;
         border-bottom: 1px solid var(--profile-border);
@@ -149,15 +205,17 @@
     }
 
     .profile-tab-button {
+        flex: 1 1 0;
         border: none;
         border-bottom: 2px solid transparent;
         background: transparent;
-        padding: 0.9rem 0.15rem 1rem;
+        padding: 0.9rem 0.5rem 1rem;
         color: rgb(100 116 139);
         font-size: 0.92rem;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
+        letter-spacing: 0.01em;
         font-weight: 800;
+        text-align: center;
+        white-space: nowrap;
         cursor: pointer;
         transition: color 0.2s ease, border-color 0.2s ease;
     }
@@ -349,6 +407,36 @@
         display: block;
     }
 
+    .profile-social-remove-button {
+        display: inline-flex;
+        min-width: 2.75rem;
+        height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 3px solid rgba(239, 68, 68, 0.72);
+        background: linear-gradient(135deg, rgba(254, 242, 242, 0.72) 0%, rgba(254, 226, 226, 0.52) 100%);
+        backdrop-filter: blur(8px);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease, background-color 0.18s ease;
+    }
+
+    .profile-social-remove-button:hover {
+        transform: translateY(-1px);
+        background: linear-gradient(135deg, rgba(254, 226, 226, 0.8) 0%, rgba(252, 165, 165, 0.3) 100%);
+        filter: saturate(1.03);
+    }
+
+    .profile-social-remove-button:focus-visible {
+        outline: 2px solid rgba(248, 113, 113, 0.35);
+        outline-offset: 2px;
+    }
+
+    .profile-social-remove-icon {
+        width: 1.2rem;
+        height: 1.2rem;
+        display: block;
+    }
+
     #closeProfileEditModal:hover .profile-close-icon {
         filter: brightness(0) saturate(100%) invert(26%) sepia(18%) saturate(687%) hue-rotate(178deg) brightness(95%) contrast(90%);
     }
@@ -384,17 +472,17 @@
         }
 
         .profile-hero-body {
-            padding: 0 1rem 1.25rem;
+            padding: 0 1rem 1.4rem;
         }
 
         .profile-avatar {
-            width: 96px;
-            height: 96px;
+            width: 104px;
+            height: 104px;
             border-width: 4px;
         }
 
         .profile-avatar-wrap {
-            margin-top: -48px;
+            margin-top: -52px;
         }
 
         .profile-identity-block {
@@ -403,8 +491,53 @@
             align-items: start;
         }
 
+        .profile-copy-stack {
+            position: relative;
+            gap: 0.55rem;
+            padding-top: 0.15rem;
+        }
+
+        .profile-name-row {
+            align-items: flex-start;
+        }
+
+        .profile-display-name {
+            font-size: clamp(2rem, 10vw, 32px);
+        }
+
+        .profile-context-line {
+            margin-top: 1rem;
+        }
+
+        .profile-actions-col {
+            display: none;
+        }
+
+        .profile-edit-trigger-mobile {
+            position: absolute;
+            right: 0;
+            bottom: -4.3rem;
+            z-index: 3;
+            display: inline-flex;
+            height: 3rem;
+            width: 3rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            border: 1px solid rgb(226 232 240);
+            background: white;
+            color: var(--umak-blue);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+        }
+
         .profile-stat-grid {
             grid-template-columns: 1fr;
+            gap: 0.9rem;
+            padding-top: 4.6rem;
+        }
+
+        .profile-stat-card {
+            min-height: 10rem;
         }
 
         .profile-modal-card {
@@ -440,26 +573,34 @@
 
                         <div class="mt-4 space-y-2 profile-copy-stack">
                             <div>
-                                <div class="flex items-center gap-3">
-                                    <h1 class="text-[2.2rem] font-black leading-none tracking-[-0.02em] text-slate-900 md:text-[2.45rem]">{{ user.full_name }}</h1>
+                                <div class="profile-name-row">
+                                    <h1 class="profile-display-name">{{ user.full_name }}</h1>
                                     <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200">
                                         {{ user.role }}
                                     </span>
                                 </div>
-                                <p class="profile-supporting-line">
+                                <p class="profile-supporting-line profile-context-line">
                                     {% if profile_context_bits %}
                                         {{ profile_context_bits|join(' · ') }}
                                     {% endif %}
                                 </p>
                             </div>
 
-                            {% if user.email or user.joined_label %}
+                            {% if is_own_profile %}
+                            <button type="button"
+                                    id="openProfileEditModalMobile"
+                                    aria-label="Edit Profile"
+                                    class="profile-edit-trigger-mobile">
+                                <svg class="profile-edit-trigger-icon h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            {% endif %}
+
+                            {% if user.email %}
                             <div class="profile-meta-row">
                                 {% if user.email %}
                                 <span class="profile-meta-pill">{{ user.email }}</span>
-                                {% endif %}
-                                {% if user.joined_label %}
-                                <span class="profile-meta-pill">Joined {{ user.joined_label }}</span>
                                 {% endif %}
                             </div>
                             {% endif %}
@@ -499,12 +640,12 @@
                     </div>
                 </div>
 
-                <div class="pt-5 lg:pt-7 flex flex-col gap-3">
+                <div class="profile-actions-col">
                     {% if is_own_profile %}
                     <button type="button"
                             id="openProfileEditModal"
-                            class="inline-flex min-h-[3rem] items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-umak-blue shadow-sm transition-all hover:-translate-y-0.5 hover:border-umak-blue hover:bg-blue-50">
-                        <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="profile-edit-trigger">
+                        <svg class="profile-edit-trigger-icon h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
                         <span>Edit Profile</span>
@@ -566,26 +707,10 @@
     {% if is_own_profile %}
     <section id="profile-tab-interactions" class="profile-panel">
         <div class="profile-panel-shell profile-section-card p-6 sm:p-7">
-            <div class="border-b border-slate-100 pb-4">
-                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Interactions</p>
-                <h2 class="mt-2 text-xl font-black text-slate-900">Recent likes and comments</h2>
-                <p class="mt-1 text-sm font-medium text-slate-500">A single activity column for your latest reactions and discussion.</p>
-            </div>
-
-            <div class="interaction-feed mt-5">
+            <div class="interaction-feed">
                 <section class="interaction-block">
                     <div class="mb-4 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="interaction-meta-icon bg-rose-50 text-rose-500">
-                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
-                                </svg>
-                            </span>
-                            <div>
-                                <p class="text-xs font-black uppercase tracking-[0.18em] text-rose-400">Likes</p>
-                                <h3 class="mt-1 text-lg font-black text-slate-900">Recent liked posts</h3>
-                            </div>
-                        </div>
+                        <h3 class="text-lg font-black text-slate-900">Recent liked posts</h3>
                         <div class="rounded-full bg-rose-50 px-3 py-1 text-xs font-black text-rose-500">
                             {{ stat_block.likes_count }}
                         </div>
@@ -594,23 +719,23 @@
                     <div class="space-y-3">
                         {% if interactions.likes %}
                             {% for item in interactions.likes %}
-                            <article class="interaction-item">
+                            <a href="/dashboard#view-post-{{ item.post_id }}-0"
+                               class="interaction-item block transition-colors hover:bg-rose-50/50 focus:outline-none focus:ring-2 focus:ring-rose-200">
                                 <div class="flex items-start justify-between gap-3">
-                                    <span class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-rose-500">
-                                        {{ item.category }}
-                                    </span>
-                                    <span class="text-[11px] font-bold text-slate-400">{{ item.relative_created_at }}</span>
+                                    <p class="pr-3 text-sm font-medium leading-6 text-slate-600">
+                                        <span class="text-slate-700">You</span>
+                                        <img src="{{ url_for('static', filename='images/like-heart-gray.png') }}"
+                                             alt=""
+                                             class="mx-1 inline h-3.5 w-3.5 align-[-0.12rem]"
+                                             aria-hidden="true">
+                                        liked a post by <span class="text-slate-700">{{ item.post_owner_name or 'another user' }}</span>
+                                    </p>
+                                    <span class="shrink-0 text-[11px] font-bold text-slate-400">{{ item.relative_created_at }}</span>
                                 </div>
-                                <p class="mt-3 line-clamp-3 text-sm font-medium leading-6 text-slate-600">
+                                <p class="mt-2 line-clamp-2 text-sm font-medium leading-6 text-slate-500">
                                     {{ item.post_content }}
                                 </p>
-                                <a href="/dashboard#view-post-{{ item.post_id }}-0" class="mt-4 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-umak-blue hover:underline">
-                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                    <span>View Post</span>
-                                </a>
-                            </article>
+                            </a>
                             {% endfor %}
                         {% else %}
                             <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-7 text-center">
@@ -622,17 +747,7 @@
 
                 <section class="interaction-block">
                     <div class="mb-4 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="interaction-meta-icon bg-blue-50 text-blue-500">
-                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h5m8 6-3.8-2.1a2 2 0 00-.97-.24H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-.99 1.73z"></path>
-                                </svg>
-                            </span>
-                            <div>
-                                <p class="text-xs font-black uppercase tracking-[0.18em] text-blue-400">Comments</p>
-                                <h3 class="mt-1 text-lg font-black text-slate-900">Recent comments</h3>
-                            </div>
-                        </div>
+                        <h3 class="text-lg font-black text-slate-900">Recent comments</h3>
                         <div class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-500">
                             {{ stat_block.comments_count }}
                         </div>
@@ -641,24 +756,21 @@
                     <div class="space-y-3">
                         {% if interactions.comments %}
                             {% for item in interactions.comments %}
-                            <article class="interaction-item">
+                            <a href="/dashboard#view-post-{{ item.post_id }}-0"
+                               class="interaction-item block transition-colors hover:bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-blue-200">
                                 <div class="flex items-start justify-between gap-3">
-                                    <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-500">
-                                        {{ item.category }}
-                                    </span>
-                                    <span class="text-[11px] font-bold text-slate-400">{{ item.relative_created_at }}</span>
+                                    <p class="pr-3 text-sm font-semibold leading-6 text-slate-700">
+                                        <span class="font-black text-slate-900">You</span>
+                                        commented on a post by <span class="font-black text-slate-900">{{ item.post_owner_name or 'another user' }}</span>
+                                    </p>
+                                    <span class="shrink-0 text-[11px] font-bold text-slate-400">{{ item.relative_created_at }}</span>
                                 </div>
-                                <p class="mt-3 text-sm font-black text-slate-800">Your comment</p>
-                                <p class="mt-1 line-clamp-3 text-sm font-medium leading-6 text-slate-600">{{ item.content }}</p>
-                                <p class="mt-3 text-xs font-black uppercase tracking-widest text-slate-400">On post</p>
-                                <p class="mt-1 line-clamp-2 text-sm font-medium leading-6 text-slate-500">{{ item.post_content }}</p>
-                                <a href="/dashboard#view-post-{{ item.post_id }}-0" class="mt-4 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-umak-blue hover:underline">
-                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                    <span>View Post</span>
-                                </a>
-                            </article>
+                                <p class="mt-2 text-sm font-black text-slate-800">Your comment</p>
+                                <p class="mt-1 line-clamp-2 text-sm font-medium leading-6 text-slate-600">{{ item.content }}</p>
+                                <p class="mt-3 line-clamp-2 text-sm font-medium leading-6 text-slate-500">
+                                    {{ item.post_content }}
+                                </p>
+                            </a>
                             {% endfor %}
                         {% else %}
                             <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-7 text-center">
@@ -782,8 +894,12 @@
                                 </div>
                                 <button type="button"
                                         data-remove-social-link
-                                        class="inline-flex min-w-[112px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 lg:flex-shrink-0">
-                                    Remove
+                                        class="profile-social-remove-button lg:flex-shrink-0"
+                                        aria-label="Remove social link">
+                                    <img src="{{ url_for('static', filename='images/remove-social-link.png') }}"
+                                         alt=""
+                                         class="profile-social-remove-icon"
+                                         aria-hidden="true">
                                 </button>
                             </div>
                         </div>
@@ -858,8 +974,12 @@
                                         </div>
                                         <button type="button"
                                                 data-remove-social-link
-                                                class="inline-flex min-w-[112px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 lg:flex-shrink-0">
-                                            Remove
+                                                class="profile-social-remove-button lg:flex-shrink-0"
+                                                aria-label="Remove social link">
+                                            <img src="{{ url_for('static', filename='images/remove-social-link.png') }}"
+                                                 alt=""
+                                                 class="profile-social-remove-icon"
+                                                 aria-hidden="true">
                                         </button>
                                     </div>
                                 </div>
@@ -973,6 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const modal = document.getElementById('profileEditModal');
     const openModalButton = document.getElementById('openProfileEditModal');
+    const openModalButtonMobile = document.getElementById('openProfileEditModalMobile');
     const closeButtons = [
         document.getElementById('closeProfileEditModal'),
         document.getElementById('dismissProfileEditModal'),
@@ -1107,6 +1228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     openModalButton?.addEventListener('click', openModal);
+    openModalButtonMobile?.addEventListener('click', openModal);
     closeButtons.forEach((button) => button.addEventListener('click', closeModal));
 
     modal?.addEventListener('click', (event) => {
