@@ -340,20 +340,23 @@
                         </div>
                     </div>
 
-                    <div id="eventFields" class="category-specific-fields hidden space-y-3 bg-white rounded-[12px] border border-slate-200 shadow-sm overflow-hidden p-3 animate-in fade-in zoom-in duration-200 font-sans">
-                        <input id="eventTitle" name="event_title" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="Event Name">
+                    <div id="eventFields" class="category-specific-fields hidden space-y-3 bg-white rounded-xl border border-slate-200 shadow-sm p-3 animate-in fade-in zoom-in duration-200 font-sans">
+                        <input id="eventTitle" name="event_title" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans outline-none focus:border-umak-blue focus:ring-4 focus:ring-umak-blue/5 transition-all placeholder-slate-400" placeholder="Event Name">
+                        
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="relative">
-                                <span class="absolute left-3 top-0.5 text-[9px] font-bold font-sans text-slate-400 uppercase">Start Time</span>
-                                <input id="eventDateTime" name="event_date" type="datetime-local" class="w-full rounded-lg border border-slate-200 px-3 pb-1.5 pt-4 text-[13px] font-sans outline-none focus:border-umak-blue/50 focus:bg-white transition-all">
+                                <span class="absolute left-3 top-1 text-[9px] font-bold font-sans text-slate-400 uppercase tracking-wider">Start Date & Time</span>
+                                <input id="eventDateTime" name="event_date" type="datetime-local" class="w-full rounded-lg border border-slate-200 px-3 pb-1.5 pt-4 text-[13px] font-sans font-medium text-slate-700 outline-none focus:border-umak-blue focus:ring-4 focus:ring-umak-blue/5 transition-all cursor-pointer">
                             </div>
                             <div class="relative">
-                                <span class="absolute left-3 top-0.5 text-[9px] font-bold font-sans text-slate-400 uppercase">End Time</span>
-                                <input id="eventEndDateTime" name="event_end_date" type="datetime-local" class="w-full rounded-lg border border-slate-200 px-3 pb-1.5 pt-4 text-[13px] font-sans outline-none focus:border-umak-blue/50 focus:bg-white transition-all">
+                                <span class="absolute left-3 top-1 text-[9px] font-bold font-sans text-slate-400 uppercase tracking-wider">End Date & Time</span>
+                                <input id="eventEndDateTime" name="event_end_date" type="datetime-local" class="w-full rounded-lg border border-slate-200 px-3 pb-1.5 pt-4 text-[13px] font-sans font-medium text-slate-700 outline-none focus:border-umak-blue focus:ring-4 focus:ring-umak-blue/5 transition-all cursor-pointer">
                             </div>
                         </div>
-                        <input id="eventPlace" name="location" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans outline-none focus:border-umak-blue/50 focus:bg-white transition-all placeholder-slate-400" placeholder="Where is it?">
-                        <select id="hostingCollege" name="hosting_college" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans text-slate-600 outline-none focus:border-umak-blue/50 focus:bg-white transition-all appearance-none bg-white">
+
+                        <input id="eventPlace" name="location" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans outline-none focus:border-umak-blue focus:ring-4 focus:ring-umak-blue/5 transition-all placeholder-slate-400" placeholder="Where is it?">
+                        
+                        <select id="hostingCollege" name="hosting_college" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans text-slate-600 outline-none focus:border-umak-blue focus:ring-4 focus:ring-umak-blue/5 transition-all appearance-none bg-white bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-[right_1rem_center] bg-no-repeat">
                             <option value="">Which college is hosting?</option>
                             <optgroup label="Colleges">
                                 {% for item in colleges %}
@@ -690,6 +693,34 @@
             });
             validateForm();
         }
+
+        // --- Event Calendar Logic (Modern UX) ---
+        function updateMinDates() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            if (eventDateTime) {
+                eventDateTime.min = minDateTime;
+                // If user selected a start date, end date must be at least that.
+                if (eventDateTime.value) {
+                    eventEndDateTime.min = eventDateTime.value;
+                } else {
+                    eventEndDateTime.min = minDateTime;
+                }
+            }
+        }
+
+        if (eventDateTime) {
+            eventDateTime.addEventListener('change', updateMinDates);
+        }
+
+        updateMinDates();
+        setInterval(updateMinDates, 60000); // Keep 'now' relatively fresh
 
         initCategoryToggle();
         initFormValidation();
