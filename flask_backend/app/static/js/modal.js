@@ -26,7 +26,7 @@ function showModerationPopup(message) {
         window.createToast(`⚠ ${text}`, 'error');
         return;
     }
-    alert(`⚠ ${text}`);
+    window.dispatchEvent(new CustomEvent('flash-message', { detail: { message: `⚠ ${text}`, type: 'error' } }));
 }
 
 let currentPost = null;

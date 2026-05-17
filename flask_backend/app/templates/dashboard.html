@@ -595,7 +595,15 @@
             });
 
             if (selectedFiles.length >= 5 && newFiles.length > 0) {
-                if (selectedFiles.length === 5) alert('Maximum 5 images allowed.');
+                if (selectedFiles.length === 5) {
+                    if (window.createToast) {
+                        window.createToast('Maximum 5 images allowed.', 'error');
+                    } else {
+                        window.dispatchEvent(new CustomEvent('flash-message', {
+                            detail: { message: 'Maximum 5 images allowed.', type: 'error' }
+                        }));
+                    }
+                }
             }
 
             // Reset input so change fires even for same file
