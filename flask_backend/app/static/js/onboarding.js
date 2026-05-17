@@ -61,6 +61,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Step 2: Profile Logic ---
+    const collegeSelect = document.querySelector('[name="college"]');
+    const courseSelect = document.getElementById('course');
+
+    const updateCourses = async (collegeName) => {
+        if (!collegeName) {
+            courseSelect.innerHTML = '<option value="">Select Course</option>';
+            return;
+        }
+
+        courseSelect.innerHTML = '<option value="">Loading courses...</option>';
+        courseSelect.disabled = true;
+
+        try {
+            const response = await fetch(`/api/courses?college=${encodeURIComponent(collegeName)}`);
+            const courses = await response.json();
+
+            let html = '<option value="">Select Course</option>';
+            courses.forEach(c => {
+                html += `<option value="${c.name}">${c.name}</option>`;
+            });
+            courseSelect.innerHTML = html;
+        } catch (error) {
+            console.error('Error fetching courses:', error);
+            courseSelect.innerHTML = '<option value="">Error loading courses</option>';
+        } finally {
+            courseSelect.disabled = false;
+        }
+    };
+
+    collegeSelect?.addEventListener('change', (e) => {
+        updateCourses(e.target.value);
+    });
+
     const addSocialButton = document.getElementById('addSocialButton');
     const socialLinkRows = document.getElementById('socialLinkRows');
     const socialRowTemplate = document.getElementById('socialRowTemplate');

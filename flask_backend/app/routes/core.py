@@ -1342,6 +1342,33 @@ def search_users():
             return jsonify({"status": "error", "reason": "session_expired"}), 401
         return jsonify({"status": "error", "reason": "search_failed"}), 500
 
+@core.route('/api/courses')
+def get_courses():
+    # Allow access if user is logged in OR in onboarding (temp_user)
+    if 'user' not in session and 'temp_user' not in session:
+        return jsonify({"status": "error", "reason": "unauthenticated"}), 401
+        
+    college_name = request.args.get('college')
+    if not college_name:
+        return jsonify([])
+    
+    # Use service client since user client might not be fully established yet
+    client = supabase_service
+    try:
+        # Get college ID first
+        col_res = client.table('colleges_institutes').select('id').eq('name', college_name).execute()
+        if not col_res.data:
+            return jsonify([])
+            
+        college_id = col_res.data[0]['id']
+        
+        # Get courses for this college
+        courses_res = client.table('courses').select('name, program_type').eq('college_id', college_id).order('name').execute()
+        return jsonify(courses_res.data or [])
+    except Exception as e:
+        logger.error("Error fetching courses for API: %s", e)
+        return jsonify([]), 500
+
 def load_profile_data(user_id, viewer_id=None):
     client = get_user_client()
     college_options = load_college_institute_options()
