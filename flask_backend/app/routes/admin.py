@@ -1903,15 +1903,45 @@ def manage_umak_coop_catalog():
     client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
-    res = client.table('umak_coop_items')\
-        .select("id, name, details, price, availability, image_url, created_at")\
-        .order('created_at', desc=True).execute()
+    
+    search = request.args.get('search', '').strip()
+    category = request.args.get('category', 'All').strip()
+    availability = request.args.get('availability', 'All').strip()
+    sort = request.args.get('sort', 'recent').strip()
+
+    query = client.table('umak_coop_items').select("id, name, details, price, availability, image_url, created_at, category")
+    
+    if search:
+        query = query.ilike('name', f'%{search}%')
+    
+    if category != 'All':
+        query = query.eq('category', category)
+        
+    if availability != 'All':
+        query = query.eq('availability', availability)
+
+    if sort == 'price_high':
+        query = query.order('price', desc=True)
+    elif sort == 'price_low':
+        query = query.order('price', desc=False)
+    elif sort == 'az':
+        query = query.order('name', desc=False)
+    elif sort == 'za':
+        query = query.order('name', desc=True)
+    else:
+        query = query.order('created_at', desc=True)
+
+    res = query.execute()
     return render_template(
         'admin/catalog_manage.html',
         catalog_type='umak_coop',
         items=res.data or [],
         user=session.get('user'),
-        permissions=permissions
+        permissions=permissions,
+        search=search,
+        category=category,
+        availability=availability,
+        sort=sort
     )
 
 @admin.route('/admin/catalog/umak-coop/create', methods=['POST'])
@@ -1920,16 +1950,24 @@ def manage_umak_coop_catalog():
 def create_umak_coop_item():
     name = request.form.get('name', '').strip()
     details = request.form.get('details', '').strip()
+    category = request.form.get('category', 'Other').strip() or 'Other'
     availability = request.form.get('availability', 'Available').strip() or 'Available'
     image_url = request.form.get('image_url', '').strip()
     image_file = request.files.get('image_file')
-    price = _parse_catalog_price(request.form.get('price'))
+    
+    try:
+        price_raw = request.form.get('price', '0')
+        price_val = float(price_raw) if price_raw else 0.0
+        if price_val <= 0:
+            flash("Price must be greater than 0.", "error")
+            return redirect(url_for('admin.manage_umak_coop_catalog'))
+        price = price_val
+    except (ValueError, TypeError):
+        flash("A valid numeric price is required.", "error")
+        return redirect(url_for('admin.manage_umak_coop_catalog'))
 
     if not name or not details:
         flash("Item name and details are required.", "error")
-        return redirect(url_for('admin.manage_umak_coop_catalog'))
-    if price is None:
-        flash("A valid item price is required.", "error")
         return redirect(url_for('admin.manage_umak_coop_catalog'))
 
     try:
@@ -1942,14 +1980,13 @@ def create_umak_coop_item():
         admin_client.table('umak_coop_items').insert({
             "name": name,
             "details": details,
+            "category": category,
             "availability": availability,
             "price": price,
             "image_url": image_url,
             "created_by": session.get('user', {}).get('id')
         }).execute()
         flash("UMak Coop item created.", "success")
-    except ValueError as ve:
-        flash(str(ve), "error")
     except Exception as e:
         logger.error("Error creating UMak Coop item: %s", e)
         flash("Failed to create UMak Coop item.", "error")
@@ -1961,16 +1998,24 @@ def create_umak_coop_item():
 def update_umak_coop_item(item_id):
     name = request.form.get('name', '').strip()
     details = request.form.get('details', '').strip()
+    category = request.form.get('category', 'Other').strip() or 'Other'
     availability = request.form.get('availability', 'Available').strip() or 'Available'
     image_url = request.form.get('image_url', '').strip()
     image_file = request.files.get('image_file')
-    price = _parse_catalog_price(request.form.get('price'))
+    
+    try:
+        price_raw = request.form.get('price', '0')
+        price_val = float(price_raw) if price_raw else 0.0
+        if price_val <= 0:
+            flash("Price must be greater than 0.", "error")
+            return redirect(url_for('admin.manage_umak_coop_catalog'))
+        price = price_val
+    except (ValueError, TypeError):
+        flash("A valid numeric price is required.", "error")
+        return redirect(url_for('admin.manage_umak_coop_catalog'))
 
     if not name or not details:
         flash("Item name and details are required.", "error")
-        return redirect(url_for('admin.manage_umak_coop_catalog'))
-    if price is None:
-        flash("A valid item price is required.", "error")
         return redirect(url_for('admin.manage_umak_coop_catalog'))
 
     try:
@@ -1983,13 +2028,12 @@ def update_umak_coop_item(item_id):
         admin_client.table('umak_coop_items').update({
             "name": name,
             "details": details,
+            "category": category,
             "availability": availability,
             "price": price,
             "image_url": image_url
         }).eq('id', item_id).execute()
         flash("UMak Coop item updated.", "success")
-    except ValueError as ve:
-        flash(str(ve), "error")
     except Exception as e:
         logger.error("Error updating UMak Coop item: %s", e)
         flash("Failed to update UMak Coop item.", "error")

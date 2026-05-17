@@ -94,6 +94,74 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCourses(e.target.value);
     });
 
+    // --- Contact Validation (Mirroring Profile Settings) ---
+    const contactNumberInput = document.getElementById('contact_number');
+    const contactNumberFeedback = document.getElementById('contactNumberFeedback');
+    const validPhilippinePrefixRegex = /^(?:\+639(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7}|09(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7})$/;
+
+    const validatePhilippineMobile = (rawValue) => {
+        const candidate = (rawValue || '').trim();
+        if (!candidate) {
+            return { valid: true, normalized: '', message: '', tone: 'idle' };
+        }
+
+        if (/[A-Za-z]/.test(candidate) || /[^\d+]/.test(candidate) || (candidate.includes('+') && !candidate.startsWith('+'))) {
+            return { valid: false, normalized: candidate, message: 'Numbers only, please.', tone: 'error' };
+        }
+
+        if (candidate.startsWith('+')) {
+            if (!candidate.startsWith('+639')) {
+                return { valid: false, normalized: candidate, message: 'Must start with +639...', tone: 'error' };
+            }
+            if (candidate.length !== 13) {
+                return { valid: false, normalized: candidate, message: 'Must be 13 characters (+639...).', tone: 'error' };
+            }
+        } else {
+            if (!candidate.startsWith('09')) {
+                return { valid: false, normalized: candidate, message: 'Must start with 09...', tone: 'error' };
+            }
+            if (candidate.length !== 11) {
+                return { valid: false, normalized: candidate, message: 'Must be exactly 11 digits.', tone: 'error' };
+            }
+        }
+
+        if (!validPhilippinePrefixRegex.test(candidate)) {
+            return { valid: false, normalized: candidate, message: 'Invalid Philippine network prefix.', tone: 'error' };
+        }
+
+        return {
+            valid: true,
+            normalized: candidate.startsWith('09') ? `+639${candidate.slice(2)}` : candidate,
+            message: 'Valid Philippine mobile number',
+            tone: 'valid',
+        };
+    };
+
+    const renderContactValidation = (result) => {
+        if (!contactNumberInput || !contactNumberFeedback) return;
+        const hasValue = Boolean(contactNumberInput.value.trim());
+        
+        contactNumberFeedback.textContent = hasValue ? result.message : '';
+        contactNumberFeedback.className = `mt-2 text-[10px] font-bold uppercase tracking-tight transition-all ${
+            !hasValue ? '' : (result.valid ? 'text-green-500' : 'text-rose-500')
+        }`;
+
+        contactNumberInput.classList.toggle('border-rose-300', hasValue && !result.valid);
+        contactNumberInput.classList.toggle('bg-rose-50', hasValue && !result.valid);
+        contactNumberInput.classList.toggle('border-green-300', hasValue && result.valid);
+        contactNumberInput.classList.toggle('bg-green-50', hasValue && result.valid);
+    };
+
+    contactNumberInput?.addEventListener('input', (e) => {
+        // Enforce digits and + only
+        let val = e.target.value.replace(/[^\d+]/g, '');
+        if (val.includes('+')) {
+            val = '+' + val.replace(/\+/g, '');
+        }
+        e.target.value = val;
+        renderContactValidation(validatePhilippineMobile(val));
+    });
+
     const addSocialButton = document.getElementById('addSocialButton');
     const socialLinkRows = document.getElementById('socialLinkRows');
     const socialRowTemplate = document.getElementById('socialRowTemplate');
@@ -101,19 +169,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const platformLabelMap = {
         'facebook.com': 'facebook',
-        'instagram.com': 'instagram',
-        'tiktok.com': 'tiktok',
-        'linkedin.com': 'linkedin',
-        'discord.com': 'discord',
         'www.facebook.com': 'facebook',
+        'm.facebook.com': 'facebook',
+        'instagram.com': 'instagram',
         'www.instagram.com': 'instagram',
+        'tiktok.com': 'tiktok',
         'www.tiktok.com': 'tiktok',
+        'linkedin.com': 'linkedin',
         'www.linkedin.com': 'linkedin',
+        'discord.com': 'discord',
+        'www.discord.com': 'discord',
     };
 
     function detectPlatform(url) {
         try {
-            const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname;
+            const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname.toLowerCase();
             return platformLabelMap[hostname] || null;
         } catch (e) { return null; }
     }
@@ -168,16 +238,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Basic Validation for Step 2
+    // Validation for Step 2
     if (onboardingForm) {
         onboardingForm.addEventListener('submit', (e) => {
             const college = onboardingForm.querySelector('[name="college"]').value;
             const course = onboardingForm.querySelector('[name="course"]').value;
             const level = onboardingForm.querySelector('[name="level"]').value;
+            const contactNum = contactNumberInput?.value.trim() || '';
 
             if (!college || !course || !level) {
                 e.preventDefault();
                 alert('Please fill in all required academic fields.');
+                return;
+            }
+
+            if (contactNum) {
+                const validation = validatePhilippineMobile(contactNum);
+                if (!validation.valid) {
+                    e.preventDefault();
+                    alert(validation.message || 'Please enter a valid Philippine mobile number (09XXXXXXXXX).');
+                    contactNumberInput.focus();
+                    return;
+                }
             }
         });
     }

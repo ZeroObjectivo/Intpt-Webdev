@@ -20,7 +20,7 @@
 
     .coop-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
     }
 
@@ -28,23 +28,30 @@
         display: flex;
         flex-direction: column;
         min-height: 100%;
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .coop-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
     }
 
     .coop-media {
         width: 100%;
-        aspect-ratio: 16 / 9;
-        border-radius: 12px;
-        border: 1px solid #d8dce5;
-        background: linear-gradient(135deg, #eef2f7, #dbe4f2);
+        aspect-ratio: 16 / 10;
+        background: #f8fafc;
         overflow: hidden;
-        margin-bottom: 10px;
+        border-bottom: 1px solid #f1f5f9;
     }
 
     .coop-media img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        display: block;
     }
 
     .coop-media-placeholder {
@@ -53,40 +60,77 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64748b;
+        color: #94a3b8;
         font-weight: 800;
-        font-size: 0.76rem;
-        letter-spacing: 0.05em;
+        font-size: 0.65rem;
         text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .coop-content {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
     }
 
     .availability-pill {
         display: inline-flex;
         align-items: center;
         border-radius: 9999px;
-        padding: 4px 10px;
-        font-size: 0.66rem;
-        font-weight: 800;
-        letter-spacing: 0.04em;
+        padding: 3px 8px;
+        font-size: 0.6rem;
+        font-weight: 900;
         text-transform: uppercase;
-        color: #0f172a;
-        background: #d9e5f6;
+        letter-spacing: 0.05em;
+        background: #f1f5f9;
+        color: #475569;
     }
 
-    .availability-pill.low {
-        background: #fef3c7;
-        color: #92400e;
+    .availability-pill.available { background: #ecfdf5; color: #059669; }
+    .availability-pill.low { background: #fffbeb; color: #d97706; }
+    .availability-pill.out { background: #fef2f2; color: #dc2626; }
+
+    .catalog-search-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        background: #ffffff;
+        padding: 0.75rem;
+        border-radius: 1.25rem;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1.25rem;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
     }
 
-    .availability-pill.sold {
-        background: #fee2e2;
-        color: #b91c1c;
+    .catalog-search-bar input,
+    .catalog-search-bar select {
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1e293b;
+        outline: none;
+        transition: all 0.2s;
     }
 
-    @media (max-width: 900px) {
-        .coop-grid {
-            grid-template-columns: 1fr;
-        }
+    .catalog-search-bar input:focus,
+    .catalog-search-bar select:focus {
+        border-color: #0038a8;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(0, 56, 168, 0.05);
+    }
+
+    .catalog-search-bar input { flex: 1; min-width: 150px; }
+
+    @media (max-width: 1200px) {
+        .coop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 768px) {
+        .coop-grid { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
@@ -106,45 +150,177 @@
                     </div>
                 </section>
 
-                {% if cards %}
-                <section class="coop-grid">
-                    {% for card in cards %}
-                    {% set availability_label = (card.availability or 'Available') %}
-                    {% set availability_key = availability_label|lower %}
-                    <article class="post-card coop-card" data-coop-id="{{ card.id }}">
-                        <div class="coop-media">
-                            {% if card.image_url %}
-                                <img src="{{ card.image_url }}" alt="{{ card.name }} image" loading="lazy">
-                            {% else %}
-                                <div class="coop-media-placeholder">No Image</div>
-                            {% endif %}
-                        </div>
-                        <div class="flex items-start justify-between gap-3 mb-2">
-                            <h2 class="post-author-name text-[1.2rem] leading-tight">{{ card.name }}</h2>
-                            <span class="availability-pill {% if 'low' in availability_key %}low{% elif 'sold' in availability_key or 'out' in availability_key %}sold{% endif %}">{{ availability_label }}</span>
-                        </div>
-                        <p class="text-sm text-slate-700 leading-relaxed mb-3">{{ card.details or 'No item details provided.' }}</p>
-                        <div class="mt-auto pt-3 border-t border-slate-200 flex items-center justify-between">
-                            <span class="text-xs font-black uppercase tracking-wider text-slate-500">Price</span>
-                            <span class="text-sm font-black text-emerald-600">{{ card.price_label }}</span>
-                        </div>
-                    </article>
-                    {% endfor %}
-                </section>
-                {% else %}
-                    <div class="empty-feed">
-                        No UMak Coop items available yet.
+                <!-- Search and Filter Bar -->
+                <form id="catalogFilterForm" class="catalog-search-bar">
+                    <div class="relative flex-1 min-w-[180px] flex items-center">
+                        <input type="text" id="catalogSearchInput" name="search" value="{{ search or '' }}" placeholder="Search items..." class="pr-10 w-full">
+                        <svg class="w-4 h-4 text-slate-400 absolute right-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                {% endif %}
+                    <select name="category" class="filter-dropdown">
+                        <option value="All" {% if category == 'All' %}selected{% endif %}>All Categories</option>
+                        <option value="Books" {% if category == 'Books' %}selected{% endif %}>Books</option>
+                        <option value="Uniforms" {% if category == 'Uniforms' %}selected{% endif %}>Uniforms</option>
+                        <option value="Patches" {% if category == 'Patches' %}selected{% endif %}>Patches</option>
+                        <option value="ID Laces" {% if category == 'ID Laces' %}selected{% endif %}>ID Laces</option>
+                        <option value="Other" {% if category == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                    <select name="availability" class="filter-dropdown">
+                        <option value="All" {% if availability == 'All' %}selected{% endif %}>All Stock</option>
+                        <option value="Available" {% if availability == 'Available' %}selected{% endif %}>Available</option>
+                        <option value="Low Stock" {% if availability == 'Low Stock' %}selected{% endif %}>Low Stock</option>
+                        <option value="Out of Stock" {% if availability == 'Out of Stock' %}selected{% endif %}>Out of Stock</option>
+                    </select>
+                    <select name="sort" class="filter-dropdown">
+                        <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Newest</option>
+                        <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                        <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                        <option value="az" {% if sort == 'az' %}selected{% endif %}>A-Z</option>
+                        <option value="za" {% if sort == 'za' %}selected{% endif %}>Z-A</option>
+                    </select>
+                </form>
+
+                <div id="catalogGridContainer">
+                    {% if cards %}
+                    <section class="coop-grid">
+                        {% for card in cards %}
+                        {% set availability_label = (card.availability or 'Available') %}
+                        {% set a_key = availability_label|lower %}
+                        {% set a_class = 'available' %}
+                        {% if 'low' in a_key %}{% set a_class = 'low' %}
+                        {% elif 'out' in a_key or 'sold' in a_key %}{% set a_class = 'out' %}{% endif %}
+
+                        <article class="coop-card">
+                            <div class="coop-media">
+                                {% if card.image_url %}
+                                    <img src="{{ card.image_url }}" alt="{{ card.name }}" loading="lazy">
+                                {% else %}
+                                    <div class="coop-media-placeholder">No Preview Image</div>
+                                {% endif %}
+                            </div>
+                            <div class="coop-content">
+                                <div class="flex items-center justify-between gap-2 mb-3">
+                                    <span class="px-2 py-0.5 bg-slate-50 text-slate-500 rounded-lg text-[8px] font-black uppercase tracking-wider">{{ card.category or 'Other' }}</span>
+                                    <span class="availability-pill {{ a_class }}">{{ availability_label }}</span>
+                                </div>
+                                <h2 class="text-[0.95rem] font-black text-[#111942] leading-tight mb-1.5">{{ card.name }}</h2>
+                                <p class="text-[12px] text-slate-600 font-medium leading-relaxed mb-3 line-clamp-2">{{ card.details or 'No item details provided.' }}</p>
+                                
+                                <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
+                                    <div class="flex flex-col">
+                                        <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Price</span>
+                                        <span class="text-[0.95rem] font-black text-emerald-600">{{ card.price_label }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                        {% endfor %}
+                    </section>
+                    {% else %}
+                        <div class="p-12 text-center bg-slate-50 rounded-3xl border border-slate-100">
+                            <p class="text-sm font-bold text-slate-400">No items found matching your filters.</p>
+                        </div>
+                    {% endif %}
+                </div>
             </main>
 
             <aside class="sidebar">
                 <div class="sidebar-section">
                     <h3 class="sidebar-heading">Catalog Note</h3>
-                    <p class="text-sm text-slate-600 font-medium leading-relaxed">Item prices and stock availability are maintained by admins from the admin portal.</p>
+                    <p class="text-sm text-slate-600 font-medium leading-relaxed">Official prices and stock availability are updated daily by the UMak Coop management.</p>
                 </div>
             </aside>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('catalogSearchInput');
+    const filterForm = document.getElementById('catalogFilterForm');
+    const gridContainer = document.getElementById('catalogGridContainer');
+    const dropdowns = document.querySelectorAll('.filter-dropdown');
+    let searchTimer = null;
+    let latestRequestId = 0;
+
+    const fetchItems = async () => {
+        const requestId = ++latestRequestId;
+        const formData = new FormData(filterForm);
+        const params = new URLSearchParams(formData);
+        
+        try {
+            const res = await fetch(`/umak-coop?${params.toString()}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            const data = await res.json();
+            
+            // Only render if this is still the latest request
+            if (requestId === latestRequestId && data.status === 'ok') {
+                renderGrid(data.cards);
+            }
+        } catch (err) {
+            if (requestId === latestRequestId) {
+                console.error('Failed to fetch items:', err);
+            }
+        }
+    };
+
+    const renderGrid = (cards) => {
+        if (!cards || cards.length === 0) {
+            gridContainer.innerHTML = `
+                <div class="p-12 text-center bg-slate-50 rounded-3xl border border-slate-100">
+                    <p class="text-sm font-bold text-slate-400">No items found matching your filters.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<section class="coop-grid">';
+        cards.forEach(card => {
+            const aLabel = card.availability || 'Available';
+            const aKey = aLabel.toLowerCase();
+            let aClass = 'available';
+            if (aKey.includes('low')) aClass = 'low';
+            else if (aKey.includes('out') || aKey.includes('sold')) aClass = 'out';
+
+            const mediaHtml = card.image_url 
+                ? `<img src="${card.image_url}" alt="${card.name}" loading="lazy">`
+                : `<div class="coop-media-placeholder">No Preview Image</div>`;
+
+            html += `
+                <article class="coop-card">
+                    <div class="coop-media">${mediaHtml}</div>
+                    <div class="coop-content">
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <span class="px-2 py-0.5 bg-slate-50 text-slate-500 rounded-lg text-[8px] font-black uppercase tracking-wider">${card.category || 'Other'}</span>
+                            <span class="availability-pill ${aClass}">${aLabel}</span>
+                        </div>
+                        <h2 class="text-[0.95rem] font-black text-[#111942] leading-tight mb-1.5">${card.name}</h2>
+                        <p class="text-[12px] text-slate-600 font-medium leading-relaxed mb-3 line-clamp-2">${card.details || 'No item details provided.'}</p>
+                        <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">Price</span>
+                                <span class="text-[0.95rem] font-black text-emerald-600">${card.price_label}</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            `;
+        });
+        html += '</section>';
+        gridContainer.innerHTML = html;
+    };
+
+    searchInput.addEventListener('input', () => {
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(fetchItems, 1);
+    });
+
+    dropdowns.forEach(dd => {
+        dd.addEventListener('change', fetchItems);
+    });
+
+    // Prevent form submission
+    filterForm.addEventListener('submit', (e) => e.preventDefault());
+});
+</script>
 {% endblock %}

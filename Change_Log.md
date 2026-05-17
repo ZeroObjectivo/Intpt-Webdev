@@ -29,6 +29,14 @@ This document summarizes the recent major updates, bug fixes, and feature implem
     - Implemented real-time dependency: Course options now automatically filter based on the selected College/Institute.
     - Added `/api/courses` backend endpoint for high-performance course retrieval.
     - Populated the `courses` database table with over 60 verified UMak programs across all colleges. (References: `flask_backend/app/routes/core.py`, `flask_backend/app/templates/profile_settings.html`, `flask_backend/app/templates/onboarding.html`, `flask_backend/setup_courses.py`)
+- **UMak Coop Catalog Overhaul:**
+    - **Advanced Search & Filtering:** Added a real-time search bar and multi-dimensional filters (Category, Availability, Sorting) for both students and admins.
+    - **Smart Categorization:** Introduced standardized categories: **Books, Uniforms, Patches, and ID Laces**.
+    - **Admin Moderation Tools:**
+        - Refined the item creation flow with mandatory category selection and price validation (> 0).
+        - Optimized the management grid with high-density item cards for easier bulk review.
+        - Integrated backend filtering for large catalog management.
+    - **UI/UX Polishing:** Improved visual hierarchy with category pills, availability indicators, and better price labels. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/routes/core.py`, `flask_backend/app/templates/umak_coop.html`, `flask_backend/app/templates/admin/catalog_manage.html`)
 - **User Management UX Improvements:**
     - **Real-time Directory Search:** Implemented live, debounce-powered search in the Full User Directory for instant profile discovery without page reloads.
     - **Dynamic Activity Status:** Replaced static status text with live activity indicators. Users now show "Online" with a glowing green dot if active within 5 minutes, or "Offline" with a "time ago" relative timestamp (e.g., "3h ago").
