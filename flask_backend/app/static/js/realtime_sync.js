@@ -7,25 +7,41 @@
     const syncConfig = window.dashboardSyncConfig || {};
     const realtimeConfig = window.realtimeConfig || {};
     const activeCategory = syncConfig.activeCategory || '';
-    const pollIntervalMs = 7000;
-    const notificationSyncIntervalMs = 15000;
-    const realtimeApplyDelayMs = 300;
+    const interactionApplyDelayMs = 200;
+    const notificationApplyDelayMs = 300;
+    const inactivityThresholdMs = 10 * 60 * 1000; // 10 minutes
+    const sidebarSyncIntervalMs = 5 * 60 * 1000;  // 5 minutes — trending & events
     const skeletonRevealDelayMs = 420;
-    const skeletonMinVisibleMs = 800; // Increased for a more deliberate feel
+    const skeletonMinVisibleMs = 800;
     const feedSkeleton = document.getElementById('feedSkeleton');
     const feedContent = document.getElementById('feedContent');
-    let baselineStateVersion = null;
+    let baselineContentKey = null;   // latest_post_id + created_at
+    let baselineSidebarKey = null;   // trending_ids + event_ids
     let latestAdminVersion = null;
     let pollInProgress = false;
     let reloadScheduled = false;
-    let lastNotificationSyncAt = 0;
     let pendingInteractionPostIds = new Set();
     let interactionFlushTimer = null;
     let realtimeClient = null;
     let interactionsChannel = null;
     let syncLoadCount = 0;
     let skeletonRevealTimer = null;
-    let skeletonVisibleAt = Date.now(); // Start counting immediately on load
+    let skeletonVisibleAt = Date.now();
+    let lastActivityAt = Date.now();
+    let contentStale = false;
+
+    function computeContentKey(state) {
+        return (state.latest_post_id || '') + '|' + (state.latest_post_created_at || '');
+    }
+    function computeSidebarKey(state) {
+        return (state.trending_ids || []).join(',') + '|' + (state.event_ids || []).join(',');
+    }
+
+    // Track user activity for inactivity-based content refresh
+    function recordActivity() { lastActivityAt = Date.now(); }
+    ['click', 'keydown', 'scroll', 'mousemove', 'touchstart'].forEach(function (evt) {
+        document.addEventListener(evt, recordActivity, { passive: true, capture: true });
+    });
 
     // Infinite Scroll State
     let hasMorePosts = true;
@@ -174,7 +190,7 @@
         const unreadCount = Number(notificationsPayload.unread_count || 0);
         window.setTimeout(() => {
             window.renderNotificationMenu(items, unreadCount);
-        }, realtimeApplyDelayMs);
+        }, notificationApplyDelayMs);
     }
 
     function removePostCardRealtime(postId) {
@@ -208,18 +224,58 @@
         }, 1200);
     }
 
-    function maybeRefreshForNewContent(state) {
-        if (!state || !state.version) return;
+    function updateStateBaselines(state) {
+        if (!state) return;
+        var newContentKey = computeContentKey(state);
+        var newSidebarKey = computeSidebarKey(state);
 
-        if (!baselineStateVersion) {
-            baselineStateVersion = state.version;
+        if (!baselineContentKey) {
+            baselineContentKey = newContentKey;
+            baselineSidebarKey = newSidebarKey;
             return;
         }
 
-        if (baselineStateVersion !== state.version) {
-            baselineStateVersion = state.version;
-            scheduleReload('New posts, events, or trending updates detected. Refreshing.');
+        // New posts → flag stale (refresh only on reload or 10min inactivity)
+        if (baselineContentKey !== newContentKey) {
+            contentStale = true;
+            baselineContentKey = newContentKey;
         }
+
+        // Trending/events shift → tracked by baselineSidebarKey, handled by 5min check
+        if (baselineSidebarKey !== newSidebarKey) {
+            baselineSidebarKey = newSidebarKey;
+        }
+    }
+
+    function checkInactivityRefresh() {
+        if (!contentStale) return;
+        var idleMs = Date.now() - lastActivityAt;
+        if (idleMs >= inactivityThresholdMs) {
+            scheduleReload('Content updated. Refreshing after inactivity.');
+        }
+    }
+
+    async function checkSidebarUpdate() {
+        if (reloadScheduled) return;
+        try {
+            var data = await fetchJson(buildSyncUrl('/sync/dashboard/load', false));
+            if (!data || !data.state) return;
+
+            var newSidebarKey = computeSidebarKey(data.state);
+            if (baselineSidebarKey && baselineSidebarKey !== newSidebarKey) {
+                baselineSidebarKey = newSidebarKey;
+                scheduleReload('Trending and events updated.');
+                return;
+            }
+            baselineSidebarKey = newSidebarKey || baselineSidebarKey;
+
+            // Also pick up any content changes discovered here
+            var newContentKey = computeContentKey(data.state);
+            if (baselineContentKey && baselineContentKey !== newContentKey) {
+                contentStale = true;
+                baselineContentKey = newContentKey;
+            }
+        } catch (_e) { /* silent */ }
     }
 
     function buildSyncUrl(path, includePostIds, overridePostIds) {
@@ -243,7 +299,7 @@
         if (!postId) return;
         pendingInteractionPostIds.add(postId);
         if (interactionFlushTimer) return;
-        interactionFlushTimer = window.setTimeout(flushInteractionRefresh, 240);
+        interactionFlushTimer = window.setTimeout(flushInteractionRefresh, interactionApplyDelayMs);
     }
 
     async function flushInteractionRefresh() {
@@ -281,8 +337,9 @@
         beginSlowSyncLoading();
         try {
             const data = await fetchJson(buildSyncUrl('/sync/dashboard/load', false));
-            if (data && data.state && data.state.version) {
-                baselineStateVersion = data.state.version;
+            if (data && data.state) {
+                baselineContentKey = computeContentKey(data.state);
+                baselineSidebarKey = computeSidebarKey(data.state);
             }
         } catch (error) {
             console.error('Dashboard load sync failed:', error);
@@ -298,14 +355,9 @@
         try {
             const data = await fetchJson(buildSyncUrl('/sync/realtime', true));
             if (!data) return;
-            const now = Date.now();
-            if (now - lastNotificationSyncAt >= notificationSyncIntervalMs) {
-                syncNotifications(data.notifications);
-                lastNotificationSyncAt = now;
-            }
             syncPostCards(data.interactions ? data.interactions.posts : []);
             syncTrendingLikes(data.interactions ? data.interactions.posts : []);
-            maybeRefreshForNewContent(data.state);
+            updateStateBaselines(data.state);
 
             if (data.admin && data.admin.version) {
                 if (latestAdminVersion && latestAdminVersion !== data.admin.version && typeof window.createToast === 'function') {
@@ -346,12 +398,16 @@
                         }));
                     }
                 })
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => {
+                    // New content detected — flag as stale, will refresh on reload or 10min inactivity
+                    contentStale = true;
+                })
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, (payload) => {
                     const row = payload ? payload.old : null;
                     if (row && row.id) {
                         window.setTimeout(() => {
                             removePostCardRealtime(row.id);
-                        }, realtimeApplyDelayMs);
+                        }, interactionApplyDelayMs);
                     }
                 })
                 .subscribe((status) => {
@@ -447,20 +503,27 @@
 
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) {
-            runLiveSync();
+            checkInactivityRefresh();
+            recordActivity();
         }
     });
 
     window.addEventListener('focus', function () {
-        runLiveSync();
+        checkInactivityRefresh();
+        recordActivity();
     });
 
     document.addEventListener('DOMContentLoaded', function () {
         runLoadSync().finally(function () {
             initRealtimeInteractionSync();
             initInfiniteScroll();
+            // Single initial sync for interactions — no periodic polling.
+            // Interactions: Supabase realtime (200ms).
+            // Notifications: Supabase realtime (300ms).
+            // Trending & Events: check every 5 minutes, reload if changed.
+            // Content (new posts): only on page reload or 10 min inactivity.
             runLiveSync();
-            window.setInterval(runLiveSync, pollIntervalMs);
+            window.setInterval(checkSidebarUpdate, sidebarSyncIntervalMs);
         });
     });
 

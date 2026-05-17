@@ -893,12 +893,8 @@
 
                     const isDashboardPage = !!document.querySelector('.dashboard-page');
                     if (!isDashboardPage) {
+                        // Initial load sync only — realtime notifications handled by Supabase subscription (300ms)
                         pollNotificationRealtime();
-                        setInterval(pollNotificationRealtime, 7000);
-                        window.addEventListener('focus', pollNotificationRealtime);
-                        document.addEventListener('visibilitychange', () => {
-                            if (!document.hidden) pollNotificationRealtime();
-                        });
                     }
                 });
             </script>

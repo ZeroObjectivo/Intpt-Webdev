@@ -112,6 +112,8 @@ def _safe_int(value, default=0):
         return default
 
 
+ADMIN_NOTIFICATION_ROLES = {'super_admin', 'superadmin', 'admin', 'content_moderator', 'account_manager'}
+
 def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None):
     if not user_id:
         return
@@ -145,6 +147,35 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
         }).execute()
     except Exception as e:
         logger.warning("Notification insert skipped for user %s: %s", user_id, e)
+
+
+def push_admin_notification(*, title, message, notif_type="admin", reference_id=None):
+    """Send a notification to all users with admin-level roles."""
+    sender_client = supabase_service
+    if not sender_client:
+        logger.warning("No service client available for admin notifications")
+        return
+    try:
+        admins_res = sender_client.table('profiles')\
+            .select("id, role")\
+            .in_("role", list(ADMIN_NOTIFICATION_ROLES))\
+            .execute()
+        admin_ids = [a['id'] for a in (admins_res.data or [])]
+        if not admin_ids:
+            return
+        rows = [
+            {
+                "user_id": uid,
+                "type": notif_type,
+                "reference_id": reference_id,
+                "title": title,
+                "message": message,
+            }
+            for uid in admin_ids
+        ]
+        sender_client.table('notifications').insert(rows).execute()
+    except Exception as e:
+        logger.warning("Admin notification broadcast failed: %s", e)
 
 def _upsert_policy_warning_notification(client, user_id, title, message, warn_reason=None):
     try:
@@ -1958,6 +1989,13 @@ def create_support_ticket():
             "message": message
         }).execute()
 
+        user_name = session.get('user', {}).get('full_name', 'A user')
+        push_admin_notification(
+            title="New Support Ticket",
+            message=f"{user_name} submitted a support ticket: {subject}",
+            notif_type="admin",
+        )
+
         return {"status": "created"}
     except Exception as e:
         logger.error("Error creating support ticket: %s", e)
@@ -1996,6 +2034,13 @@ def report_user(target_user_id):
             "reported_user_id": target_user_id,
             "reason": reason
         }).execute()
+
+        reporter_name = user_session.get('full_name', 'A user')
+        push_admin_notification(
+            title="New User Report",
+            message=f"{reporter_name} reported a user account. Reason: {reason[:100]}",
+            notif_type="admin",
+        )
 
         return {"status": "reported"}
     except Exception as e:
@@ -2039,6 +2084,14 @@ def report_post(post_id):
             "reporter_id": reporter_id,
             "reason": reason
         }).execute()
+
+        reporter_name = user_session.get('full_name', 'A user')
+        push_admin_notification(
+            title="New Post Report",
+            message=f"{reporter_name} reported a post. Reason: {reason[:100]}",
+            notif_type="admin",
+            reference_id=post_id,
+        )
 
         return {"status": "reported"}
     except Exception as e:
@@ -2209,6 +2262,12 @@ def create_post():
                 flash("Event post submitted! It will be visible after admin approval.", "success")
             else:
                 flash("Post submitted! Since it contains media, it will be visible after admin approval.", "success")
+            poster_name = session.get('user', {}).get('full_name', 'A user')
+            push_admin_notification(
+                title="Post Pending Approval",
+                message=f"{poster_name} submitted a post with media that needs approval.",
+                notif_type="admin",
+            )
         else:
             flash("Post created successfully!", "success")
     except Exception as e:
