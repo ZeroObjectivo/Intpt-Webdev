@@ -11,12 +11,15 @@ logger = logging.getLogger(__name__)
 
 def run_direct_sql():
     # Use the POOLER address instead of the DB address which is failing DNS
-    # aws-0-ap-southeast-1.pooler.supabase.com
-    user = "postgres.dwxvaiqcuqtidbqxlcgt" # Formatted for Supabase Pooler
-    password = os.environ.get("DATABASE_URL").split(":")[2].split("@")[0]
-    host = "aws-0-ap-southeast-1.pooler.supabase.com"
-    port = "5432"
-    dbname = "postgres"
+    project_id = os.environ.get("SUPABASE_PROJECT_ID", "")
+    user = f"postgres.{project_id}" if project_id else os.environ.get("DB_USER", "postgres")
+    password = os.environ.get("DB_PASSWORD", "")
+    if not password:
+        db_url = os.environ.get("DATABASE_URL", "")
+        password = db_url.split(":")[2].split("@")[0] if db_url else ""
+    host = os.environ.get("DB_HOST", "aws-0-ap-southeast-1.pooler.supabase.com")
+    port = os.environ.get("DB_PORT", "5432")
+    dbname = os.environ.get("DB_NAME", "postgres")
 
     try:
         conn = psycopg2.connect(

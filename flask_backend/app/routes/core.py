@@ -14,7 +14,7 @@ import re
 import calendar as month_calendar
 
 logger = logging.getLogger(__name__)
-from urllib.parse import parse_qs, urlparse, urlunparse
+from urllib.parse import parse_qs, quote, urlparse, urlunparse
 from zoneinfo import ZoneInfo
 
 core = Blueprint('core', __name__)
@@ -27,6 +27,11 @@ LOOM_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
 VIMEO_ID_RE = re.compile(r'^\d+$')
 DAILYMOTION_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
 TIKTOK_ID_RE = re.compile(r'^\d{8,}$')
+INSTAGRAM_CODE_RE = re.compile(r'^[A-Za-z0-9_-]+$')
+PH_MOBILE_REGEX = re.compile(r'^(?:\+639\d{9}|09\d{9})$')
+PH_MOBILE_PREFIX_REGEX = re.compile(
+    r'^(?:\+639(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7}|09(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7})$'
+)
 PROFANITY_WARNING_THRESHOLD = 5
 PROFANITY_SUSPEND_THRESHOLD = 10
 PROFANITY_WEEK_RESET_DAYS = 7
@@ -111,6 +116,8 @@ def _safe_int(value, default=0):
     except (TypeError, ValueError):
         return default
 
+
+ADMIN_NOTIFICATION_ROLES = {'super_admin', 'superadmin', 'admin', 'content_moderator', 'account_manager'}
 
 def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None):
     if not user_id:
@@ -203,6 +210,35 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
         }).execute()
     except Exception as e:
         logger.warning("Notification insert skipped for user %s: %s", user_id, e)
+
+
+def push_admin_notification(*, title, message, notif_type="admin", reference_id=None):
+    """Send a notification to all users with admin-level roles."""
+    sender_client = supabase_service
+    if not sender_client:
+        logger.warning("No service client available for admin notifications")
+        return
+    try:
+        admins_res = sender_client.table('profiles')\
+            .select("id, role")\
+            .in_("role", list(ADMIN_NOTIFICATION_ROLES))\
+            .execute()
+        admin_ids = [a['id'] for a in (admins_res.data or [])]
+        if not admin_ids:
+            return
+        rows = [
+            {
+                "user_id": uid,
+                "type": notif_type,
+                "reference_id": reference_id,
+                "title": title,
+                "message": message,
+            }
+            for uid in admin_ids
+        ]
+        sender_client.table('notifications').insert(rows).execute()
+    except Exception as e:
+        logger.warning("Admin notification broadcast failed: %s", e)
 
 def _upsert_policy_warning_notification(client, user_id, title, message, warn_reason=None):
     try:
@@ -448,6 +484,7 @@ def extract_embed_from_url(source_url):
     provider = None
     embed_url = None
 
+    # --- YouTube ---
     if host in {'youtu.be', 'www.youtu.be', 'youtube.com', 'www.youtube.com', 'm.youtube.com'}:
         video_id = None
         if host.endswith('youtu.be') and path_parts:
@@ -459,17 +496,20 @@ def extract_embed_from_url(source_url):
 
         if video_id and YOUTUBE_ID_RE.fullmatch(video_id):
             provider = 'youtube'
-            embed_url = f"https://www.youtube.com/embed/{video_id}"
+            params = ['rel=0', 'modestbranding=1']
             start_seconds = parse_embed_timestamp((query.get('t') or [None])[0]) or parse_embed_timestamp((query.get('start') or [None])[0])
             if start_seconds:
-                embed_url = f"{embed_url}?start={start_seconds}"
+                params.append(f"start={start_seconds}")
+            embed_url = f"https://www.youtube.com/embed/{video_id}?{'&'.join(params)}"
 
+    # --- Loom ---
     elif host.endswith('loom.com') and len(path_parts) >= 2 and path_parts[0] in {'share', 'embed'}:
         video_id = path_parts[1]
         if LOOM_ID_RE.fullmatch(video_id):
             provider = 'loom'
-            embed_url = f"https://www.loom.com/embed/{video_id}"
+            embed_url = f"https://www.loom.com/embed/{video_id}?hide_share=true&hideEmbedTopBar=true"
 
+    # --- Vimeo ---
     elif host in {'vimeo.com', 'www.vimeo.com', 'player.vimeo.com'}:
         video_id = None
         if host == 'player.vimeo.com' and len(path_parts) >= 2 and path_parts[0] == 'video':
@@ -481,8 +521,9 @@ def extract_embed_from_url(source_url):
 
         if video_id and VIMEO_ID_RE.fullmatch(video_id):
             provider = 'vimeo'
-            embed_url = f"https://player.vimeo.com/video/{video_id}"
+            embed_url = f"https://player.vimeo.com/video/{video_id}?dnt=1"
 
+    # --- DailyMotion ---
     elif host in {'dailymotion.com', 'www.dailymotion.com', 'dai.ly'}:
         video_id = None
         if host == 'dai.ly' and path_parts:
@@ -498,8 +539,9 @@ def extract_embed_from_url(source_url):
 
         if video_id and DAILYMOTION_ID_RE.fullmatch(video_id):
             provider = 'dailymotion'
-            embed_url = f"https://www.dailymotion.com/embed/video/{video_id}"
+            embed_url = f"https://www.dailymotion.com/embed/video/{video_id}?endscreen-enable=false&queue-enable=false&sharing-enable=false"
 
+    # --- TikTok ---
     elif host.endswith('tiktok.com'):
         video_id = None
 
@@ -512,7 +554,31 @@ def extract_embed_from_url(source_url):
 
         if video_id and TIKTOK_ID_RE.fullmatch(video_id):
             provider = 'tiktok'
-            embed_url = f"https://www.tiktok.com/player/v1/{video_id}"
+            embed_url = f"https://www.tiktok.com/player/v1/{video_id}?rel=0"
+
+    # --- Facebook ---
+    elif host in {'facebook.com', 'www.facebook.com', 'web.facebook.com', 'm.facebook.com', 'fb.watch'}:
+        if host == 'fb.watch':
+            provider = 'facebook'
+            embed_url = f"https://www.facebook.com/plugins/video.php?href={quote(source_url, safe='')}&show_text=false"
+        elif path_parts:
+            is_video = 'videos' in path_parts or 'video' in path_parts or 'watch' in path_parts or 'reel' in path_parts
+            if is_video:
+                provider = 'facebook'
+                embed_url = f"https://www.facebook.com/plugins/video.php?href={quote(source_url, safe='')}&show_text=false"
+            elif 'posts' in path_parts or 'photos' in path_parts or 'permalink' in path_parts:
+                provider = 'facebook'
+                embed_url = f"https://www.facebook.com/plugins/post.php?href={quote(source_url, safe='')}&show_text=true"
+
+    # --- Instagram ---
+    elif host in {'instagram.com', 'www.instagram.com'}:
+        shortcode = None
+        if len(path_parts) >= 2 and path_parts[0] in {'p', 'reel', 'reels', 'tv'}:
+            shortcode = path_parts[1]
+
+        if shortcode and INSTAGRAM_CODE_RE.fullmatch(shortcode):
+            provider = 'instagram'
+            embed_url = f"https://www.instagram.com/{path_parts[0]}/{shortcode}/embed/"
 
     if not embed_url:
         return None
@@ -569,6 +635,38 @@ def format_profile_date(value):
     if parsed is None:
         return ""
     return parsed.astimezone(DISPLAY_TIMEZONE).strftime("%b %d, %Y").replace(" 0", " ")
+
+def normalize_philippine_mobile_number(raw_value):
+    candidate = (raw_value or "").strip()
+    if not candidate:
+        return ""
+    if re.search(r'[A-Za-z]', candidate):
+        raise ValueError("Invalid phone number.")
+    if ' ' in candidate:
+        raise ValueError("Invalid phone number.")
+    if candidate.startswith('+'):
+        if not candidate.startswith('+639'):
+            raise ValueError("Phone number must start with 09.")
+        if not candidate[1:].isdigit():
+            raise ValueError("Invalid phone number.")
+        if len(candidate) != 13:
+            raise ValueError("Phone number must contain exactly 13 characters.")
+    else:
+        if not candidate.startswith('09'):
+            raise ValueError("Phone number must start with 09.")
+        if not candidate.isdigit():
+            raise ValueError("Invalid phone number.")
+        if len(candidate) != 11:
+            raise ValueError("Phone number must contain exactly 11 digits.")
+
+    if not PH_MOBILE_REGEX.fullmatch(candidate):
+        raise ValueError("Invalid phone number.")
+    if not PH_MOBILE_PREFIX_REGEX.fullmatch(candidate):
+        raise ValueError("Invalid phone number.")
+
+    if candidate.startswith('09'):
+        return f"+639{candidate[2:]}"
+    return candidate
 
 SOCIAL_HOST_PLATFORM_MAP = {
     "facebook.com": "facebook",
@@ -1116,7 +1214,7 @@ def view_profile(target_user_id):
     current_user_id = session.get('user').get('id')
 
     try:
-        profile, posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
+        profile, posts, pending_posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
         is_own_profile = (current_user_id == target_user_id)
 
         # Fetch colleges/institutes for settings dropdown
@@ -1128,6 +1226,7 @@ def view_profile(target_user_id):
         return render_template('profile_settings.html',
                                user=profile,
                                posts=posts,
+                               pending_posts=pending_posts,
                                interactions=interactions,
                                college_options=college_options,
                                social_links=social_links,
@@ -1138,11 +1237,17 @@ def view_profile(target_user_id):
                                now=datetime.datetime.now(datetime.timezone.utc))
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
-            profile, posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
+            profile, posts, pending_posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
             is_own_profile = (current_user_id == target_user_id)
+            client = get_user_client()
+            units_res = client.table('colleges_institutes').select("name, full_name, type").order('name').execute()
+            colleges = [u for u in units_res.data if u['type'] == 'College']
+            institutes = [u for u in units_res.data if u['type'] == 'Institute']
             return render_template('profile_settings.html',
-                                   user=profile, posts=posts, interactions=interactions, college_options=college_options, social_links=social_links, public_social_links=public_social_links,
+                                   user=profile, posts=posts, pending_posts=pending_posts, interactions=interactions, college_options=college_options, social_links=social_links, public_social_links=public_social_links,
                                    is_own_profile=is_own_profile,
+                                   colleges=colleges,
+                                   institutes=institutes,
                                    now=datetime.datetime.now(datetime.timezone.utc))
         elif is_jwt_error(e):
             session.clear()
@@ -1245,14 +1350,12 @@ def load_profile_data(user_id, viewer_id=None):
 
     posts_query = client.table('posts')\
         .select("*, profiles(full_name, avatar_url, college, course, level)")\
-        .eq("user_id", user_id)
+        .eq("user_id", user_id)\
+        .eq('status', 'approved')
     
-    # If not owner, only show approved posts
-    if str(viewer_id) != str(user_id):
-        posts_query = posts_query.eq('status', 'approved')
-        
     posts_response = posts_query.order("created_at", desc=True).execute()
     posts = posts_response.data
+    pending_posts = []
 
     liked_post_ids = set()
     if viewer_id:
@@ -1286,6 +1389,23 @@ def load_profile_data(user_id, viewer_id=None):
     }
     is_own_profile = str(viewer_id) == str(user_id)
     if is_own_profile:
+        pending_posts_res = client.table('posts')\
+            .select("*, profiles(full_name, avatar_url, college, course, level)")\
+            .eq("user_id", user_id)\
+            .eq('status', 'pending')\
+            .order("created_at", desc=True).execute()
+        pending_posts = pending_posts_res.data or []
+
+        pending_comments_count_map = build_comment_count_map(client, [p['id'] for p in pending_posts])
+        for post in pending_posts:
+            post['user_has_liked'] = False
+            post['likes_count'] = post.get('likes_count') or 0
+            post['comments_count'] = pending_comments_count_map.get(post['id'], 0)
+            post['relative_created_at'] = format_relative_time(post.get('created_at'))
+            attach_embed_metadata(post)
+            if post.get('created_at'):
+                activity_timestamps.append(post.get('created_at'))
+
         likes_activity = client.table('likes')\
             .select("created_at, posts(id, content, category)")\
             .eq("user_id", user_id)\
@@ -1336,7 +1456,7 @@ def load_profile_data(user_id, viewer_id=None):
                 "group": "Colleges",
             })
 
-    return profile, posts, interactions, college_options, social_links, public_social_links
+    return profile, posts, pending_posts, interactions, college_options, social_links, public_social_links
 
 @core.route('/settings/profile', methods=['POST'])
 @login_required
@@ -1361,12 +1481,20 @@ def update_profile():
         request.form.get('social_link_visibility_3', 'public'),
     ]
 
+    # Profanity check on bio
+    if bio:
+        bio_match = find_profanity_match(bio)
+        if bio_match:
+            flash("Your bio contains inappropriate language. Please revise it.", "error")
+            return redirect(url_for('core.profile_settings'))
+
     client = get_user_client()
 
     try:
+        normalized_contact_number = normalize_philippine_mobile_number(contact_number)
         normalized_social_links = normalize_social_links_input(social_links_raw, social_visibility_raw)
         update_data = {
-            "contact_number": contact_number,
+            "contact_number": normalized_contact_number or None,
             "contact_privacy": contact_privacy,
             "college": college,
             "course": course,
@@ -2044,6 +2172,13 @@ def create_support_ticket():
             "message": message
         }).execute()
 
+        user_name = session.get('user', {}).get('full_name', 'A user')
+        push_admin_notification(
+            title="New Support Ticket",
+            message=f"{user_name} submitted a support ticket: {subject}",
+            notif_type="admin",
+        )
+
         return {"status": "created"}
     except Exception as e:
         logger.error("Error creating support ticket: %s", e)
@@ -2082,6 +2217,13 @@ def report_user(target_user_id):
             "reported_user_id": target_user_id,
             "reason": reason
         }).execute()
+
+        reporter_name = user_session.get('full_name', 'A user')
+        push_admin_notification(
+            title="New User Report",
+            message=f"{reporter_name} reported a user account. Reason: {reason[:100]}",
+            notif_type="admin",
+        )
 
         return {"status": "reported"}
     except Exception as e:
@@ -2125,6 +2267,14 @@ def report_post(post_id):
             "reporter_id": reporter_id,
             "reason": reason
         }).execute()
+
+        reporter_name = user_session.get('full_name', 'A user')
+        push_admin_notification(
+            title="New Post Report",
+            message=f"{reporter_name} reported a post. Reason: {reason[:100]}",
+            notif_type="admin",
+            reference_id=post_id,
+        )
 
         return {"status": "reported"}
     except Exception as e:
@@ -2295,6 +2445,12 @@ def create_post():
                 flash("Event post submitted! It will be visible after admin approval.", "success")
             else:
                 flash("Post submitted! Since it contains media, it will be visible after admin approval.", "success")
+            poster_name = session.get('user', {}).get('full_name', 'A user')
+            push_admin_notification(
+                title="Post Pending Approval",
+                message=f"{poster_name} submitted a post with media that needs approval.",
+                notif_type="admin",
+            )
         else:
             flash("Post created successfully!", "success")
     except Exception as e:
@@ -2328,6 +2484,31 @@ def upload_single_image(client, file, user_id):
         file_options={"content-type": file.content_type}
     )
     return client.storage.from_(bucket_name).get_public_url(filename)
+
+@core.route('/notifications')
+@login_required
+def notifications_page():
+    user_id = session.get('user', {}).get('id')
+    try:
+        client = get_user_client()
+        res = client.table('notifications')\
+            .select("id, title, message, type, is_read, created_at, reference_id")\
+            .eq('user_id', user_id)\
+            .order('created_at', desc=True)\
+            .limit(50).execute()
+        notifications = res.data or []
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            client = get_user_client()
+            res = client.table('notifications')\
+                .select("id, title, message, type, is_read, created_at, reference_id")\
+                .eq('user_id', user_id)\
+                .order('created_at', desc=True)\
+                .limit(50).execute()
+            notifications = res.data or []
+        else:
+            notifications = []
+    return render_template('notifications.html', notifications=notifications)
 
 @core.route('/notifications/<notification_id>/read', methods=['POST'])
 @login_required

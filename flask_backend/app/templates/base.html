@@ -47,6 +47,15 @@
 
     {% include "includes/navbar.html" %}
 
+    <!-- Pull-to-Refresh Indicator -->
+    <div id="ptr-indicator" class="fixed top-0 left-0 right-0 z-[90] flex items-center justify-center pointer-events-none transition-transform duration-200" style="transform: translateY(-60px);">
+        <div class="bg-white shadow-lg rounded-full p-2 mt-2 pointer-events-auto cursor-pointer" onclick="window.location.reload()">
+            <svg id="ptr-icon" class="w-6 h-6 text-umak-blue transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </div>
+    </div>
+
     <!-- Flash Messages -->
     <div id="flash-container" class="fixed top-24 right-4 z-[100] space-y-3">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -115,6 +124,74 @@
     </main>
 
     {% include 'includes/support_modal.html' %}
+
+    <!-- Pull-to-Refresh Logic -->
+    <script>
+    (function() {
+        var ptr = document.getElementById('ptr-indicator');
+        var icon = document.getElementById('ptr-icon');
+        if (!ptr) return;
+        var threshold = 80;
+        var isTouch = 'ontouchstart' in window;
+
+        // --- Desktop: show reload icon when scrolled to top and scrolling up ---
+        if (!isTouch) {
+            var lastScrollY = window.scrollY;
+            var showing = false;
+            window.addEventListener('scroll', function() {
+                var y = window.scrollY;
+                if (y === 0 && lastScrollY > 0) {
+                    // Just reached top
+                    ptr.style.transform = 'translateY(0)';
+                    showing = true;
+                    setTimeout(function() {
+                        if (showing) {
+                            ptr.style.transform = 'translateY(-60px)';
+                            showing = false;
+                        }
+                    }, 3000);
+                } else if (y > 20 && showing) {
+                    ptr.style.transform = 'translateY(-60px)';
+                    showing = false;
+                }
+                lastScrollY = y;
+            }, { passive: true });
+        }
+
+        // --- Mobile/Touch: pull-down gesture ---
+        if (isTouch) {
+            var startY = 0;
+            var pulling = false;
+            document.addEventListener('touchstart', function(e) {
+                if (window.scrollY <= 0) {
+                    startY = e.touches[0].clientY;
+                    pulling = true;
+                }
+            }, { passive: true });
+            document.addEventListener('touchmove', function(e) {
+                if (!pulling) return;
+                var dy = e.touches[0].clientY - startY;
+                if (dy < 0) { pulling = false; return; }
+                var progress = Math.min(dy / threshold, 1);
+                ptr.style.transform = 'translateY(' + (progress * 50 - 60) + 'px)';
+                icon.style.transform = 'rotate(' + (progress * 360) + 'deg)';
+            }, { passive: true });
+            document.addEventListener('touchend', function() {
+                if (!pulling) return;
+                pulling = false;
+                var currentY = parseFloat(ptr.style.transform.replace(/[^0-9.-]/g, '')) || -60;
+                if (currentY >= -10) {
+                    // Past threshold — refresh
+                    icon.style.transform = 'rotate(720deg)';
+                    setTimeout(function() { window.location.reload(); }, 300);
+                } else {
+                    ptr.style.transform = 'translateY(-60px)';
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            }, { passive: true });
+        }
+    })();
+    </script>
 
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

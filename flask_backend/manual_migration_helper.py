@@ -29,8 +29,9 @@ def run_migration_via_rpc():
     # Let's try to just resolve the IP manually for the database if we can.
     # Often 'db.project.supabase.co' is just a CNAME.
     
+    project_id = os.environ.get("SUPABASE_PROJECT_ID", "YOUR_PROJECT_ID")
     print("Please go to the Supabase Dashboard SQL Editor:")
-    print("https://supabase.com/dashboard/project/dwxvaiqcuqtidbqxlcgt/sql/new")
+    print(f"https://supabase.com/dashboard/project/{project_id}/sql/new")
     print("\nAnd paste the following SQL to create the table:\n")
     
     with open('../supabase/migrations/20260516000000_setup_colleges_institutes.sql', 'r') as f:
