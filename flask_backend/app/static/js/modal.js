@@ -577,6 +577,15 @@ async function submitComment(event) {
             body: JSON.stringify(body)
         });
         const data = await response.json();
+        if (!response.ok || data.status === 'blocked') {
+            var msg = data.error || data.message || 'Your comment violates content policy.';
+            if (typeof showModerationPopup === 'function') {
+                showModerationPopup(msg);
+            } else if (window.createToast) {
+                window.createToast(msg, 'error');
+            }
+            return;
+        }
         if (data.comment) {
             textarea.value = '';
             textarea.style.height = 'auto';
