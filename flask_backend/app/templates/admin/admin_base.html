@@ -468,7 +468,7 @@
                         <span class="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span>
                         {% endif %}
                     </a>
-                    <a href="{{ url_for('admin.approvals_queue') }}" class="dropdown-item flex items-center justify-between">
+                    <a href="{{ url_for('admin.content_management', category='All') }}?view=pending" class="dropdown-item flex items-center justify-between">
                         Approvals Queue
                         {% if stats and stats.get('pending_approvals', 0) > 0 %}
                         <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>

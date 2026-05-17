@@ -677,35 +677,39 @@ def lift_user_suspension(user_id):
 
     return redirect(url_for('admin.user_management', user_id=user_id))
 
-@admin.route('/admin/approvals')
+@admin.route('/admin/content/<category>')
 @login_required
 @content_access_required
-def approvals_queue():
+def content_management(category):
     client = get_admin_read_client()
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     
-    category = request.args.get('category', 'All')
-    sort_method = request.args.get('sort', 'recent')
+    view_filter = request.args.get('view', 'recent') # 'pending', 'recent', 'oldest'
     
-    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)").eq('status', 'pending')
+    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
     
+    # 1. Filter by Status/Order
+    if view_filter == 'pending':
+        query = query.eq('status', 'pending')
+    else:
+        # Default to showing approved/flagged but not pending
+        query = query.neq('status', 'pending')
+
+    # 2. Filter by Category
     if category != 'All':
         query = query.eq('category', category)
         
-    res = query.execute()
-    posts = res.data or []
-    
-    # Sort
-    if sort_method == 'oldest':
-        posts.sort(key=lambda x: x.get('created_at', ''))
+    # 3. Execution & Sorting
+    if view_filter == 'oldest':
+        res = query.order('created_at', desc=False).execute()
     else:
-        posts.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-        
-    return render_template('admin/approvals.html', 
-                           posts=posts, 
+        res = query.order('created_at', desc=True).execute()
+    
+    return render_template('admin/content_manage.html', 
+                           posts=res.data, 
                            category=category, 
-                           sort=sort_method,
+                           view_filter=view_filter,
                            user=session.get('user'), 
                            permissions=permissions)
 
@@ -806,28 +810,6 @@ def reports_queue(category='All'):
 
         return render_template('admin/reports_queue.html', posts=posts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
 
-@admin.route('/admin/content/<category>')
-@login_required
-@content_access_required
-def content_management(category):
-    client = get_admin_read_client()
-    current_role = get_current_role()
-    permissions = build_admin_permissions(current_role)
-    
-    sort_method = request.args.get('sort', 'recent')
-    
-    query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
-    if category != 'All':
-        query = query.eq('category', category)
-        
-    res = query.order('created_at', desc=(sort_method == 'recent')).execute()
-    
-    return render_template('admin/content_manage.html', 
-                           posts=res.data, 
-                           category=category, 
-                           sort=sort_method,
-                           user=session.get('user'), 
-                           permissions=permissions)
 
 @admin.route('/admin/posts/bulk-approve', methods=['POST'])
 @login_required
