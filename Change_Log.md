@@ -22,9 +22,10 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Admin Moderation Refactor:** Integrated the post approval system into the general content management dashboard. Streamlined the workflow with high-visibility category pills and a dedicated **"Pending Posts" action button** featuring a real-time numerical indicator for items awaiting review. Consolidated chronological sorting into a standalone dropdown, removing redundant navigation pages. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/templates/admin/content_manage.html`)
 - **Notification Display Fixes:** 
     - Removed numerical notification count indicators from desktop, mobile, and admin interfaces, replacing them with a cleaner "New" label or a simple red dot. (References: `flask_backend/app/templates/includes/navbar.html`, `flask_backend/app/templates/admin/admin_base.html`)
-    - Migrated notification items to a **robust grid-based layout** (Fixed-width avatar column + flexible content column). This ensures perfect text alignment where wrapped lines always start at the first word (indented), regardless of global styles or page context.
-    - Implemented high-specificity CSS overrides in the navbar to enforce `white-space: normal` and `overflow-wrap: anywhere`, resolving persistent wrapping issues on the dashboard and other subpages.
-    - Standardized notification markup across server-side Jinja2, JavaScript re-rendering, and Supabase realtime handlers for absolute visual consistency. (References: `flask_backend/app/templates/includes/navbar.html`)
+    - **Complete Notification UI Re-Implementation:** To permanently fix a persistent styling glitch, the entire notification bell and dropdown component was removed and re-implemented from scratch.
+        - **Isolated Component:** The new system uses unique, specific CSS class names (e.g., `.notif-item`) and self-contained styles, making it completely immune to conflicting global styles from `dashboard.css` or other stylesheets.
+        - **Restored Server-Side Rendering:** The fast and reliable initial render from the server has been restored, eliminating the "pop-in" effect from the previous workaround.
+        - This "rip and replace" approach guarantees a stable, consistent, and glitch-free notification experience on all pages. (References: `flask_backend/app/templates/includes/navbar.html`)
     - Simplified interaction notification titles by removing redundant "on your post" and "to your comment" suffixes for a more concise and readable feed. (References: `flask_backend/app/routes/core.py`)
 
 ### Changed
