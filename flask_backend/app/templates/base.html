@@ -57,15 +57,14 @@
     </div>
 
     <!-- Flash Messages -->
-    <div id="flash-container" class="fixed top-24 right-4 z-[100] space-y-3">
+    <div id="flash-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] space-y-3 w-[90vw] max-w-md pointer-events-none">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
           {% for category, message in messages %}
-            <div class="flash-message p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-500 animate-slide-in 
-              {% if category == 'success' %} bg-emerald-500 text-white {% elif category == 'error' %} bg-rose-500 text-white {% else %} bg-sky-500 text-white {% endif %}">
+            <div class="flash-message pointer-events-auto p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-500 animate-slide-in bg-white/90 backdrop-blur-md text-slate-800 border border-slate-200">
               <div class="flex-1 font-bold text-sm tracking-tight">{{ message }}</div>
-              <button onclick="this.parentElement.remove()" class="p-1 hover:bg-white/20 rounded-lg transition-colors">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              <button onclick="this.parentElement.remove()" class="p-1 hover:bg-slate-100 rounded-lg transition-colors">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>
           {% endfor %}
@@ -77,27 +76,26 @@
         function createToast(message, type = 'success') {
             const container = document.getElementById('flash-container');
             const toast = document.createElement('div');
-            const bgClass = type === 'success' ? 'bg-emerald-500' : (type === 'error' ? 'bg-rose-500' : 'bg-sky-500');
-            
-            toast.className = `flash-message p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-500 translate-x-20 opacity-0 ${bgClass} text-white`;
+
+            toast.className = 'flash-message pointer-events-auto p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-500 -translate-y-4 opacity-0 bg-white/90 backdrop-blur-md text-slate-800 border border-slate-200';
             toast.innerHTML = `
                 <div class="flex-1 font-bold text-sm tracking-tight">${message}</div>
-                <button onclick="this.parentElement.remove()" class="p-1 hover:bg-white/20 rounded-lg transition-colors">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button onclick="this.parentElement.remove()" class="p-1 hover:bg-slate-100 rounded-lg transition-colors">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             `;
-            
+
             container.appendChild(toast);
-            
+
             // Animate in
             requestAnimationFrame(() => {
-                toast.classList.remove('translate-x-20', 'opacity-0');
+                toast.classList.remove('-translate-y-4', 'opacity-0');
             });
-            
+
             // Auto remove
             setTimeout(() => {
                 toast.style.opacity = '0';
-                toast.style.transform = 'translateX(20px)';
+                toast.style.transform = 'translateY(-16px)';
                 setTimeout(() => toast.remove(), 500);
             }, 4000);
         }
