@@ -9,8 +9,10 @@
                     <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="post-author-name capitalize hover:underline decoration-slate-300 underline-offset-2">{{ post.profiles.full_name | title }}</a>
                     {% if post.profiles.college %}
                         <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
-                        {% set coll_code = post.profiles.college.split(' ')[0]|lower %}
-                        <span class="badge college-{{ coll_code }} shrink-0">{{ post.profiles.college.split(' ')[0] }}</span>
+                        {% set coll_name = post.profiles.college %}
+                        {% set coll_code = coll_name.split(' ')[0] %}
+                        {% set coll_color = college_colors.get(coll_name) or college_colors.get(coll_code) or '#64748B' %}
+                        <span class="badge shrink-0" style="background-color: {{ coll_color }}15; color: {{ coll_color }}; border: 1px solid {{ coll_color }}30;">{{ coll_code }}</span>
                     {% endif %}
                 </div>
                 

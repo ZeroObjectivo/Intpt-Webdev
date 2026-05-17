@@ -302,9 +302,16 @@ function updateModalContent() {
     if (collegeEl && collegeContainer) {
         if (profile.college) {
             collegeContainer.style.display = 'flex';
-            collegeEl.innerText = profile.college.split(' ')[0];
-            const collCode = profile.college.split(' ')[0].toLowerCase();
-            collegeEl.className = `badge college-${collCode} shrink-0`;
+            const collName = profile.college;
+            const collCode = collName.split(' ')[0];
+            collegeEl.innerText = collCode;
+            
+            // Dynamic Color from window.collegeColors
+            const color = (window.collegeColors && (window.collegeColors[collName] || window.collegeColors[collCode])) || '#64748B';
+            collegeEl.style.backgroundColor = `${color}15`; // 15% opacity
+            collegeEl.style.color = color;
+            collegeEl.style.borderColor = `${color}30`; // 30% opacity
+            collegeEl.className = 'badge shrink-0';
         } else {
             collegeContainer.style.display = 'none';
         }

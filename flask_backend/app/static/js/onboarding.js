@@ -110,6 +110,74 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCourses(e.target.value);
     });
 
+    // --- Contact Validation (Mirroring Profile Settings) ---
+    const contactNumberInput = document.getElementById('contact_number');
+    const contactNumberFeedback = document.getElementById('contactNumberFeedback');
+    const validPhilippinePrefixRegex = /^(?:\+639(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7}|09(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7})$/;
+
+    const validatePhilippineMobile = (rawValue) => {
+        const candidate = (rawValue || '').trim();
+        if (!candidate) {
+            return { valid: true, normalized: '', message: '', tone: 'idle' };
+        }
+
+        if (/[A-Za-z]/.test(candidate) || /[^\d+]/.test(candidate) || (candidate.includes('+') && !candidate.startsWith('+'))) {
+            return { valid: false, normalized: candidate, message: 'Numbers only, please.', tone: 'error' };
+        }
+
+        if (candidate.startsWith('+')) {
+            if (!candidate.startsWith('+639')) {
+                return { valid: false, normalized: candidate, message: 'Must start with +639...', tone: 'error' };
+            }
+            if (candidate.length !== 13) {
+                return { valid: false, normalized: candidate, message: 'Must be 13 characters (+639...).', tone: 'error' };
+            }
+        } else {
+            if (!candidate.startsWith('09')) {
+                return { valid: false, normalized: candidate, message: 'Must start with 09...', tone: 'error' };
+            }
+            if (candidate.length !== 11) {
+                return { valid: false, normalized: candidate, message: 'Must be exactly 11 digits.', tone: 'error' };
+            }
+        }
+
+        if (!validPhilippinePrefixRegex.test(candidate)) {
+            return { valid: false, normalized: candidate, message: 'Invalid Philippine network prefix.', tone: 'error' };
+        }
+
+        return {
+            valid: true,
+            normalized: candidate.startsWith('09') ? `+639${candidate.slice(2)}` : candidate,
+            message: 'Valid Philippine mobile number',
+            tone: 'valid',
+        };
+    };
+
+    const renderContactValidation = (result) => {
+        if (!contactNumberInput || !contactNumberFeedback) return;
+        const hasValue = Boolean(contactNumberInput.value.trim());
+        
+        contactNumberFeedback.textContent = hasValue ? result.message : '';
+        contactNumberFeedback.className = `mt-2 text-[10px] font-bold uppercase tracking-tight transition-all ${
+            !hasValue ? '' : (result.valid ? 'text-green-500' : 'text-rose-500')
+        }`;
+
+        contactNumberInput.classList.toggle('border-rose-300', hasValue && !result.valid);
+        contactNumberInput.classList.toggle('bg-rose-50', hasValue && !result.valid);
+        contactNumberInput.classList.toggle('border-green-300', hasValue && result.valid);
+        contactNumberInput.classList.toggle('bg-green-50', hasValue && result.valid);
+    };
+
+    contactNumberInput?.addEventListener('input', (e) => {
+        // Enforce digits and + only
+        let val = e.target.value.replace(/[^\d+]/g, '');
+        if (val.includes('+')) {
+            val = '+' + val.replace(/\+/g, '');
+        }
+        e.target.value = val;
+        renderContactValidation(validatePhilippineMobile(val));
+    });
+
     const addSocialButton = document.getElementById('addSocialButton');
     const socialLinkRows = document.getElementById('socialLinkRows');
     const socialRowTemplate = document.getElementById('socialRowTemplate');
@@ -117,19 +185,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const platformLabelMap = {
         'facebook.com': 'facebook',
-        'instagram.com': 'instagram',
-        'tiktok.com': 'tiktok',
-        'linkedin.com': 'linkedin',
-        'discord.com': 'discord',
         'www.facebook.com': 'facebook',
+        'm.facebook.com': 'facebook',
+        'instagram.com': 'instagram',
         'www.instagram.com': 'instagram',
+        'tiktok.com': 'tiktok',
         'www.tiktok.com': 'tiktok',
+        'linkedin.com': 'linkedin',
         'www.linkedin.com': 'linkedin',
+        'discord.com': 'discord',
+        'www.discord.com': 'discord',
     };
 
     function detectPlatform(url) {
         try {
-            const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname;
+            const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname.toLowerCase();
             return platformLabelMap[hostname] || null;
         } catch (e) { return null; }
     }
@@ -137,16 +207,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateBadge(row) {
         const input = row.querySelector('[data-social-url-input]');
         const badge = row.querySelector('[data-platform-badge]');
+        const iconContainer = badge.querySelector('svg');
         const platform = detectPlatform(input.value);
         
+        // Default State (Slate)
+        badge.className = 'onboarding-social-badge bg-slate-50 text-slate-400 border border-slate-100 flex items-center justify-center rounded-xl w-10 h-10 transition-all';
+        iconContainer.innerHTML = '<path d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5m6.328-1.5a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+
         if (platform) {
-            badge.dataset.platform = platform;
-            badge.style.color = '#0D4E8B';
-            badge.style.borderColor = '#0D4E8B';
-        } else {
-            badge.dataset.platform = '';
-            badge.style.color = '';
-            badge.style.borderColor = '';
+            // Identified State (Indigo - match Profile Settings)
+            badge.className = 'onboarding-social-badge bg-indigo-50 text-[#4338ca] border border-indigo-100 flex items-center justify-center rounded-xl w-10 h-10 transition-all';
+            
+            if (platform === 'facebook') {
+                iconContainer.innerHTML = '<path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else if (platform === 'instagram') {
+                iconContainer.innerHTML = '<rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else if (platform === 'tiktok') {
+                iconContainer.innerHTML = '<path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else if (platform === 'linkedin') {
+                iconContainer.innerHTML = '<path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="4" r="2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else if (platform === 'discord') {
+                iconContainer.innerHTML = '<circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><path d="M9 7L8 3h8l-1 4h-6zM3 13v-3a10 10 0 0118 0v3c0 4-3 7-9 7s-9-3-9-7z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+            }
         }
     }
 
@@ -184,16 +266,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Basic Validation for Step 2
+    // Validation for Step 2
     if (onboardingForm) {
         onboardingForm.addEventListener('submit', (e) => {
             const college = onboardingForm.querySelector('[name="college"]').value;
             const course = onboardingForm.querySelector('[name="course"]').value;
             const level = onboardingForm.querySelector('[name="level"]').value;
+            const contactNum = contactNumberInput?.value.trim() || '';
 
             if (!college || !course || !level) {
                 e.preventDefault();
                 alert('Please fill in all required academic fields.');
+                return;
+            }
+
+            if (contactNum) {
+                const validation = validatePhilippineMobile(contactNum);
+                if (!validation.valid) {
+                    e.preventDefault();
+                    alert(validation.message || 'Please enter a valid Philippine mobile number (09XXXXXXXXX).');
+                    contactNumberInput.focus();
+                    return;
+                }
             }
         });
     }
