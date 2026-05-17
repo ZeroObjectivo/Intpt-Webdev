@@ -447,7 +447,7 @@
                     if (dot) dot.classList.toggle('hidden', !hasUnread);
                     if (count) {
                         count.classList.toggle('hidden', !hasUnread);
-                        count.textContent = `${unreadCount} New`;
+                        count.textContent = String(unreadCount);
                     }
                     if (mobileCount) {
                         mobileCount.classList.toggle('hidden', !hasUnread);
@@ -493,15 +493,15 @@
                                  id="notif-${escapeNotifHtml(n.id)}"
                                  data-notification-id="${escapeNotifHtml(n.id)}"
                                  onclick="handleNotificationClick('${escapeNotifHtml(n.id)}', '${refId}', '${type}', this)">
-                                <div class="flex-shrink-0">
+                                <div class="flex-shrink-0 mt-0.5">
                                     <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" alt="">
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-baseline mb-0.5">
-                                        <h4 class="text-[14px] ${titleClass} truncate">${escapeNotifHtml(n.title || 'Notification')}</h4>
+                                    <div class="mb-0.5">
+                                        <h4 class="text-[14px] ${titleClass} leading-snug break-words">${escapeNotifHtml(n.title || 'Notification')}</h4>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        ${n.message ? `<p class="text-[12px] ${msgClass} leading-snug line-clamp-1 flex-1">${escapeNotifHtml(n.message)}</p>` : ''}
+                                    <div class="flex flex-col gap-0.5">
+                                        ${n.message ? `<p class="text-[12px] ${msgClass} leading-normal break-words">${escapeNotifHtml(n.message)}</p>` : ''}
                                         <span class="text-[10px] font-bold text-slate-300 uppercase whitespace-nowrap">${escapeNotifHtml(relativeTime)}</span>
                                     </div>
                                 </div>
@@ -575,6 +575,8 @@
                         if (notifMenu) notifMenu.classList.add('hidden');
                     }
                 };
+
+                const defaultAvatar = '{{ url_for('static', filename='images/Logo.png') }}';
 
                 document.addEventListener('DOMContentLoaded', function() {
                     const trigger = document.getElementById('profile-dropdown-trigger');

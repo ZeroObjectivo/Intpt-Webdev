@@ -1552,8 +1552,9 @@ def build_dashboard_sync_state(client, category=None):
 
 def build_notification_payload(client, user_id):
     # Fetch notifications with actor profile info
+    # Explicitly name the FK because we have two relations to profiles (user_id and actor_id)
     notifications_res = client.table('notifications')\
-        .select("id, title, message, type, is_read, created_at, reference_id, actor_id, actor:profiles(full_name, avatar_url)")\
+        .select("id, title, message, type, is_read, created_at, reference_id, actor_id, actor:profiles!notifications_actor_id_fkey(full_name, avatar_url)")\
         .eq('user_id', user_id)\
         .order('created_at', desc=True)\
         .limit(15).execute()
@@ -1810,8 +1811,8 @@ def toggle_like(post_id):
                         push_notification(
                             client,
                             post_owner_id,
-                            title="New like on your post",
-                            message=f"{liker_name} liked your post.",
+                            title=f"{liker_name} liked your post.",
+                            message="",
                             notif_type="interaction",
                             reference_id=post_id,
                             actor_id=user_id,
@@ -1895,8 +1896,8 @@ def add_comment(post_id):
                 push_notification(
                     client,
                     post_owner_id,
-                    title="New comment on your post",
-                    message=f"{commenter_name} commented on your post.",
+                    title=f"{commenter_name} commented on your post.",
+                    message="",
                     notif_type="interaction",
                     reference_id=post_id,
                     actor_id=user_id,
@@ -1912,8 +1913,8 @@ def add_comment(post_id):
                     push_notification(
                         client,
                         parent_owner_id,
-                        title="New reply to your comment",
-                        message=f"{commenter_name} replied to your comment.",
+                        title=f"{commenter_name} replied to your comment.",
+                        message="",
                         notif_type="interaction",
                         reference_id=post_id,
                         actor_id=user_id,
