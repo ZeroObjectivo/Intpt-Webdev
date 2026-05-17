@@ -101,12 +101,19 @@
                     </p>
                     {% endif %}
                 </div>
-                <span class="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest">{{ target_user.status or 'active' }}</span>
+                <div class="flex items-center justify-center gap-3 mb-4">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest">
+                        <span class="status-dot w-2 h-2 rounded-full" data-last-active="{{ target_user.updated_at }}"></span>
+                        <span class="status-label" data-last-active="{{ target_user.updated_at }}"></span>
+                    </span>
+                    <span class="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest time-ago" data-timestamp="{{ target_user.updated_at }}">{{ target_user.updated_at }}</span>
+                </div>
+                
                 {% if target_user.suspended_until %}
-                <span class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Until {{ target_user.suspended_until[:10] }}</span>
+                <span class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 inline-block">Until {{ target_user.suspended_until[:10] }}</span>
                 {% endif %}
                 {% if target_user.profanity_count is not none %}
-                <span class="px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-widest">Profanity Strike {{ target_user.profanity_count }}</span>
+                <span class="px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 inline-block">Profanity Strike {{ target_user.profanity_count }}</span>
                 {% endif %}
             </div>
 
@@ -166,35 +173,41 @@
     <!-- Right: Activity & History -->
     <div class="lg:col-span-2 space-y-6">
         <!-- Warnings History -->
-        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-            <h4 class="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Warning History</h4>
-            {% if warnings %}
-                <div class="space-y-4">
-                    {% for w in warnings %}
-                    <div class="p-5 bg-amber-50/50 rounded-2xl border border-amber-100">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <p class="text-xs font-black text-amber-700 uppercase tracking-tight">{{ w.reason }}</p>
-                                <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">{{ w.created_at[:16].replace('T', ' ') }}</p>
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100" x-data="{ open: true }">
+            <div class="flex items-center gap-4 mb-6 cursor-pointer" @click="open = !open">
+                <svg class="w-5 h-5 text-slate-400 transition-transform duration-300" :class="{ 'rotate-180': !open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <h4 class="text-sm font-black text-slate-800 uppercase tracking-widest">Warning History</h4>
+            </div>
+            
+            <div x-show="open" x-collapse>
+                {% if warnings %}
+                    <div class="space-y-4">
+                        {% for w in warnings %}
+                        <div class="p-5 bg-amber-50/50 rounded-2xl border border-amber-100">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-xs font-black text-amber-700 uppercase tracking-tight">{{ w.reason }}</p>
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">{{ w.created_at[:16].replace('T', ' ') }}</p>
+                                </div>
+                                <form action="{{ url_for('admin.delete_warning', warning_id=w.id) }}" method="POST" onsubmit="return confirm('Remove this warning?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-slate-300 hover:text-rose-500 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
                             </div>
-                            <form action="{{ url_for('admin.delete_warning', warning_id=w.id) }}" method="POST" onsubmit="return confirm('Remove this warning?');">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="text-slate-300 hover:text-rose-500 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </form>
+                            {% if w.message %}
+                            <div class="bg-white/60 rounded-xl p-3 mt-2 border border-amber-100/50">
+                                <p class="text-xs text-slate-600 font-medium leading-relaxed">{{ w.message }}</p>
+                            </div>
+                            {% endif %}
                         </div>
-                        {% if w.message %}
-                        <div class="bg-white/60 rounded-xl p-3 mt-2 border border-amber-100/50">
-                            <p class="text-xs text-slate-600 font-medium leading-relaxed">{{ w.message }}</p>
-                        </div>
-                        {% endif %}
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-xs text-slate-400 font-bold italic text-center py-4">This user has no warnings.</p>
-            {% endif %}
+                {% else %}
+                    <p class="text-xs text-slate-400 font-bold italic text-center py-4">This user has no warnings.</p>
+                {% endif %}
+            </div>
         </div>
 
         <!-- Recent Posts -->
@@ -348,6 +361,43 @@
 {% block admin_scripts %}
 <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
 <script>
+    // Status Display Updates
+    document.addEventListener('DOMContentLoaded', () => {
+        const timeAgo = (date) => {
+            const now = new Date();
+            const diff = Math.floor((now - new Date(date)) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+            return new Date(date).toLocaleDateString();
+        };
+
+        const updateStatusDisplays = () => {
+            document.querySelectorAll('[data-last-active]').forEach(el => {
+                const lastActive = el.dataset.lastActive;
+                if (!lastActive) return;
+                const date = new Date(lastActive);
+                const now = new Date();
+                const diffMinutes = (now - date) / 1000 / 60;
+                
+                if (el.classList.contains('status-dot')) {
+                    el.className = `status-dot w-2 h-2 rounded-full ${diffMinutes < 5 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`;
+                } else if (el.classList.contains('status-label')) {
+                    el.textContent = diffMinutes < 5 ? 'Online' : 'Offline';
+                }
+            });
+
+            document.querySelectorAll('.time-ago').forEach(el => {
+                const ts = el.dataset.timestamp;
+                if (ts) el.textContent = timeAgo(ts);
+            });
+        };
+
+        updateStatusDisplays();
+        setInterval(updateStatusDisplays, 30000);
+    });
+
     // Populate posts for the modal
     window.allPosts = {{ posts|tojson|safe }};
     

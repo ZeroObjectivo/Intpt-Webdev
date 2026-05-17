@@ -528,11 +528,18 @@ def manage_users():
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     search = request.args.get('search', '')
+    
     query = client.table('profiles').select("*")
     if search:
-        query = query.ilike('full_name', f'%{search}%')
+        query = query.or_(f"full_name.ilike.%{search}%,email.ilike.%{search}%")
+    
     res = query.order('full_name').execute()
-    return render_template('admin/users.html', users=res.data, user=session.get('user'), search=search, permissions=permissions)
+    users = res.data or []
+
+    if wants_json_response():
+        return jsonify({"status": "ok", "users": users})
+        
+    return render_template('admin/users.html', users=users, user=session.get('user'), search=search, permissions=permissions)
 
 @admin.route('/admin/users/<user_id>/manage')
 @login_required

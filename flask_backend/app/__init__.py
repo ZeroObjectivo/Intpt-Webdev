@@ -124,6 +124,46 @@ def create_app():
         return normalize_domain(raw_host)
 
     @app.before_request
+    def update_last_active():
+        user = session.get('user')
+        if not user or not user.get('id'):
+            return None
+        
+        # Only update once every 2 minutes to save database calls
+        now = datetime.now(timezone.utc)
+        last_update_str = session.get('last_activity_update')
+        
+        should_update = True
+        if last_update_str:
+            try:
+                last_update = datetime.fromisoformat(last_update_str)
+                if (now - last_update).total_seconds() < 120:
+                    should_update = False
+            except: pass
+            
+        if should_update:
+            try:
+                from services.supabase_client import supabase_service
+                if supabase_service:
+                    iso_now = now.isoformat()
+                    # Update both updated_at and last_active_at (if it exists)
+                    # Use a dictionary to avoid errors if last_active_at doesn't exist yet
+                    payload = {"updated_at": iso_now}
+                    
+                    # We'll try to update last_active_at too, but if the migration failed, 
+                    # we don't want to crash. However, standard Postgrest will ignore unknown columns
+                    # if configured, but Supabase might return 400.
+                    # Let's just stick to updated_at for now as it's guaranteed.
+                    supabase_service.table('profiles').update(payload).eq('id', user['id']).execute()
+                    
+                    session['last_activity_update'] = iso_now
+                    session.modified = True
+            except Exception as e:
+                logger.warning("Failed to update user activity: %s", e)
+
+        return None
+
+    @app.before_request
     def enforce_domain_separation():
         host = request_host_domain()
         path = request.path

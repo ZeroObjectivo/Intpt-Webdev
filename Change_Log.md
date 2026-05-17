@@ -29,6 +29,11 @@ This document summarizes the recent major updates, bug fixes, and feature implem
     - Implemented real-time dependency: Course options now automatically filter based on the selected College/Institute.
     - Added `/api/courses` backend endpoint for high-performance course retrieval.
     - Populated the `courses` database table with over 60 verified UMak programs across all colleges. (References: `flask_backend/app/routes/core.py`, `flask_backend/app/templates/profile_settings.html`, `flask_backend/app/templates/onboarding.html`, `flask_backend/setup_courses.py`)
+- **User Management UX Improvements:**
+    - **Real-time Directory Search:** Implemented live, debounce-powered search in the Full User Directory for instant profile discovery without page reloads.
+    - **Dynamic Activity Status:** Replaced static status text with live activity indicators. Users now show "Online" with a glowing green dot if active within 5 minutes, or "Offline" with a "time ago" relative timestamp (e.g., "3h ago").
+    - **Heartbeat Middleware:** Added a throttled backend hook that securely updates user activity timestamps every 2 minutes during active sessions.
+    - **Collapsible Warnings:** Unified the User Management interface by making the Warning History section collapsible, matching the Recent Posts and Comments sections. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/templates/admin/users.html`, `flask_backend/app/templates/admin/user_manage.html`, `flask_backend/app/__init__.py`)
 - **Notification Display Fixes:** 
     - Removed numerical notification count indicators from desktop, mobile, and admin interfaces, replacing them with a cleaner "New" label or a simple red dot. (References: `flask_backend/app/templates/includes/navbar.html`, `flask_backend/app/templates/admin/admin_base.html`)
     - Migrated notification items to a **robust grid-based layout** (Fixed-width avatar column + flexible content column). This ensures perfect text alignment where wrapped lines always start at the first word (indented), regardless of global styles or page context.
