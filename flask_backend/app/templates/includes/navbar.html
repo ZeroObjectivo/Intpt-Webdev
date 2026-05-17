@@ -448,9 +448,9 @@
                     const hasUnread = unreadCount > 0;
 
                     if (dot) dot.classList.toggle('hidden', !hasUnread);
+                    // Remove the number from the badge as requested (keeping only the dot visible if there are unread)
                     if (count) {
-                        count.classList.toggle('hidden', !hasUnread);
-                        count.textContent = String(unreadCount);
+                        count.classList.add('hidden');
                     }
                     if (mobileCount) {
                         mobileCount.classList.toggle('hidden', !hasUnread);
@@ -501,11 +501,11 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="mb-0.5">
-                                        <h4 class="text-[14px] ${titleClass} leading-snug break-words">${escapeNotifHtml(n.title || 'Notification')}</h4>
+                                        <h4 class="text-[13px] ${titleClass} leading-snug break-words whitespace-normal">${escapeNotifHtml(n.title || 'Notification')}</h4>
                                     </div>
                                     <div class="flex flex-col gap-0.5">
-                                        ${n.message ? `<p class="text-[12px] ${msgClass} leading-normal break-words">${escapeNotifHtml(n.message)}</p>` : ''}
-                                        <span class="text-[10px] font-bold text-slate-300 uppercase whitespace-nowrap">${escapeNotifHtml(relativeTime)}</span>
+                                        ${n.message ? `<p class="text-[11px] ${msgClass} leading-normal break-words whitespace-normal">${escapeNotifHtml(n.message)}</p>` : ''}
+                                        <span class="text-[9px] font-bold text-slate-300 uppercase whitespace-nowrap">${escapeNotifHtml(relativeTime)}</span>
                                     </div>
                                 </div>
                             </div>

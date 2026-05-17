@@ -685,11 +685,12 @@ def content_management(category):
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     
-    view_filter = request.args.get('view', 'recent') # 'pending', 'recent', 'oldest'
+    view_filter = request.args.get('view', 'approved') # 'pending', 'approved'
+    sort_method = request.args.get('sort', 'recent') # 'recent', 'oldest'
     
     query = client.table('posts').select("*, profiles(full_name, avatar_url, college, course, level)")
     
-    # 1. Filter by Status/Order
+    # 1. Filter by Status
     if view_filter == 'pending':
         query = query.eq('status', 'pending')
     else:
@@ -701,15 +702,22 @@ def content_management(category):
         query = query.eq('category', category)
         
     # 3. Execution & Sorting
-    if view_filter == 'oldest':
-        res = query.order('created_at', desc=False).execute()
-    else:
-        res = query.order('created_at', desc=True).execute()
+    desc_order = (sort_method == 'recent')
+    res = query.order('created_at', desc=desc_order).execute()
+    
+    # 4. Fetch Pending Count for the indicator
+    pending_count = 0
+    try:
+        pending_res = client.table('posts').select("id", count='exact').eq('status', 'pending').limit(1).execute()
+        pending_count = int(pending_res.count or 0)
+    except: pass
     
     return render_template('admin/content_manage.html', 
                            posts=res.data, 
                            category=category, 
                            view_filter=view_filter,
+                           sort=sort_method,
+                           pending_count=pending_count,
                            user=session.get('user'), 
                            permissions=permissions)
 
@@ -1208,6 +1216,7 @@ def warn_user():
         flash("Warning sent successfully.", "success")
         return redirect(request.referrer or url_for('admin.dashboard'))
     except Exception as e:
+        logger.error("CRITICAL error in warn_user: %s", e, exc_info=True)
         if is_json:
             return jsonify({"status": "error", "message": "An error occurred."}), 500
         flash("Failed to send warning.", "error")
