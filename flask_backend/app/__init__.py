@@ -1,4 +1,6 @@
 import logging
+import re
+from markupsafe import Markup, escape
 from flask import Flask, request, redirect, session, url_for
 from flask_wtf.csrf import CSRFProtect
 from datetime import datetime, timezone
@@ -96,6 +98,17 @@ def create_app():
     app.register_blueprint(core)
     app.register_blueprint(auth)
     app.register_blueprint(admin)
+
+    _LINKIFY_RE = re.compile(r'(https?://[^\s<>"\']+)', re.IGNORECASE)
+
+    @app.template_filter('linkify')
+    def linkify_filter(text):
+        """Escape text then convert URLs into clickable links."""
+        safe_text = str(escape(text or ''))
+        def _replace(m):
+            url = m.group(1).rstrip('.,!?;:)')
+            return f'<a href="{url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline break-all">{url}</a>'
+        return Markup(_LINKIFY_RE.sub(_replace, safe_text))
 
     def normalize_domain(raw_value):
         raw = (raw_value or '').strip().lower()

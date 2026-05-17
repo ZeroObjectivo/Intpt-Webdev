@@ -6,6 +6,20 @@ function getCSRFToken() {
     return meta ? meta.getAttribute('content') : '';
 }
 
+function escapeHtmlForLinkify(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function linkifyText(text) {
+    var safe = escapeHtmlForLinkify(text || '');
+    return safe.replace(/(https?:\/\/[^\s<>"']+)/gi, function(url) {
+        var clean = url.replace(/[.,!?;:)]+$/, '');
+        return '<a href="' + clean + '" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline break-all">' + clean + '</a>';
+    });
+}
+
 function showModerationPopup(message) {
     const text = message || 'Your content violates community policy.';
     if (window.createToast) {
@@ -157,6 +171,8 @@ function closeImageModal(event) {
         if (embedIframe) {
             embedIframe.src = '';
         }
+        const embedSourceLink = document.getElementById('modalEmbedSourceLink');
+        if (embedSourceLink) embedSourceLink.classList.add('hidden');
     }
 }
 
@@ -298,23 +314,34 @@ function updateModalContent() {
         else if (cat === 'Events') catBadge.classList.add('badge-events');
     }
 
-    document.getElementById('modalPostText').innerText = currentPost.content;
+    document.getElementById('modalPostText').innerHTML = linkifyText(currentPost.content);
 
     const dynamic = document.getElementById('modalDynamicDetails');
     dynamic.innerHTML = '';
-    
+
     if (currentPost.event_title) {
-        document.getElementById('modalPostText').innerHTML = `<strong class="block text-slate-900 mb-1">${currentPost.event_title}</strong>` + currentPost.content;
+        document.getElementById('modalPostText').innerHTML = `<strong class="block text-slate-900 mb-1">${escapeHtmlForLinkify(currentPost.event_title)}</strong>` + linkifyText(currentPost.content);
     }
 
     if (embedContainer && embedIframe) {
         const embedUrl = currentPost.embed && currentPost.embed.embed_url ? currentPost.embed.embed_url : '';
+        const sourceLink = document.getElementById('modalEmbedSourceLink');
+        const sourceText = document.getElementById('modalEmbedSourceText');
         if (embedUrl) {
             embedIframe.src = embedUrl;
             embedContainer.classList.remove('hidden');
+            if (sourceLink && currentPost.embed.source_url) {
+                sourceLink.href = currentPost.embed.source_url;
+                sourceLink.classList.remove('hidden');
+                if (sourceText) {
+                    const provider = (currentPost.embed.provider || 'source');
+                    sourceText.textContent = 'Open on ' + provider.charAt(0).toUpperCase() + provider.slice(1);
+                }
+            }
         } else {
             embedIframe.src = '';
             embedContainer.classList.add('hidden');
+            if (sourceLink) sourceLink.classList.add('hidden');
         }
     }
 

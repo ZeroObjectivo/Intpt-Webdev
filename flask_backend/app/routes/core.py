@@ -14,7 +14,7 @@ import re
 import calendar as month_calendar
 
 logger = logging.getLogger(__name__)
-from urllib.parse import parse_qs, urlparse, urlunparse
+from urllib.parse import parse_qs, quote, urlparse, urlunparse
 from zoneinfo import ZoneInfo
 
 core = Blueprint('core', __name__)
@@ -27,6 +27,7 @@ LOOM_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
 VIMEO_ID_RE = re.compile(r'^\d+$')
 DAILYMOTION_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
 TIKTOK_ID_RE = re.compile(r'^\d{8,}$')
+INSTAGRAM_CODE_RE = re.compile(r'^[A-Za-z0-9_-]+$')
 PROFANITY_WARNING_THRESHOLD = 5
 PROFANITY_SUSPEND_THRESHOLD = 10
 PROFANITY_WEEK_RESET_DAYS = 7
@@ -421,6 +422,7 @@ def extract_embed_from_url(source_url):
     provider = None
     embed_url = None
 
+    # --- YouTube ---
     if host in {'youtu.be', 'www.youtu.be', 'youtube.com', 'www.youtube.com', 'm.youtube.com'}:
         video_id = None
         if host.endswith('youtu.be') and path_parts:
@@ -432,17 +434,20 @@ def extract_embed_from_url(source_url):
 
         if video_id and YOUTUBE_ID_RE.fullmatch(video_id):
             provider = 'youtube'
-            embed_url = f"https://www.youtube.com/embed/{video_id}"
+            params = ['rel=0', 'modestbranding=1']
             start_seconds = parse_embed_timestamp((query.get('t') or [None])[0]) or parse_embed_timestamp((query.get('start') or [None])[0])
             if start_seconds:
-                embed_url = f"{embed_url}?start={start_seconds}"
+                params.append(f"start={start_seconds}")
+            embed_url = f"https://www.youtube.com/embed/{video_id}?{'&'.join(params)}"
 
+    # --- Loom ---
     elif host.endswith('loom.com') and len(path_parts) >= 2 and path_parts[0] in {'share', 'embed'}:
         video_id = path_parts[1]
         if LOOM_ID_RE.fullmatch(video_id):
             provider = 'loom'
-            embed_url = f"https://www.loom.com/embed/{video_id}"
+            embed_url = f"https://www.loom.com/embed/{video_id}?hide_share=true&hideEmbedTopBar=true"
 
+    # --- Vimeo ---
     elif host in {'vimeo.com', 'www.vimeo.com', 'player.vimeo.com'}:
         video_id = None
         if host == 'player.vimeo.com' and len(path_parts) >= 2 and path_parts[0] == 'video':
@@ -454,8 +459,9 @@ def extract_embed_from_url(source_url):
 
         if video_id and VIMEO_ID_RE.fullmatch(video_id):
             provider = 'vimeo'
-            embed_url = f"https://player.vimeo.com/video/{video_id}"
+            embed_url = f"https://player.vimeo.com/video/{video_id}?dnt=1"
 
+    # --- DailyMotion ---
     elif host in {'dailymotion.com', 'www.dailymotion.com', 'dai.ly'}:
         video_id = None
         if host == 'dai.ly' and path_parts:
@@ -471,8 +477,9 @@ def extract_embed_from_url(source_url):
 
         if video_id and DAILYMOTION_ID_RE.fullmatch(video_id):
             provider = 'dailymotion'
-            embed_url = f"https://www.dailymotion.com/embed/video/{video_id}"
+            embed_url = f"https://www.dailymotion.com/embed/video/{video_id}?endscreen-enable=false&queue-enable=false&sharing-enable=false"
 
+    # --- TikTok ---
     elif host.endswith('tiktok.com'):
         video_id = None
 
@@ -485,7 +492,31 @@ def extract_embed_from_url(source_url):
 
         if video_id and TIKTOK_ID_RE.fullmatch(video_id):
             provider = 'tiktok'
-            embed_url = f"https://www.tiktok.com/player/v1/{video_id}"
+            embed_url = f"https://www.tiktok.com/player/v1/{video_id}?rel=0"
+
+    # --- Facebook ---
+    elif host in {'facebook.com', 'www.facebook.com', 'web.facebook.com', 'm.facebook.com', 'fb.watch'}:
+        if host == 'fb.watch':
+            provider = 'facebook'
+            embed_url = f"https://www.facebook.com/plugins/video.php?href={quote(source_url, safe='')}&show_text=false"
+        elif path_parts:
+            is_video = 'videos' in path_parts or 'video' in path_parts or 'watch' in path_parts or 'reel' in path_parts
+            if is_video:
+                provider = 'facebook'
+                embed_url = f"https://www.facebook.com/plugins/video.php?href={quote(source_url, safe='')}&show_text=false"
+            elif 'posts' in path_parts or 'photos' in path_parts or 'permalink' in path_parts:
+                provider = 'facebook'
+                embed_url = f"https://www.facebook.com/plugins/post.php?href={quote(source_url, safe='')}&show_text=true"
+
+    # --- Instagram ---
+    elif host in {'instagram.com', 'www.instagram.com'}:
+        shortcode = None
+        if len(path_parts) >= 2 and path_parts[0] in {'p', 'reel', 'reels', 'tv'}:
+            shortcode = path_parts[1]
+
+        if shortcode and INSTAGRAM_CODE_RE.fullmatch(shortcode):
+            provider = 'instagram'
+            embed_url = f"https://www.instagram.com/{path_parts[0]}/{shortcode}/embed/"
 
     if not embed_url:
         return None
