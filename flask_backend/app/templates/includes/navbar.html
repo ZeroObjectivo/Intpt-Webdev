@@ -550,6 +550,7 @@
                 window.renderNotificationMenu = function(notifications, unreadCount) {
                     const list = document.getElementById('notification-items-container');
                     const empty = document.getElementById('notification-empty-state');
+                    const footer = document.getElementById('notification-footer');
                     let items = Array.isArray(notifications) ? notifications : [];
 
                     if (!list || !empty) return;
@@ -602,7 +603,7 @@
                     }
 
                     empty.classList.add('hidden');
-                    footer.classList.remove('hidden');
+                    if (footer) footer.classList.remove('hidden');
                     updateNotificationBadge(unreadCount);
                 };
 
@@ -1162,21 +1163,6 @@ document.addEventListener('DOMContentLoaded', () => {
             (payload) => {
                 console.log('New notification received:', payload.new);
                 setTimeout(() => handleNewNotification(payload.new), 50);
-            }
-        )
-        .subscribe((status, err) => {
-            if (status === 'SUBSCRIBED') {
-                console.log('Successfully subscribed to real-time notifications!');
-            }
-            if (status === 'CHANNEL_ERROR') {
-                console.error('Failed to subscribe to notifications:', err);
-            }
-        });
-});
-</script>
-{% endif %}
-
-andleNewNotification(payload.new), 300);
             }
         )
         .subscribe((status, err) => {
