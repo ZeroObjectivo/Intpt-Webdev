@@ -75,12 +75,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(`/api/courses?college=${encodeURIComponent(collegeName)}`);
-            const courses = await response.json();
+            const data = await response.json();
 
             let html = '<option value="">Select Course</option>';
-            courses.forEach(c => {
-                html += `<option value="${c.name}">${c.name}</option>`;
-            });
+            
+            if (data.courses && data.courses.length > 0) {
+                const groups = {};
+                data.courses.forEach(c => {
+                    if (!groups[c.group]) groups[c.group] = [];
+                    groups[c.group].push(c);
+                });
+
+                Object.keys(groups).sort().forEach(group => {
+                    html += `<optgroup label="${group}">`;
+                    groups[group].forEach(c => {
+                        html += `<option value="${c.value}">${c.label}</option>`;
+                    });
+                    html += `</optgroup>`;
+                });
+            } else {
+                html = '<option value="">No courses found for this unit</option>';
+            }
+            
             courseSelect.innerHTML = html;
         } catch (error) {
             console.error('Error fetching courses:', error);

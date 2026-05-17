@@ -110,7 +110,8 @@ class SecurityHardeningTest(unittest.TestCase):
         home_template = read_text("app/templates/home.html")
 
         self.assertIn("href=\"{{ url_for('core.home') }}\"", navbar_template)
-        self.assertIn("{% if request.endpoint not in ['core.dashboard', 'core.home'] %}", navbar_template)
+        self.assertIn("{% set dashboard_parent_endpoints = ['core.dashboard', 'core.event_calendar', 'core.scholarship', 'core.umak_coop'] %}", navbar_template)
+        self.assertIn("{% if request.endpoint not in dashboard_parent_endpoints + ['core.home'] %}", navbar_template)
         self.assertIn("Go to Dashboard", navbar_template)
         self.assertIn("{{ navbar_display_name }}", navbar_template)
         self.assertIn("navbar_full_name | title", navbar_template)

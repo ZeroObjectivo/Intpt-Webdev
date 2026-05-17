@@ -55,6 +55,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Post Card UI Enhancements:** Updated `includes/post_card.html` with improved styling (rounded corners on images and overlays) to match the latest design standards.
 
 ### Fixed
+- **Profile Engagement Metrics:** Fixed profile 'Like' and 'Comment' counter metrics to accurately aggregate interactions received on authored posts via joined queries, rather than counting sent interactions.
 - **Onboarding Completion (500 Error):** Fixed a critical 500 Internal Server Error on `/onboarding/complete` caused by a missing `flash` import in `auth.py`. 
 - **Profile Saving Logic:** Corrected the onboarding flow to save social links to the dedicated `profile_social_links` table instead of the non-existent `social_links` column in the `profiles` table.
 - **Metadata Safety:** Added safety checks for user metadata during onboarding to prevent crashes if metadata is missing.
