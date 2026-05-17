@@ -29,6 +29,15 @@ This document summarizes the recent major updates, bug fixes, and feature implem
     - Implemented real-time dependency: Course options now automatically filter based on the selected College/Institute.
     - Added `/api/courses` backend endpoint for high-performance course retrieval.
     - Populated the `courses` database table with over 60 verified UMak programs across all colleges. (References: `flask_backend/app/routes/core.py`, `flask_backend/app/templates/profile_settings.html`, `flask_backend/app/templates/onboarding.html`, `flask_backend/setup_courses.py`)
+- **Academic Unit Management:**
+    - Implemented **Edit functionality** for Colleges and Institutes, allowing admins to update abbreviations, full names, types, and identification colors.
+    - Added a responsive **Edit Modal** powered by Alpine.js for a seamless administrative experience.
+    - Integrated backend validation and audit logging for all academic unit updates. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/templates/admin/colleges_manage.html`)
+- **Unified Dynamic College Colors:**
+    - Migrated college and institute brand colors from hardcoded CSS/Python to the database.
+    - Implemented a **Color Picker** in the Admin Hub for creating and managing academic unit identification colors.
+    - Harmonized visual identity by syncing the **Admin Dashboard Breakdown Chart** and the **User Side College Badges** to the same database-driven color palette.
+    - Updated the post card and modal logic to dynamically style badges using real-time hex codes with optimized background opacity. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/__init__.py`, `flask_backend/app/templates/includes/post_card.html`, `flask_backend/app/static/js/modal.js`)
 - **UMak Coop Catalog Overhaul:**
     - **Advanced Search & Filtering:** Added a real-time search bar and multi-dimensional filters (Category, Availability, Sorting) for both students and admins.
     - **Smart Categorization:** Introduced standardized categories: **Books, Uniforms, Patches, and ID Laces**.
