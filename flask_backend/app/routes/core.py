@@ -2333,6 +2333,31 @@ def upload_single_image(client, file, user_id):
     )
     return client.storage.from_(bucket_name).get_public_url(filename)
 
+@core.route('/notifications')
+@login_required
+def notifications_page():
+    user_id = session.get('user', {}).get('id')
+    try:
+        client = get_user_client()
+        res = client.table('notifications')\
+            .select("id, title, message, type, is_read, created_at, reference_id")\
+            .eq('user_id', user_id)\
+            .order('created_at', desc=True)\
+            .limit(50).execute()
+        notifications = res.data or []
+    except Exception as e:
+        if is_jwt_error(e) and refresh_supabase_auth():
+            client = get_user_client()
+            res = client.table('notifications')\
+                .select("id, title, message, type, is_read, created_at, reference_id")\
+                .eq('user_id', user_id)\
+                .order('created_at', desc=True)\
+                .limit(50).execute()
+            notifications = res.data or []
+        else:
+            notifications = []
+    return render_template('notifications.html', notifications=notifications)
+
 @core.route('/notifications/<notification_id>/read', methods=['POST'])
 @login_required
 def mark_notification_read(notification_id):

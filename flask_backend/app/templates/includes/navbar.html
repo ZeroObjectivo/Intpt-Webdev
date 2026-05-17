@@ -336,7 +336,7 @@
                                     <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
                                 </div>
                                 <div id="notification-footer" class="p-4 bg-slate-50/30 {% if not notifications %}hidden{% endif %}">
-                                    <button class="w-full py-3 text-[12px] font-black text-slate-400 uppercase tracking-widest hover:text-umak-blue transition-colors">View All Notifications</button>
+                                    <a href="{{ url_for('core.notifications_page') }}" class="block w-full py-3 text-center text-[12px] font-black text-slate-400 uppercase tracking-widest hover:text-umak-blue transition-colors">View All Notifications</a>
                                 </div>
                             </div>
                         </div>
@@ -367,12 +367,12 @@
                             </span>
                         </button>
                         <div id="mobile-nav-menu" class="hidden absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-2xl py-2 text-[#101828] z-[70] border border-slate-100">
-                            <button id="mobile-notification-trigger" type="button" class="w-full flex items-center justify-between px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors text-left">
+                            <a href="{{ url_for('core.notifications_page') }}" class="w-full flex items-center justify-between px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors text-left">
                                 <span>Notifications</span>
                                 <span id="mobile-notification-count" class="hh-mobile-menu-badge px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-600 {% if unread_notifications_count <= 0 %}hidden{% endif %}">
                                     {{ unread_notifications_count }}
                                 </span>
-                            </button>
+                            </a>
                             <a href="{{ url_for('core.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Home Feed</a>
                             <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Marketplace</a>
                             <a href="{{ url_for('core.event_calendar') }}" class="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">Event Calendar</a>

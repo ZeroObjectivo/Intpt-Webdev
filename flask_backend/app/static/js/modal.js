@@ -537,12 +537,22 @@ async function toggleLike(postId, btn) {
     try {
         const response = await fetch(`/posts/${postId}/like`, { method: 'POST', headers: { 'X-CSRFToken': getCSRFToken() } });
         const data = await response.json();
-        if (data.status === 'liked') {
+        var liked = data.status === 'liked';
+        if (liked) {
             btn.classList.add('text-red-500');
             btn.querySelector('svg').classList.add('fill-current');
         } else {
             btn.classList.remove('text-red-500');
             btn.querySelector('svg').classList.remove('fill-current');
+        }
+        // Optimistically update like count on the card
+        var card = document.querySelector('.post-card[data-post-id="' + postId + '"]');
+        if (card) {
+            var countEl = card.querySelector('.likes-count');
+            if (countEl) {
+                var cur = parseInt(countEl.textContent, 10) || 0;
+                countEl.textContent = String(Math.max(0, cur + (liked ? 1 : -1)));
+            }
         }
         if (window.requestInteractionSync) window.requestInteractionSync(postId);
     } catch (error) {
@@ -572,6 +582,12 @@ async function submitComment(event) {
             textarea.style.height = 'auto';
             cancelReply();
             fetchComments(currentPost.id, { force: true, silent: true });
+            // Optimistically update comment count on the card
+            var card = document.querySelector('.post-card[data-post-id="' + currentPost.id + '"]');
+            if (card) {
+                var countEl = card.querySelector('.comments-count');
+                if (countEl) countEl.textContent = String((parseInt(countEl.textContent, 10) || 0) + 1);
+            }
             if (window.requestInteractionSync) window.requestInteractionSync(currentPost.id);
         }
     } catch (error) {

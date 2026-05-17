@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Notifications - Herons' Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-black text-slate-800 tracking-tight">Notifications</h1>
+        <a href="{{ url_for('core.dashboard') }}" class="text-sm font-bold text-slate-400 hover:text-umak-blue transition-colors">Back to Feed</a>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        {% if notifications %}
+            {% for n in notifications %}
+            <a href="{% if n.reference_id %}{{ url_for('core.dashboard') }}#view-post-{{ n.reference_id }}{% else %}#{% endif %}"
+               class="block px-6 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors {% if not n.is_read %}bg-blue-50/30{% endif %}"
+               data-notification-id="{{ n.id }}"
+               onclick="markNotifRead('{{ n.id }}')">
+                <div class="flex justify-between items-start mb-1">
+                    <h4 class="text-[15px] font-black {% if not n.is_read %}text-umak-blue{% else %}text-slate-600{% endif %}">{{ n.title }}</h4>
+                    <span class="text-[11px] font-bold text-slate-300 uppercase ml-4 whitespace-nowrap">{{ n.created_at[:10] }}</span>
+                </div>
+                <p class="text-[13px] text-slate-500 leading-relaxed font-medium">{{ n.message }}</p>
+                {% if n.type %}
+                <span class="inline-block mt-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full
+                    {% if n.type == 'warning' %}bg-amber-100 text-amber-600
+                    {% elif n.type == 'admin' %}bg-purple-100 text-purple-600
+                    {% else %}bg-slate-100 text-slate-400{% endif %}">{{ n.type }}</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="px-6 py-16 text-center">
+                <svg class="w-12 h-12 mx-auto text-slate-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+                <p class="text-sm font-bold text-slate-300">No notifications yet</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function markNotifRead(id) {
+    try {
+        await fetch('/notifications/' + id + '/read', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
+        });
+    } catch(e) {}
+}
+</script>
+{% endblock %}
