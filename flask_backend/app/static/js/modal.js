@@ -42,6 +42,42 @@ let modalCommentPollTimer = null;
 let currentCommentsSignature = '';
 const isAdminContext = window.location.pathname.startsWith('/admin/');
 
+function resizeCommentComposerTextarea(textarea) {
+    if (!textarea) return;
+    const maxHeight = 132;
+    textarea.style.height = 'auto';
+    const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+}
+
+function initCommentComposerInteractions() {
+    const form = document.getElementById('modalCommentForm');
+    const textarea = document.getElementById('commentTextarea');
+    if (!form || !textarea || textarea.dataset.boundComposer === '1') return;
+
+    textarea.dataset.boundComposer = '1';
+    resizeCommentComposerTextarea(textarea);
+
+    textarea.addEventListener('input', () => {
+        resizeCommentComposerTextarea(textarea);
+    });
+
+    textarea.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        if (event.shiftKey) return;
+
+        event.preventDefault();
+        if (!textarea.value.trim()) return;
+
+        if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+            return;
+        }
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+}
+
 function resetZoomState() {
     const wrapper = document.querySelector('.modal-image-wrapper');
     const img = document.getElementById('modalImg');
@@ -588,7 +624,7 @@ async function submitComment(event) {
         }
         if (data.comment) {
             textarea.value = '';
-            textarea.style.height = 'auto';
+            resizeCommentComposerTextarea(textarea);
             cancelReply();
             fetchComments(currentPost.id, { force: true, silent: true });
             // Optimistically update comment count on the card
@@ -608,6 +644,7 @@ function setReply(commentId, userName) {
     currentReplyTo = { id: commentId, name: userName };
     const textarea = document.getElementById('commentTextarea');
     textarea.value = `@${userName} `;
+    resizeCommentComposerTextarea(textarea);
     textarea.focus();
 }
 
@@ -746,6 +783,7 @@ function showConfirmModal(title, message, onConfirm, options = {}) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    initCommentComposerInteractions();
     checkHashAndOpenModal();
     window.addEventListener('hashchange', checkHashAndOpenModal);
 });
