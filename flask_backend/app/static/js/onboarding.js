@@ -1,27 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const continueBtn = document.getElementById('continue-btn');
+    const nextStepBtn = document.getElementById('next-step-btn');
     const agreeCheckbox = document.getElementById('agree-terms');
     const tcContainer = document.querySelector('.tc-container');
     const footerAction = document.getElementById('footer-action');
     const scrollPrompt = document.getElementById('scroll-prompt');
 
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const dot1 = document.getElementById('dot-1');
+    const dot2 = document.getElementById('dot-2');
+
     let hasScrolledToBottom = false;
 
-    // Detect scroll to bottom
+    // Detect scroll to bottom for T&C
     if (tcContainer && footerAction && scrollPrompt) {
         tcContainer.addEventListener('scroll', () => {
             if (hasScrolledToBottom) return;
-
-            // Use a threshold (20px) for better reliability
-            const isAtBottom = tcContainer.scrollHeight - tcContainer.scrollTop <= tcContainer.clientHeight + 20;
-            
+            const isAtBottom = tcContainer.scrollHeight - tcContainer.scrollTop <= tcContainer.clientHeight + 40;
             if (isAtBottom) {
                 hasScrolledToBottom = true;
                 revealFooter();
             }
         });
 
-        // Also check if content is short enough (safety check)
+        // Safety check for short content
         if (tcContainer.scrollHeight <= tcContainer.clientHeight) {
             hasScrolledToBottom = true;
             revealFooter();
@@ -29,26 +31,120 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function revealFooter() {
-        // Hide prompt
         scrollPrompt.style.opacity = '0';
         setTimeout(() => scrollPrompt.style.display = 'none', 300);
-
-        // Show footer
-        footerAction.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-        footerAction.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+        footerAction.classList.remove('opacity-0', 'pointer-events-none');
+        footerAction.classList.add('opacity-100', 'pointer-events-auto');
     }
 
-    // Handle checkbox and button state
-    if (agreeCheckbox && continueBtn) {
+    // Step 1 -> Step 2 transition
+    if (agreeCheckbox && nextStepBtn) {
         agreeCheckbox.addEventListener('change', () => {
             if (agreeCheckbox.checked) {
-                continueBtn.disabled = false;
-                continueBtn.classList.remove('bg-slate-100', 'text-slate-400', 'cursor-not-allowed');
-                continueBtn.classList.add('bg-[#0D4E8B]', 'text-white', 'shadow-[0_20px_40px_rgba(13,78,139,0.2)]', 'hover:scale-[1.02]', 'active:scale-95');
+                nextStepBtn.disabled = false;
+                nextStepBtn.classList.remove('bg-slate-100', 'text-slate-400', 'cursor-not-allowed');
+                nextStepBtn.classList.add('bg-[#0D4E8B]', 'text-white', 'shadow-xl', 'shadow-blue-900/20', 'hover:scale-[1.02]', 'active:scale-95');
             } else {
-                continueBtn.disabled = true;
-                continueBtn.classList.add('bg-slate-100', 'text-slate-400', 'cursor-not-allowed');
-                continueBtn.classList.remove('bg-[#0D4E8B]', 'text-white', 'shadow-[0_20px_40px_rgba(13,78,139,0.2)]', 'hover:scale-[1.02]', 'active:scale-95');
+                nextStepBtn.disabled = true;
+                nextStepBtn.classList.add('bg-slate-100', 'text-slate-400', 'cursor-not-allowed');
+                nextStepBtn.classList.remove('bg-[#0D4E8B]', 'text-white', 'shadow-xl', 'shadow-blue-900/20', 'hover:scale-[1.02]', 'active:scale-95');
+            }
+        });
+
+        nextStepBtn.addEventListener('click', () => {
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            dot1.classList.remove('active');
+            dot2.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    // --- Step 2: Profile Logic ---
+    const addSocialButton = document.getElementById('addSocialButton');
+    const socialLinkRows = document.getElementById('socialLinkRows');
+    const socialRowTemplate = document.getElementById('socialRowTemplate');
+    const onboardingForm = document.getElementById('onboarding-form');
+
+    const platformLabelMap = {
+        'facebook.com': 'facebook',
+        'instagram.com': 'instagram',
+        'tiktok.com': 'tiktok',
+        'linkedin.com': 'linkedin',
+        'discord.com': 'discord',
+        'www.facebook.com': 'facebook',
+        'www.instagram.com': 'instagram',
+        'www.tiktok.com': 'tiktok',
+        'www.linkedin.com': 'linkedin',
+    };
+
+    function detectPlatform(url) {
+        try {
+            const hostname = new URL(url.includes('://') ? url : `https://${url}`).hostname;
+            return platformLabelMap[hostname] || null;
+        } catch (e) { return null; }
+    }
+
+    function updateBadge(row) {
+        const input = row.querySelector('[data-social-url-input]');
+        const badge = row.querySelector('[data-platform-badge]');
+        const platform = detectPlatform(input.value);
+        
+        if (platform) {
+            badge.dataset.platform = platform;
+            badge.style.color = '#0D4E8B';
+            badge.style.borderColor = '#0D4E8B';
+        } else {
+            badge.dataset.platform = '';
+            badge.style.color = '';
+            badge.style.borderColor = '';
+        }
+    }
+
+    function renumberRows() {
+        const rows = socialLinkRows.querySelectorAll('.onboarding-social-row');
+        rows.forEach((row, idx) => {
+            const i = idx + 1;
+            row.querySelector('[data-social-url-input]').name = `social_link_${i}`;
+            row.querySelector('[data-social-visibility]').name = `social_link_visibility_${i}`;
+        });
+        
+        if (rows.length >= 3) {
+            addSocialButton.style.display = 'none';
+        } else {
+            addSocialButton.style.display = 'inline-flex';
+        }
+    }
+
+    if (addSocialButton && socialLinkRows && socialRowTemplate) {
+        addSocialButton.addEventListener('click', () => {
+            if (socialLinkRows.children.length >= 3) return;
+            
+            const clone = socialRowTemplate.content.firstElementChild.cloneNode(true);
+            socialLinkRows.appendChild(clone);
+            
+            const input = clone.querySelector('[data-social-url-input]');
+            input.addEventListener('input', () => updateBadge(clone));
+            
+            clone.querySelector('[data-remove-link]').addEventListener('click', () => {
+                clone.remove();
+                renumberRows();
+            });
+            
+            renumberRows();
+        });
+    }
+
+    // Basic Validation for Step 2
+    if (onboardingForm) {
+        onboardingForm.addEventListener('submit', (e) => {
+            const college = onboardingForm.querySelector('[name="college"]').value;
+            const course = onboardingForm.querySelector('[name="course"]').value;
+            const level = onboardingForm.querySelector('[name="level"]').value;
+
+            if (!college || !course || !level) {
+                e.preventDefault();
+                alert('Please fill in all required academic fields.');
             }
         });
     }

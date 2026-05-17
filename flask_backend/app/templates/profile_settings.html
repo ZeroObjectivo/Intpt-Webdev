@@ -1135,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const keys = new Set([...Object.keys(initialValues), ...Object.keys(currentValues)]);
             const hasChanges = Array.from(keys).some((key) => currentValues[key] !== initialValues[key]);
 
-            saveBtn.disabled = !changes;
+            saveBtn.disabled = !hasChanges;
             saveBtn.classList.toggle('opacity-50', !hasChanges);
             saveBtn.classList.toggle('cursor-not-allowed', !hasChanges);
         };

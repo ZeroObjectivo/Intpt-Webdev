@@ -356,11 +356,28 @@ def set_session():
 @auth.route('/onboarding')
 def onboarding():
     """
-    Shows the onboarding page with T&C and logo animation.
+    Shows the onboarding page with multi-step flow:
+    1. Terms and Conditions
+    2. Profile Setup (College, Course, Bio, etc.)
     """
     if 'temp_user' not in session:
         return redirect(url_for('core.login'))
-    return render_template('onboarding.html', user=session['temp_user'])
+
+    # Fetch colleges/institutes for Step 2 dropdown
+    profile_client = supabase_service or get_public_client()
+    colleges = []
+    institutes = []
+    try:
+        units_res = profile_client.table('colleges_institutes').select("name, full_name, type").order('name').execute()
+        colleges = [u for u in units_res.data if u['type'] == 'College']
+        institutes = [u for u in units_res.data if u['type'] == 'Institute']
+    except Exception as e:
+        logger.warning("Could not load academic units for onboarding: %s", e)
+
+    return render_template('onboarding.html', 
+                           user=session['temp_user'],
+                           colleges=colleges,
+                           institutes=institutes)
 
 @auth.route('/auth/post-login')
 @login_required
@@ -371,23 +388,58 @@ def post_login_transition():
 @auth.route('/onboarding/complete', methods=['POST'])
 def complete_onboarding():
     """
-    Finalizes the registration after agreeing to terms.
+    Finalizes the registration after agreeing to terms and entering profile info.
     """
     if 'temp_user' not in session or 'access_token' not in session:
         return redirect(url_for('core.login'))
     
     user = session['temp_user']
+    
+    # Extract profile fields from form
+    college = request.form.get('college', '').strip()
+    course = request.form.get('course', '').strip()
+    level = request.form.get('level', '').strip()
+    bio = request.form.get('bio', '').strip()
+    contact_number = request.form.get('contact_number', '').strip()
+    contact_privacy = request.form.get('contact_privacy', 'only_me').strip()
+
+    # Required field validation
+    if not all([college, course, level]):
+        flash("Please fill in all required academic information.", "error")
+        return redirect(url_for('auth.onboarding'))
 
     # 1. Create the profile in Supabase (using user's token to satisfy RLS)
     try:
         user_client = get_user_client()
 
-        user_client.table('profiles').upsert({
+        # Handle social links (imported here to avoid circular dependency)
+        from .core import normalize_social_links_input
+        social_links_raw = []
+        social_visibility_raw = []
+        for i in range(1, 4):
+            url = request.form.get(f'social_link_{i}')
+            vis = request.form.get(f'social_link_visibility_{i}')
+            if url:
+                social_links_raw.append(url)
+                social_visibility_raw.append(vis or 'public')
+        
+        normalized_social_links = normalize_social_links_input(social_links_raw, social_visibility_raw)
+
+        profile_data = {
             "id": str(user['id']),
             "email": user['email'],
             "full_name": user['user_metadata'].get('full_name'),
             "avatar_url": user['user_metadata'].get('avatar_url'),
-        }).execute()
+            "college": college,
+            "course": course,
+            "level": level,
+            "bio": bio,
+            "contact_number": contact_number,
+            "contact_privacy": contact_privacy,
+            "social_links": normalized_social_links
+        }
+
+        user_client.table('profiles').upsert(profile_data).execute()
         
         # 2. Move from temp_user to full user session
         session['user'] = session.pop('temp_user')
@@ -407,7 +459,8 @@ def complete_onboarding():
         return redirect(url_for('auth.post_login_transition'))
     except Exception as e:
         logger.error("Onboarding completion error: %s", e)
-        return "Failed to complete onboarding", 500
+        flash("Failed to save profile information. Please try again.", "error")
+        return redirect(url_for('auth.onboarding'))
 
 @auth.route('/unauthorized')
 def unauthorized():

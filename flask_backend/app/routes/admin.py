@@ -1,8 +1,10 @@
 import logging
 import os
+import math
 from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify, request
 from app.routes.auth import login_required
-from services.supabase_client import supabase, supabase_service, get_user_client
+from services.supabase_client import supabase, supabase_service, get_user_client, engine
+from sqlalchemy import text
 from app.utils.post_archive import archive_post_snapshot, maybe_purge_expired_archived_posts, purge_expired_archived_posts
 from functools import wraps
 import datetime
@@ -48,6 +50,14 @@ def get_admin_read_client():
     Fallback to per-user client for graceful behavior.
     """
     return get_service_client()
+
+def format_size(size_bytes):
+    if size_bytes == 0: return "0 B"
+    size_name = ("B", "KB", "MB", "GB", "TB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
 
 def normalize_role(role):
     value = (role or '').strip().lower()
@@ -256,6 +266,103 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
     except Exception as e:
         logger.warning("Notification insert skipped for user %s: %s", user_id, e)
 
+def fetch_comprehensive_stats(client):
+    """
+    Unified helper to fetch all admin dashboard metrics.
+    Handles SQL blocking and API limitations gracefully.
+    """
+    stats = {
+        "total_users": 0,
+        "total_posts": 0,
+        "total_comments": 0,
+        "total_likes": 0,
+        "total_photos": 0,
+        "total_notifications": 0,
+        "pending_approvals": 0,
+        "reported_count": 0,
+        "open_tickets_count": 0,
+        "banned_accounts": 0,
+        "user_list": [],
+        "reports_list": [],
+        "posts_by_category": [],
+        "recent_activities": [],
+        "disputes_count": 0,
+        "college_breakdown": [],
+    }
+
+    try:
+        # 1. Primary Metrics (via standard API - always works)
+        # Use a single query for profiles if possible, or separate for counts
+        profiles_res = client.table('profiles').select("id, college, status, full_name, avatar_url, role").execute()
+        stats["user_list"] = profiles_res.data
+        stats["total_users"] = len(profiles_res.data)
+        stats["banned_accounts"] = len([p for p in profiles_res.data if p.get('status') == 'banned'])
+
+        # College Breakdown for Chart
+        college_counts = {}
+        for p in profiles_res.data:
+            college = p.get('college') or 'Unknown'
+            college_counts[college] = college_counts.get(college, 0) + 1
+        
+        # Sort by count descending
+        sorted_colleges = sorted(college_counts.items(), key=lambda x: x[1], reverse=True)
+        
+        colors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#64748B']
+        breakdown = []
+        total_users_count = stats["total_users"] or 1
+        current_angle = 0
+        
+        for i, (label, count) in enumerate(sorted_colleges):
+            percentage = round((count / total_users_count) * 100, 1)
+            angle = (count / total_users_count) * 360
+            breakdown.append({
+                "label": label,
+                "count": count,
+                "percentage": percentage,
+                "color": colors[i % len(colors)],
+                "start_angle": current_angle,
+                "end_angle": current_angle + angle
+            })
+            current_angle += angle
+        
+        stats["college_breakdown"] = breakdown
+
+        posts_res = client.table('posts').select("id, category, status").execute()
+        stats["total_posts"] = len(posts_res.data)
+        cat_counts = {}
+        pending_count = 0
+        for p in posts_res.data:
+            cat = p.get('category', 'General')
+            cat_counts[cat] = cat_counts.get(cat, 0) + 1
+            if p.get('status') == 'pending': pending_count += 1
+        stats["posts_by_category"] = [{"category": k, "count": v} for k, v in cat_counts.items()]
+        stats["pending_approvals"] = pending_count
+
+        # Counts for other major tables
+        for table in ['comments', 'likes', 'notifications', 'reports', 'support_tickets']:
+            try:
+                res = client.table(table).select("id", count="exact").limit(0).execute()
+                count = res.count if hasattr(res, 'count') else len(res.data)
+                stats[f"total_{table if table != 'reports' else 'reported_count'}"] = count
+                if table == 'reports': stats["reported_count"] = count
+            except: pass
+
+        # 2. Photos count
+        try:
+            storage_client = (supabase_service or client).storage
+            buckets = storage_client.list_buckets()
+            total_photos = 0
+            for b in buckets:
+                files = storage_client.from_(b.id).list()
+                total_photos += len(files)
+            stats["total_photos"] = total_photos
+        except: pass
+
+    except Exception as e:
+        logger.error("Error in fetch_comprehensive_stats: %s", e)
+
+    return stats
+
 @admin.route('/admin/dashboard')
 @login_required
 @admin_required
@@ -270,123 +377,28 @@ def dashboard():
         except Exception as cleanup_e:
             logger.warning("Admin dashboard archive cleanup skipped: %s", cleanup_e)
     
-    stats = {
-        "total_users": 0,
-        "total_posts": 0,
-        "reported_posts": 0,
-        "pending_approvals": 0,
-        "open_tickets_count": 0,
-        "banned_accounts": 0,
-        "user_list": [],
-        "reports_list": [],
-        "posts_by_category": [],
-        "recent_activities": [],
-        "disputes_count": 0
-    }
+    stats = fetch_comprehensive_stats(client)
     
     try:
-        # Fetch all profiles
-        users_res = client.table('profiles').select("*").execute()
-        stats["total_users"] = len(users_res.data)
-        stats["user_list"] = users_res.data
-        
-        # Fetch all posts for category counts
-        posts_res = client.table('posts').select("id, category, status").execute()
-        stats["total_posts"] = len(posts_res.data)
-        
-        cat_counts = {}
-        pending_count = 0
-        for p in posts_res.data:
-            cat = p.get('category', 'General')
-            cat_counts[cat] = cat_counts.get(cat, 0) + 1
-            if p.get('status') == 'pending':
-                pending_count += 1
-        
-        stats["posts_by_category"] = [{"category": k, "count": v} for k, v in cat_counts.items()]
-        stats["pending_approvals"] = pending_count
-
-        # Fetch pending posts for preview
+        # Fetch additional data needed specifically for dashboard view
         pending_res = client.table('posts').select("*, profiles(full_name)").eq('status', 'pending').order("created_at", desc=True).limit(5).execute()
         stats["pending_list"] = pending_res.data
 
-        # Fetch reports
         reports_res = client.table('reports').select("*, posts(content), profiles!reports_reporter_id_fkey(full_name)").order("created_at", desc=True).execute()
-        stats["reported_posts"] = len(reports_res.data)
         stats["reports_list"] = reports_res.data
         
-        # New reports (last 24 hours)
         now = datetime.datetime.now(datetime.timezone.utc)
         day_ago = now - datetime.timedelta(hours=24)
-        new_reports_count = 0
-        for r in reports_res.data:
-            try:
-                created_at = datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00'))
-                if created_at > day_ago:
-                    new_reports_count += 1
-            except Exception:
-                pass
-        stats["new_reports_count"] = new_reports_count
-        
-        # Banned accounts
-        banned_res = client.table('profiles').select("id").eq("status", "banned").execute()
-        stats["banned_accounts"] = len(banned_res.data)
+        stats["new_reports_count"] = len([r for r in reports_res.data if datetime.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')) > day_ago])
 
-        # 1. Official Unit Color Map
-        UNIT_COLORS = {
-            "CLAS": "#630100", "CHK": "#5d4a2a", "CBFS": "#645430", "CCIS": "#003130",
-            "CITE": "#05172d", "HSU": "#1a4266", "CGPP": "#3c2b58", "CCSE": "#222222",
-            "CET": "#603407", "CTHM": "#524415", "CCAPS": "#222945", "SOL": "#181520",
-            "IAD": "#451916", "IOA": "#1f3e03", "IOP": "#2a2231", "ION": "#023a0d",
-            "IIHS": "#202a4d", "ITEST": "#5e4c28", "ISDNB": "#412f00", "IOPSY": "#1d4746",
-            "ISW": "#4a0732", "IDEM": "#0f1225", "Other": "#94a3b8"
-        }
-
-        # 2. Fetch official unit mapping to distinguish College vs Institute
-        units_res = client.table('colleges_institutes').select("name, type").execute()
-        unit_type_map = {u['name']: u['type'] for u in units_res.data}
-
-        # 3. User Breakdown (by college)
-        college_counts = {}
-        for profile in users_res.data:
-            col = profile.get('college') or 'Other'
-            college_counts[col] = college_counts.get(col, 0) + 1
-        
-        total = stats["total_users"] or 1
-        breakdown = []
-        current_angle = 0
-        
-        sorted_counts = sorted(college_counts.items(), key=lambda x: x[1], reverse=True)
-        for k, v in sorted_counts:
-            percentage = (v / total) * 100
-            color = UNIT_COLORS.get(k.upper(), UNIT_COLORS['Other'])
-            
-            breakdown.append({
-                "label": k,
-                "count": v,
-                "percentage": round(percentage),
-                "type": unit_type_map.get(k, 'College'),
-                "color": color,
-                "start_angle": current_angle,
-                "end_angle": current_angle + (percentage * 3.6)
-            })
-            current_angle += (percentage * 3.6)
-            
-        stats["college_breakdown"] = breakdown
-
-        # Recent Activities (Admin Logs)
         logs_res = client.table('admin_logs').select("*, profiles!admin_logs_admin_id_fkey(full_name)").order("created_at", desc=True).limit(20).execute()
         stats["recent_activities"] = logs_res.data
 
-        # Verification Disputes Count
         disputes_res = client.table('verification_disputes').select("id", count="exact").eq("status", "pending").execute()
         stats["disputes_count"] = disputes_res.count if hasattr(disputes_res, 'count') else len(disputes_res.data)
-
-        # Support Tickets Count
-        tickets_res = client.table('support_tickets').select("id", count="exact").eq("status", "open").execute()
-        stats["open_tickets_count"] = tickets_res.count if hasattr(tickets_res, 'count') else len(tickets_res.data)
             
     except Exception as e:
-        logger.error("Error fetching admin stats: %s", e)
+        logger.error("Error fetching dashboard-specific data: %s", e)
 
     return render_template('admin/dashboard.html', stats=stats, user=session.get('user'), permissions=permissions)
 
@@ -1367,34 +1379,6 @@ def admin_delete_comment(comment_id):
         
         delete_comment_thread(admin_client, comment_id)
         owner_id = comment.get("user_id")
-        
-        if owner_id:
-            try:
-                admin_client.table('notifications').insert({
-                    "user_id": owner_id,
-                    "type": "warning",
-                    "reference_id": comment_id,
-                    "title": "Comment removed by moderation",
-                    "message": "One of your comments was removed by moderation due to policy enforcement.",
-                }).execute()
-            except Exception as notif_e:
-                logger.warning("Could not notify comment owner for deleted comment %s: %s", comment_id, notif_e)
-
-        # Log action
-        try:
-            admin_client.table('admin_logs').insert({
-                "admin_id": session.get('user', {}).get('id'),
-                "action_type": "remove_comment",
-                "target_id": comment_id,
-                "details": f"Removed comment from {author_name}."
-            }).execute()
-        except Exception as log_e:
-            logger.error("Audit log error (delete comment): %s", log_e)
-
-        return jsonify({"status": "deleted"})
-    except Exception as e:
-        logger.error("Error deleting comment (admin): %s", e)
-        return jsonify({"status": "error", "message": "Failed to remove comment."}), 500
         
         if owner_id:
             try:

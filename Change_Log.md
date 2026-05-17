@@ -1,7 +1,36 @@
 # Herons' Hub Community Platform - Update Log
-**Date:** May 14, 2026
+**Date:** May 17, 2026
 
 This document summarizes the recent major updates, bug fixes, and feature implementations for the Herons' Hub platform.
+
+---
+
+## [Unreleased] - 2026-05-17
+
+### Added
+- **Multi-Step Onboarding Flow:** Enhanced the registration process with a new two-step flow:
+    1.  **Community Guidelines:** Improved T&C presentation with mandatory scroll-to-read validation.
+    2.  **Profile Setup:** New form to collect required academic info (College, Course, Year Level) and optional details (Bio, Contact, Social Links) before users access the dashboard.
+- **Dynamic Academic Selection:** Integrated real-time database-driven College and Institute selection into the onboarding process.
+- **Onboarding Social Links:** Integrated a simplified version of the social links editor into the onboarding flow for new users.
+- **Admin Moderation Actions:** Added "Flag Post" button and logic to `content_manage.html` and `reports_queue.html` to support explicit flagging of content for further review.
+- **Shared Post Management JS:** Moved `togglePostMenu`, `showEditForm`, `hideEditForm`, `confirmDeletePost`, and `reportPost` to `main.js` to ensure consistent behavior across Dashboard and Profile pages.
+
+### Changed
+- **Dashboard Feed Refactor:** Refactored `dashboard.html` to use the shared `includes/post_card.html` template, reducing code duplication by ~150 lines and ensuring a unified UI.
+- **Post Card UI Enhancements:** Updated `includes/post_card.html` with improved styling (rounded corners on images and overlays) to match the latest design standards.
+
+### Fixed
+- **Profile Settings Save Button:** Fixed a JavaScript typo where an undefined variable was preventing the "Save Changes" button from enabling when changes were made. (References: `flask_backend/app/templates/profile_settings.html`)
+- **Admin Dashboard Layout:** Fixed a `jinja2.exceptions.UndefinedError` by removing the experimental storage analytics card and reverting related backend logic while preserving the requested user breakdown statistics.
+- **Database Connection Issues:** Removed SQL-based storage size fetching which was causing DNS resolution errors on some environments.
+- **Template Crash:** Fixed an `UndefinedError` in `post_card.html` caused by calling `.astimezone()` on a `None` date object when a post's creation date was missing or invalid.
+- **Security Hardening Tests:** Updated `test_security_hardening.py` to match the current template design (consolidated forms) and fixed outdated assertions.
+- **Mock Supabase Tests:** Fixed `test_create_post.py` by improving the `FakeSupabase` mock to support more complex queries (`in_`, `gt`, `is_`, `or_`) and correcting the patching strategy to ensure authentication tokens are correctly simulated.
+- **Dashboard Layout Tests:** Updated `test_dashboard_layout.py` to match the actual template logic (using `.onclick` instead of `addEventListener`, and removing checks for removed functions like `handleMockSubmission`).
+
+### Removed
+- **Experimental Templates:** Deleted outdated `main_profile.html` and `social_profile.html` experimental files after confirming all features are integrated into the primary templates.
 
 ---
 

@@ -80,3 +80,93 @@
 #continue-btn:active {
     transform: translateY(0);
 }
+
+/* Step Indicator */
+.step-indicator {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 2rem;
+}
+
+.step-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #E2E8F0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.step-dot.active {
+    background: #0D4E8B;
+    width: 40px;
+    border-radius: 6px;
+}
+
+/* Onboarding Step Container */
+.onboarding-step {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+}
+
+.onboarding-step.hidden {
+    display: none;
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+/* Form Styling */
+.onboarding-form-control {
+    width: 100%;
+    background: #F8FAFC;
+    border: 2px solid #F1F5F9;
+    border-radius: 1.25rem;
+    padding: 1rem 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0F172A;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.onboarding-form-control:focus {
+    border-color: #0D4E8B;
+    background: white;
+    box-shadow: 0 10px 25px -5px rgba(13, 78, 139, 0.05);
+}
+
+.onboarding-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #94A3B8;
+    margin-bottom: 0.6rem;
+    margin-left: 0.5rem;
+}
+
+/* Social Links Editor (consistent with profile settings) */
+.onboarding-social-row {
+    background: #F8FAFC;
+    border: 1px solid #F1F5F9;
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.onboarding-social-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 1rem;
+    background: white;
+    border: 1px solid #E2E8F0;
+    color: #0D4E8B;
+}
+
+.onboarding-social-badge svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}

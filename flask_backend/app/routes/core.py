@@ -925,6 +925,7 @@ def dashboard():
                            events=upcoming_events,
                            colleges=colleges,
                            institutes=institutes,
+                           DISPLAY_TIMEZONE=DISPLAY_TIMEZONE,
                            now=datetime.datetime.now(datetime.timezone.utc)))
     # Prevent stale dashboard snapshots from cache/CDN.
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
