@@ -2031,7 +2031,7 @@ def add_comment(post_id):
                 push_notification(
                     client,
                     post_owner_id,
-                    title=f"{commenter_name} commented on your post.",
+                    title=f"{commenter_name} commented.",
                     message="",
                     notif_type="interaction",
                     reference_id=post_id,
@@ -2048,7 +2048,7 @@ def add_comment(post_id):
                     push_notification(
                         client,
                         parent_owner_id,
-                        title=f"{commenter_name} replied to your comment.",
+                        title=f"{commenter_name} replied.",
                         message="",
                         notif_type="interaction",
                         reference_id=post_id,
