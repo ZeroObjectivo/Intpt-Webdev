@@ -812,6 +812,36 @@ def load_college_institute_options():
         })
     return options
 
+def load_course_options(college_name=None):
+    if not college_name:
+        return []
+        
+    client = supabase_service or get_user_client()
+    try:
+        query = client.table('courses')\
+            .select("name, program_type, colleges_institutes!inner(name)")\
+            .eq("colleges_institutes.name", college_name)
+        
+        response = query.order("name").execute()
+    except Exception as exc:
+        logger.warning("Unable to load courses options: %s", exc)
+        return []
+
+    options = []
+    seen = set()
+    for row in (response.data or []):
+        name = (row.get('name') or '').strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        program_type = (row.get('program_type') or 'Other').strip()
+        options.append({
+            "value": name,
+            "label": name,
+            "group": program_type
+        })
+    return options
+
 def parse_catalog_multiline(value):
     if not value:
         return []
@@ -1350,33 +1380,47 @@ def get_courses():
         
     college_name = request.args.get('college')
     if not college_name:
-        return jsonify([])
+        return jsonify({"courses": []})
     
-    # Use service client since user client might not be fully established yet
-    client = supabase_service
+    client = supabase_service or get_user_client()
     try:
-        # Get college ID first
-        col_res = client.table('colleges_institutes').select('id').eq('name', college_name).execute()
-        if not col_res.data:
-            return jsonify([])
-            
-        college_id = col_res.data[0]['id']
+        # Join with colleges_institutes to filter by name
+        response = client.table('courses')\
+            .select("name, program_type, colleges_institutes!inner(name)")\
+            .eq("colleges_institutes.name", college_name)\
+            .order("name")\
+            .execute()
         
-        # Get courses for this college
-        courses_res = client.table('courses').select('name, program_type').eq('college_id', college_id).order('name').execute()
-        return jsonify(courses_res.data or [])
-    except Exception as e:
-        logger.error("Error fetching courses for API: %s", e)
-        return jsonify([]), 500
+        options = []
+        seen = set()
+        for row in (response.data or []):
+            name = (row.get('name') or '').strip()
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            program_type = (row.get('program_type') or 'Other').strip()
+            options.append({
+                "value": name,
+                "label": name,
+                "group": program_type
+            })
+        return jsonify({"courses": options})
+    except Exception as exc:
+        logger.warning("API error fetching courses for %s: %s", college_name, exc)
+        return jsonify({"courses": []}), 500
 
 def load_profile_data(user_id, viewer_id=None):
     client = get_user_client()
     college_options = load_college_institute_options()
-    social_links = load_profile_social_links(client, user_id)
-    public_social_links = [link for link in social_links if link.get("visibility") == "public"]
-
+    
     profile_response = client.table('profiles').select("*").eq("id", user_id).single().execute()
     profile = profile_response.data
+    
+    current_college_name = (profile.get('college') or '').strip() if profile else None
+    course_options = load_course_options(current_college_name)
+    
+    social_links = load_profile_social_links(client, user_id)
+    public_social_links = [link for link in social_links if link.get("visibility") == "public"]
 
     activity_timestamps = []
     if profile:
@@ -1417,8 +1461,9 @@ def load_profile_data(user_id, viewer_id=None):
         if post.get('created_at'):
             activity_timestamps.append(post.get('created_at'))
 
-    likes_count_res = client.table('likes').select("post_id", count="exact").eq("user_id", user_id).execute()
-    comments_count_res = client.table('comments').select("id", count="exact").eq("user_id", user_id).execute()
+    # Count total likes and comments received on posts authored by this user
+    likes_count_res = client.table('likes').select("id, posts!inner(user_id)", count="exact").eq("posts.user_id", user_id).execute()
+    comments_count_res = client.table('comments').select("id, posts!inner(user_id)", count="exact").eq("posts.user_id", user_id).execute()
 
     interactions = {
         "stats": {
