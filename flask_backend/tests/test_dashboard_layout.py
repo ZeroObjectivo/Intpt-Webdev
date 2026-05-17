@@ -46,63 +46,52 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn("About", self.template)
         self.assertIn("Settings", self.template)
 
-    def test_primary_nav_links_use_eight_pixel_radius_without_active_indicator(self):
+    def test_primary_nav_links_use_current_dashboard_navigation_structure(self):
         nav_rule = re.search(r"\.primary-nav-link\s*\{(?P<body>.*?)\}", self.css, re.S)
         active_rule = re.search(r"\.primary-nav-link\.active\s*\{(?P<body>.*?)\}", self.css, re.S)
 
         self.assertIsNotNone(nav_rule)
         self.assertIsNotNone(active_rule)
-        self.assertIn("border-radius: 8px", nav_rule.group("body"))
-        self.assertNotIn("inset 4px 0", active_rule.group("body"))
-        self.assertEqual(self.template.count("primary-nav-link rounded-lg"), 5)
+        self.assertIn("border-radius: var(--hh-radius)", nav_rule.group("body"))
+        self.assertIn("background: var(--hh-blue-500)", active_rule.group("body"))
+        self.assertEqual(self.template.count("primary-nav-link rounded-lg"), 7)
+        self.assertIn("Home Feed", self.template)
+        self.assertIn("Marketplace", self.template)
+        self.assertIn("Event Calendar", self.template)
+        self.assertIn("Scholarship", self.template)
+        self.assertIn("UMak Coop", self.template)
+        self.assertIn("About", self.template)
+        self.assertIn("Settings", self.template)
 
     def test_dashboard_category_tags_use_standard_dark_palette(self):
         post_tag_matches = re.findall(
             r"<span class=\"(?P<classes>[^\"]*post-category-tag[^\"]*)\"",
             self.template,
         )
-        sidebar_tag_matches = re.findall(
-            r"<span class=\"category-tag inline-flex rounded-full px-3 py-1 (?P<classes>[^\"]+)\"",
-            self.template,
-        )
-        filter_pill_matches = re.findall(
-            r"<button class=\"pill rounded-full px-3 py-1 (?P<classes>[^\"]+)\"",
-            self.template,
-        )
+        filter_pill_matches = re.findall(r"class=\"pill [^\"]+\"", self.template)
 
-        self.assertGreaterEqual(len(post_tag_matches), 5)
-        self.assertEqual(len(sidebar_tag_matches), 3)
-        self.assertEqual(len(filter_pill_matches), 6)
-        for class_list in post_tag_matches + sidebar_tag_matches + filter_pill_matches:
-            self.assertIn("font-bold", class_list)
-            self.assertIn("my-[5px]", class_list)
-            self.assertNotIn("font-normal", class_list)
+        self.assertGreaterEqual(len(filter_pill_matches), 6)
+        self.assertIn("badge-all", self.template)
+        self.assertIn("badge-general", self.template)
+        self.assertIn("badge-lost-found", self.template)
+        self.assertIn("badge-heron-business", self.template)
+        self.assertIn("badge-question", self.template)
+        self.assertIn("badge-events", self.template)
 
-        self.assertEqual(len(re.findall(r"<button[^>]+data-category-tag", self.template)), 6)
-        self.assertIn('aria-pressed="true"', self.template)
-        self.assertEqual(self.template.count('aria-pressed="false"'), 5)
-        self.assertIn("bg-[#111942] text-[#C7CDE6]", filter_pill_matches[0])
-        for class_list in filter_pill_matches[1:]:
-            self.assertIn("bg-[#C7CDE6] text-[#111942]", class_list)
-        for class_list in post_tag_matches + sidebar_tag_matches:
-            self.assertIn("bg-[#C7CDE6] text-[#111942]", class_list)
-
-        self.assertIn(".category-pills .pill", self.css)
-        self.assertIn(".category-pills .pill.active", self.css)
-        self.assertIn(".category-tag", self.css)
-        self.assertIn(".post-category-tag", self.css)
-        self.assertIn("background-color: #C7CDE6", self.css)
-        self.assertIn("color: #111942", self.css)
-        self.assertIn("background-color: #111942 !important", self.css)
-        self.assertIn("color: #C7CDE6 !important", self.css)
+        self.assertIn(".badge-all", self.css)
+        self.assertIn(".badge-general", self.css)
+        self.assertIn(".badge-lost-found", self.css)
+        self.assertIn(".badge-heron-business", self.css)
+        self.assertIn(".badge-question", self.css)
+        self.assertIn(".badge-events", self.css)
+        self.assertIn(".pill.active", self.css)
+        self.assertNotIn("#fef08a", self.css)
 
     def test_dashboard_state_interactions_are_client_side(self):
-        self.assertEqual(len(re.findall(r"<a[^>]+data-nav-item", self.template)), 5)
-        self.assertIn("const navItems = document.querySelectorAll('[data-nav-item]')", self.template)
-        self.assertIn("const categoryTags = document.querySelectorAll('[data-category-tag]')", self.template)
-        self.assertIn("function setActiveCategoryTag(activeTag)", self.template)
-        self.assertIn("item.addEventListener('click'", self.template)
-        self.assertIn("tag.addEventListener('click'", self.template)
+        self.assertGreaterEqual(len(re.findall(r"<a[^>]+data-nav-item", self.template)), 7)
+        self.assertIn('id="mobileCategoryFilter"', self.template)
+        self.assertIn("window.dashboardSyncConfig", self.template)
+        self.assertIn("js/realtime_sync.js", self.template)
 
     def test_create_post_modal_has_dynamic_category_fields(self):
         self.assertIn('id="createPostForm"', self.template)
@@ -152,26 +141,26 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn("query = query.in_('category', HERON_BUSINESS_CATEGORIES)", self.core_route)
 
     def test_create_post_modal_has_image_upload_and_mock_submission_js(self):
-        self.assertIn('id="globalImageUpload" name="image" accept="image/*" class="hidden"', self.template)
+        self.assertRegex(
+            self.template,
+            r'id="globalImageUpload" name="image" accept="image/\*"[^>]*class="hidden"'
+        )
         self.assertIn('id="addImageTrigger"', self.template)
         self.assertIn('id="globalImageFilename"', self.template)
-        self.assertIn('id="globalImagePreview"', self.template)
-        self.assertIn("function initImageUpload()", self.template)
-        self.assertIn("addImageTrigger.addEventListener('click'", self.template)
-        self.assertIn("globalImageUpload.click()", self.template)
-        self.assertIn("globalImageUpload.addEventListener('change'", self.template)
+        self.assertIn('id="imagePreviewContainer"', self.template)
+        self.assertIn("let selectedFiles = []", self.template)
+        self.assertIn("function renderPreviews()", self.template)
+        self.assertIn("globalImageUpload.onchange = () => {", self.template)
+        self.assertIn("new DataTransfer()", self.template)
+        self.assertIn("card.addEventListener('dragstart'", self.template)
         self.assertIn("function initFormValidation()", self.template)
         self.assertIn("function validateActiveCategory()", self.template)
         self.assertIn("case 'Lost & Found':", self.template)
-        self.assertIn("payload.status = 'Lost'", self.template)
         self.assertIn("case 'Heron Business':", self.template)
         self.assertIn("case 'Events':", self.template)
-        self.assertIn("function handleMockSubmission()", self.template)
-        self.assertIn("event.preventDefault()", self.template)
-        self.assertIn("console.log('New post mock submission:', payload)", self.template)
-        self.assertIn("function resetFormState()", self.template)
-        self.assertIn(".global-image-feedback", self.css)
-        self.assertIn(".global-image-preview", self.css)
+        self.assertIn("Maximum 5 images allowed.", self.template)
+        self.assertIn("imageLimitCounter", self.template)
+        self.assertIn(".fb-grid", self.css)
 
     def test_event_hosting_college_options_are_exact(self):
         expected_options = [
@@ -207,7 +196,7 @@ class DashboardLayoutTest(unittest.TestCase):
 
         container_rule = re.search(r"\.dashboard-container\s*\{(?P<body>.*?)\}", self.css, re.S)
         self.assertIsNotNone(container_rule)
-        self.assertIn("min-height: calc(100vh - 56px)", container_rule.group("body"))
+        self.assertIn("grid-template-columns: minmax(190px, 220px) minmax(0, 1fr) minmax(280px, 320px)", container_rule.group("body"))
 
         sidebar_rule = re.search(r"\.sidebar\s*\{(?P<body>.*?)\}", self.css, re.S)
         self.assertIsNotNone(sidebar_rule)
@@ -230,7 +219,7 @@ class RelativeTimestampTest(unittest.TestCase):
         self.assertEqual(format_relative_time("2026-05-13T11:55:00Z", now), "5 mins ago")
         self.assertEqual(format_relative_time("2026-05-13T10:00:00Z", now), "2 hrs ago")
         self.assertEqual(format_relative_time("2026-05-12T02:30:00Z", now), "Yesterday at 10:30 AM")
-        self.assertEqual(format_relative_time("2026-05-10T16:00:00Z", now), "May 11")
+        self.assertEqual(format_relative_time("2026-05-10T16:00:00Z", now), "May 11, 2026 at 12:00 AM")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Event Calendar | Herons' Hub{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<style>
+    .calendar-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 14px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        border: 1px solid #d8d9de;
+        background: rgba(248, 249, 251, 0.9);
+        box-shadow: 0 2px 8px rgba(7, 10, 18, 0.08);
+        flex-wrap: wrap;
+    }
+
+    .month-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .month-nav-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 9999px;
+        border: 1px solid #d6d8df;
+        background: #ffffff;
+        color: #111942;
+        font-weight: 800;
+        text-decoration: none;
+        transition: background-color 0.16s ease, transform 0.16s ease;
+    }
+
+    .month-nav-btn:hover {
+        background: #eef4fb;
+        transform: translateY(-1px);
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .calendar-weekday {
+        padding: 8px 6px;
+        text-align: center;
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .calendar-day {
+        min-height: 120px;
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid #d6d8df;
+        background: rgba(246, 247, 249, 0.88);
+        box-shadow: 0 2px 7px rgba(7, 10, 18, 0.07);
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .calendar-day-empty {
+        min-height: 120px;
+        border-radius: 12px;
+        border: 1px dashed #e2e8f0;
+        background: rgba(248, 250, 252, 0.66);
+    }
+
+    .calendar-day.is-today {
+        border-color: #111942;
+        box-shadow: 0 0 0 1px rgba(17, 25, 66, 0.25);
+    }
+
+    .calendar-day-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .calendar-day-number {
+        font-size: 0.98rem;
+        font-weight: 900;
+        color: #111942;
+    }
+
+    .calendar-day-count {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .calendar-event-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .calendar-event-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 9999px;
+        margin-top: 6px;
+        flex: 0 0 8px;
+        background: #64748b;
+    }
+
+    .calendar-event-dot.ongoing {
+        background: #f59e0b;
+    }
+
+    .calendar-event-dot.upcoming {
+        background: #2563eb;
+    }
+
+    .calendar-event-text {
+        min-width: 0;
+        font-size: 0.74rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #1e293b;
+    }
+
+    .calendar-more {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #475569;
+        margin-top: 2px;
+    }
+
+    .calendar-side-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .calendar-side-card {
+        border: 1px solid #d6d8df;
+        border-radius: 14px;
+        background: rgba(246, 247, 249, 0.88);
+        box-shadow: 0 2px 7px rgba(7, 10, 18, 0.07);
+        padding: 12px;
+    }
+
+    .calendar-status-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 9999px;
+        padding: 3px 9px;
+        font-size: 0.64rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        background: #dbe4f6;
+        color: #0f172a;
+    }
+
+    .calendar-status-pill.ongoing {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    @media (max-width: 1024px) {
+        .calendar-grid {
+            gap: 6px;
+        }
+        .calendar-day,
+        .calendar-day-empty {
+            min-height: 108px;
+            padding: 8px;
+        }
+    }
+
+    @media (max-width: 760px) {
+        .calendar-grid {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+        .calendar-weekday {
+            display: none;
+        }
+        .calendar-day,
+        .calendar-day-empty {
+            min-height: 84px;
+        }
+        .calendar-day-empty {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <div class="dashboard-shell">
+        <div class="dashboard-container min-h-screen">
+            <aside class="primary-sidebar" aria-label="Primary navigation">
+                <nav class="primary-nav">
+                    <a href="{{ url_for('core.dashboard') }}" class="primary-nav-link rounded-lg" data-nav-item>
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1V10.5Z"></path>
+                        </svg>
+                        <span>Home Feed</span>
+                    </a>
+                    <a href="{{ url_for('core.dashboard', category='Heron Business') }}" class="primary-nav-link rounded-lg" data-nav-item>
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 8h12l-1 12H7L6 8Z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 8a3 3 0 0 1 6 0"></path>
+                        </svg>
+                        <span>Marketplace</span>
+                    </a>
+                    <a href="{{ url_for('core.event_calendar') }}" class="primary-nav-link rounded-lg active" aria-current="page" data-nav-item>
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"></path>
+                        </svg>
+                        <span>Event Calendar</span>
+                    </a>
+                    <a href="{{ url_for('core.scholarship') }}" class="primary-nav-link rounded-lg" data-nav-item>
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5Z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 11.5V15c0 1.7 2.24 3 5 3s5-1.3 5-3v-3.5"></path>
+                        </svg>
+                        <span>Scholarship</span>
+                    </a>
+                    <a href="{{ url_for('core.umak_coop') }}" class="primary-nav-link rounded-lg" data-nav-item>
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9.5 12 4l9 5.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 21v-5h6v5"></path>
+                        </svg>
+                        <span>UMak Coop</span>
+                    </a>
+                    <a href="{{ url_for('core.home') }}" class="primary-nav-link rounded-lg" data-nav-item>
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 17v-5"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8h.01"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+                        </svg>
+                        <span>About</span>
+                    </a>
+                    <a href="{{ url_for('core.profile_settings') }}" class="primary-nav-link rounded-lg" data-nav-item>
+                        <svg aria-hidden="true" class="primary-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.8 1.8 0 0 0 15 19.4a1.8 1.8 0 0 0-1 .6 1.8 1.8 0 0 0-.5 1.25V21a2 2 0 0 1-4 0v-.09A1.8 1.8 0 0 0 8 19.4a1.8 1.8 0 0 0-1.98.36l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.8 1.8 0 0 0 3.6 15a1.8 1.8 0 0 0-.6-1 1.8 1.8 0 0 0-1.25-.5H1.7a2 2 0 0 1 0-4h.09A1.8 1.8 0 0 0 3.6 8a1.8 1.8 0 0 0-.36-1.98l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.8 1.8 0 0 0 8 3.6a1.8 1.8 0 0 0 1-.6A1.8 1.8 0 0 0 9.5 1.75V1.7a2 2 0 0 1 4 0v.09A1.8 1.8 0 0 0 15 3.6a1.8 1.8 0 0 0 1.98-.36l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.8 1.8 0 0 0 19.4 8c.16.39.37.72.6 1 .35.31.79.5 1.25.5h.05a2 2 0 0 1 0 4h-.09A1.8 1.8 0 0 0 19.4 15Z"></path>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="feed-column">
+                <section class="calendar-hero">
+                    <div>
+                        <h1 class="text-2xl font-black text-[#111942]">Event Calendar</h1>
+                        <p class="text-sm font-semibold text-slate-500">Monthly grid of Events posts with a quick summary per day.</p>
+                    </div>
+                    <div class="month-nav">
+                        <a class="month-nav-btn" href="{{ url_for('core.event_calendar', month=prev_month) }}" aria-label="Previous month">&#8592;</a>
+                        <span class="text-sm font-black text-slate-700 uppercase tracking-wider">{{ month_label }}</span>
+                        <a class="month-nav-btn" href="{{ url_for('core.event_calendar', month=next_month) }}" aria-label="Next month">&#8594;</a>
+                    </div>
+                </section>
+
+                <section class="posts-list">
+                    <div class="calendar-grid">
+                        {% for label in weekday_labels %}
+                        <div class="calendar-weekday">{{ label }}</div>
+                        {% endfor %}
+
+                        {% for cell in calendar_cells %}
+                            {% if cell %}
+                            <article class="calendar-day {% if cell.is_today %}is-today{% endif %}">
+                                <div class="calendar-day-head">
+                                    <span class="calendar-day-number">{{ cell.day }}</span>
+                                    {% if cell.event_count %}
+                                    <span class="calendar-day-count">{{ cell.event_count }} event{% if cell.event_count != 1 %}s{% endif %}</span>
+                                    {% endif %}
+                                </div>
+                                {% if cell.events %}
+                                    {% for event in cell.events %}
+                                    <div class="calendar-event-item">
+                                        <span class="calendar-event-dot {% if event.status == 'Ongoing' %}ongoing{% elif event.status == 'Upcoming' %}upcoming{% endif %}"></span>
+                                        <div class="calendar-event-text line-clamp-1" title="{{ event.title }}">{{ event.title }}</div>
+                                    </div>
+                                    {% endfor %}
+                                    {% if cell.event_count > 2 %}
+                                    <div class="calendar-more">+{{ cell.event_count - 2 }} more</div>
+                                    {% endif %}
+                                {% endif %}
+                            </article>
+                            {% else %}
+                            <div class="calendar-day-empty" aria-hidden="true"></div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </section>
+            </main>
+
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3 class="sidebar-heading">This Month</h3>
+                    <div class="calendar-side-list">
+                        {% if month_events %}
+                            {% for event in month_events[:8] %}
+                            <article class="calendar-side-card">
+                                <div class="flex items-start justify-between gap-3 mb-1.5">
+                                    <h4 class="text-sm font-black text-[#111942] leading-tight">{{ event.title }}</h4>
+                                    <span class="calendar-status-pill {% if event.status == 'Ongoing' %}ongoing{% endif %}">{{ event.status }}</span>
+                                </div>
+                                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{{ event.day_label }} · {{ event.time_display }}</p>
+                                <p class="text-xs font-semibold text-slate-600 mt-1">{{ event.location }}</p>
+                            </article>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-sm text-slate-500 font-medium">No event posts found for this month.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}

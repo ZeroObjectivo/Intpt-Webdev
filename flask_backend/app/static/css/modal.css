@@ -157,10 +157,11 @@
 .modal-post-header h4 {
     margin: 0;
     color: var(--hh-blue-900);
-    font-family: 'Inter', sans-serif;
+    font-family: 'Metropolis', 'Inter', sans-serif !important;
     font-size: 0.98rem;
     font-weight: 700;
     line-height: 1.2;
+    text-transform: none !important;
 }
 
 .modal-post-header span {
@@ -245,10 +246,11 @@
 #modalCommentsList h5 {
     margin: 0;
     color: var(--hh-blue-900);
-    font-family: 'Inter', sans-serif;
+    font-family: 'Metropolis', 'Inter', sans-serif !important;
     font-size: 0.85rem;
     font-weight: 700;
     line-height: 1.2;
+    text-transform: none !important;
 }
 
 #modalCommentsList p {

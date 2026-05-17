@@ -140,6 +140,23 @@ def wants_json_response():
     requested_with = (request.headers.get('X-Requested-With') or '').lower()
     return requested_with == 'xmlhttprequest'
 
+def require_admin_service_client(action_label="Admin action"):
+    """
+    Enforce service-role usage for privileged writes.
+    Without service credentials, many actions will fail under RLS.
+    """
+    if supabase_service:
+        return supabase_service, None
+
+    message = "Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY."
+    logger.error("%s blocked: %s", action_label, message)
+
+    if wants_json_response():
+        return None, (jsonify({"status": "error", "message": message}), 500)
+
+    flash(message, "error")
+    return None, redirect(request.referrer or url_for('admin.dashboard'))
+
 
 def get_delete_reason_payload():
     data = request.get_json(silent=True) if request.is_json else None
@@ -469,7 +486,9 @@ def update_user_role(user_id):
         new_role = 'super_admin'
     
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Update role")
+        if service_error:
+            return service_error
 
         target_profile_res = admin_client.table('profiles').select("id, role, full_name").eq("id", user_id).single().execute()
         target_name = target_profile_res.data.get('full_name', 'Unknown User') if target_profile_res.data else 'Unknown User'
@@ -534,7 +553,9 @@ def update_user_role(user_id):
 @account_access_required
 def lift_user_suspension(user_id):
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Lift suspension")
+        if service_error:
+            return service_error
         actor_role = get_current_role()
         target_res = admin_client.table('profiles').select("role, full_name").eq("id", user_id).single().execute()
         target_name = target_res.data.get('full_name', 'Unknown User') if target_res.data else 'Unknown User'
@@ -1004,7 +1025,9 @@ def admin_get_post_comments(post_id):
 @login_required
 @content_access_required
 def flag_post(post_id):
-    client = get_service_client()
+    client, service_error = require_admin_service_client("Flag post")
+    if service_error:
+        return service_error
     try:
         post_res = client.table('posts').select("id, user_id").eq("id", post_id).single().execute()
         post = post_res.data or {}
@@ -1030,7 +1053,9 @@ def flag_post(post_id):
 @login_required
 @content_access_required
 def flag_comment(comment_id):
-    client = get_service_client()
+    client, service_error = require_admin_service_client("Flag comment")
+    if service_error:
+        return service_error
     try:
         comment_res = client.table('comments').select("id, user_id, post_id").eq("id", comment_id).single().execute()
         comment = comment_res.data or {}
@@ -1073,7 +1098,9 @@ def warn_user():
         return redirect(request.referrer or url_for('admin.dashboard'))
 
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Warn user")
+        if service_error:
+            return service_error
 
         # Get target name for logging
         target_res = admin_client.table('profiles').select("full_name").eq("id", user_id).single().execute()
@@ -1141,7 +1168,9 @@ def suspend_user(user_id):
     days = max(1, min(days, 365))
 
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Suspend user")
+        if service_error:
+            return service_error
         actor_role = get_current_role()
         target_res = admin_client.table('profiles').select("role, full_name").eq("id", user_id).single().execute()
         target_name = target_res.data.get('full_name', 'Unknown User') if target_res.data else 'Unknown User'
@@ -1188,7 +1217,9 @@ def ban_user(user_id):
     reason = request.form.get('reason', '').strip() or 'Banned by admin'
 
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Ban user")
+        if service_error:
+            return service_error
         actor_role = get_current_role()
         target_res = admin_client.table('profiles').select("role, full_name").eq("id", user_id).single().execute()
         target_name = target_res.data.get('full_name', 'Unknown User') if target_res.data else 'Unknown User'
@@ -1232,44 +1263,49 @@ def ban_user(user_id):
 @content_access_required
 def admin_delete_post(post_id):
     try:
-        if not supabase_service:
-            logger.error("Admin delete blocked: SUPABASE_SERVICE_ROLE_KEY is not configured.")
-            if wants_json_response():
-                return jsonify({
-                    "status": "error",
-                    "message": "Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY.",
-                }), 500
-            flash("Admin service credentials are missing. Configure SUPABASE_SERVICE_ROLE_KEY.", "error")
-            return redirect(request.referrer or url_for('admin.dashboard'))
+        admin_client, service_error = require_admin_service_client("Delete post")
+        if service_error:
+            return service_error
 
         delete_reason, delete_note = get_delete_reason_payload()
         actor = session.get('user', {})
         actor_id = actor.get('id')
         actor_role = normalize_role(actor.get('role'))
 
-        admin_client = supabase_service
         purge_expired_archived_posts(admin_client)
 
-        # Archive and delete
-        post_res = admin_client.table('posts').select("*, profiles(full_name)").eq("id", post_id).single().execute()
-        if not post_res.data:
+        archived_post = None
+        archived_ok = False
+        author_name = 'Unknown User'
+
+        try:
+            # Try to fetch author name first for logging
+            post_res = admin_client.table('posts').select("profiles(full_name)").eq("id", post_id).single().execute()
+            if post_res.data and post_res.data.get('profiles'):
+                author_name = post_res.data['profiles'].get('full_name', 'Unknown User')
+
+            archived_post = archive_post_snapshot(
+                admin_client,
+                post_id,
+                deleted_by=actor_id,
+                deleted_by_role=actor_role,
+                source="admin",
+                reason=delete_reason,
+                note=delete_note or None,
+            )
+            archived_ok = bool(archived_post)
+        except Exception as archive_error:
+            logger.warning("Archive snapshot skipped for post %s: %s", post_id, archive_error)
+            # Fallback if archiving failed but post exists
+            post_res = admin_client.table('posts').select("*").eq("id", post_id).limit(1).execute()
+            rows = post_res.data or []
+            archived_post = rows[0] if rows else None
+
+        if not archived_post:
             if wants_json_response():
                 return jsonify({"status": "error", "message": "Post not found."}), 404
             flash("Post not found.", "error")
             return redirect(request.referrer or url_for('admin.dashboard'))
-        
-        post = post_res.data
-        author_name = post.get('profiles', {}).get('full_name', 'Unknown User')
-
-        archived_post = archive_post_snapshot(
-            admin_client,
-            post_id,
-            deleted_by=actor_id,
-            deleted_by_role=actor_role,
-            source="admin",
-            reason=delete_reason,
-            note=delete_note or None,
-        )
 
         delete_post_dependencies(admin_client, post_id)
         admin_client.table('posts').delete().eq("id", post_id).execute()
@@ -1301,8 +1337,10 @@ def admin_delete_post(post_id):
             logger.error("Audit log error (delete post): %s", log_e)
 
         if wants_json_response():
-            return jsonify({"status": "deleted", "message": "Post removed and archived."})
-        flash("Post removed.", "success")
+            if archived_ok:
+                return jsonify({"status": "deleted", "message": "Post removed and archived."})
+            return jsonify({"status": "deleted", "message": "Post removed."})
+        flash("Post removed and archived." if archived_ok else "Post removed.", "success")
     except Exception as e:
         logger.error("Error deleting post (admin): %s", e)
         if wants_json_response():
@@ -1320,13 +1358,43 @@ def admin_delete_post(post_id):
 @content_access_required
 def admin_delete_comment(comment_id):
     try:
-        admin_client = get_service_client()
+        admin_client, service_error = require_admin_service_client("Delete comment")
+        if service_error:
+            return service_error
         comment_res = admin_client.table('comments').select("id, user_id, post_id, profiles(full_name)").eq("id", comment_id).single().execute()
         comment = comment_res.data or {}
-        author_name = comment.get('profiles', {}).get('full_name', 'Unknown User')
+        author_name = comment.get('profiles', {}).get('full_name', 'Unknown User') if comment.get('profiles') else 'Unknown User'
         
         delete_comment_thread(admin_client, comment_id)
         owner_id = comment.get("user_id")
+        
+        if owner_id:
+            try:
+                admin_client.table('notifications').insert({
+                    "user_id": owner_id,
+                    "type": "warning",
+                    "reference_id": comment_id,
+                    "title": "Comment removed by moderation",
+                    "message": "One of your comments was removed by moderation due to policy enforcement.",
+                }).execute()
+            except Exception as notif_e:
+                logger.warning("Could not notify comment owner for deleted comment %s: %s", comment_id, notif_e)
+
+        # Log action
+        try:
+            admin_client.table('admin_logs').insert({
+                "admin_id": session.get('user', {}).get('id'),
+                "action_type": "remove_comment",
+                "target_id": comment_id,
+                "details": f"Removed comment from {author_name}."
+            }).execute()
+        except Exception as log_e:
+            logger.error("Audit log error (delete comment): %s", log_e)
+
+        return jsonify({"status": "deleted"})
+    except Exception as e:
+        logger.error("Error deleting comment (admin): %s", e)
+        return jsonify({"status": "error", "message": "Failed to remove comment."}), 500
         
         if owner_id:
             try:

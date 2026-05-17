@@ -1,6 +1,7 @@
 import os
 import unittest
 from unittest.mock import patch
+from flask import session as flask_session
 
 os.environ.setdefault("SUPABASE_URL", "https://example.supabase.co")
 os.environ.setdefault(
@@ -81,6 +82,18 @@ class FakeSelectQuery:
     def eq(self, *args, **kwargs):
         return self
 
+    def in_(self, *args, **kwargs):
+        return self
+
+    def is_(self, *args, **kwargs):
+        return self
+
+    def gt(self, *args, **kwargs):
+        return self
+
+    def or_(self, *args, **kwargs):
+        return self
+
     def single(self):
         return self
 
@@ -118,6 +131,9 @@ class FakeSelectQuery:
         if self.table_name == "likes":
             return type("Response", (), {"data": []})()
 
+        if self.table_name == "comments":
+            return type("Response", (), {"data": []})()
+
         return type(
             "Response",
             (),
@@ -150,7 +166,11 @@ class FakeSupabaseWithExpiredJwt(FakeSupabase):
 class CreatePostTest(unittest.TestCase):
     def setUp(self):
         self.app = create_app()
-        self.app.config.update(TESTING=True, SECRET_KEY="test-secret")
+        self.app.config.update(
+            TESTING=True,
+            SECRET_KEY="test-secret",
+            WTF_CSRF_ENABLED=False,
+        )
         self.client = self.app.test_client()
 
     def test_create_post_applies_session_access_token_before_insert(self):
@@ -160,8 +180,15 @@ class CreatePostTest(unittest.TestCase):
             session["user"] = {"id": "user-123"}
             session["access_token"] = "jwt-token"
 
-        with patch("app.routes.core.supabase", fake_supabase), patch(
-            "app.routes.auth.supabase", fake_supabase
+        def fake_get_user_client():
+            token = flask_session.get("access_token")
+            if token:
+                fake_supabase.postgrest.auth(token)
+            return fake_supabase
+
+        with patch("app.routes.core.get_user_client", side_effect=fake_get_user_client), patch(
+            "app.routes.core.evaluate_submission_policy",
+            return_value={"allowed": True},
         ):
             response = self.client.post(
                 "/posts/create",
@@ -194,8 +221,15 @@ class CreatePostTest(unittest.TestCase):
             session["user"] = {"id": "user-123"}
             session["access_token"] = "jwt-token"
 
-        with patch("app.routes.core.supabase", fake_supabase), patch(
-            "app.routes.auth.supabase", fake_supabase
+        def fake_get_user_client():
+            token = flask_session.get("access_token")
+            if token:
+                fake_supabase.postgrest.auth(token)
+            return fake_supabase
+
+        with patch("app.routes.core.get_user_client", side_effect=fake_get_user_client), patch(
+            "app.routes.core.evaluate_submission_policy",
+            return_value={"allowed": True},
         ):
             response = self.client.post(
                 "/posts/create",
@@ -221,7 +255,13 @@ class CreatePostTest(unittest.TestCase):
             session["access_token"] = "expired-jwt-token"
             session["refresh_token"] = "refresh-token"
 
-        with patch("app.routes.core.supabase", fake_supabase), patch(
+        def fake_get_user_client():
+            token = flask_session.get("access_token")
+            if token:
+                fake_supabase.postgrest.auth(token)
+            return fake_supabase
+
+        with patch("app.routes.core.get_user_client", side_effect=fake_get_user_client), patch(
             "app.routes.auth.supabase", fake_supabase
         ):
             response = self.client.get("/dashboard")

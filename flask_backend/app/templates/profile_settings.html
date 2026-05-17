@@ -417,73 +417,73 @@
             <div class="profile-summary-grid">
                 <div class="space-y-6">
                     <div class="profile-identity-block">
-                    <div class="profile-avatar-wrap">
-                        <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}"
-                             alt="{{ user.full_name }}"
-                             class="profile-avatar">
-                    </div>
+                        <div class="profile-avatar-wrap">
+                            <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}"
+                                 alt="{{ user.full_name }}"
+                                 class="profile-avatar">
+                        </div>
 
-                    <div class="mt-4 space-y-2 profile-copy-stack">
-                        <div>
-                            <div class="flex items-center gap-3">
-                                <h1 class="text-[2.2rem] font-black leading-none tracking-[-0.02em] text-slate-900 md:text-[2.45rem]">{{ user.full_name }}</h1>
-                                <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200">
-                                    {{ user.role }}
-                                </span>
+                        <div class="mt-4 space-y-2 profile-copy-stack">
+                            <div>
+                                <div class="flex items-center gap-3">
+                                    <h1 class="text-[2.2rem] font-black leading-none tracking-[-0.02em] text-slate-900 md:text-[2.45rem]">{{ user.full_name }}</h1>
+                                    <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200">
+                                        {{ user.role }}
+                                    </span>
+                                </div>
+                                <p class="profile-supporting-line">
+                                    {% if profile_context_bits %}
+                                        {{ profile_context_bits|join(' · ') }}
+                                    {% endif %}
+                                </p>
                             </div>
-                            <p class="profile-supporting-line">
-                                {% if profile_context_bits %}
-                                    {{ profile_context_bits|join(' · ') }}
+
+                            {% if user.email or user.last_seen_label or user.joined_label %}
+                            <div class="profile-meta-row">
+                                {% if user.email %}
+                                <span class="profile-meta-pill">{{ user.email }}</span>
                                 {% endif %}
+                                {% if user.last_seen_label %}
+                                <span class="profile-meta-pill">Last seen {{ user.last_seen_label }}</span>
+                                {% endif %}
+                                {% if user.joined_label %}
+                                <span class="profile-meta-pill">Joined {{ user.joined_label }}</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            {% if visible_social_links %}
+                            <div class="flex flex-wrap gap-3">
+                                {% for link in visible_social_links %}
+                                <a href="{{ link.url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex min-h-[2.75rem] items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-umak-blue hover:text-umak-blue">
+                                    {% if link.platform == 'facebook' %}
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7h2.4l.4-3h-2.8V9.2c0-.9.3-1.5 1.6-1.5H16V5.1c-.3 0-1.1-.1-2-.1-2 0-3.4 1.2-3.4 3.6V11H8v3h2.6v7h2.9z"/></svg>
+                                    {% elif link.platform == 'instagram' %}
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4.5"></rect><circle cx="12" cy="12" r="3.4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg>
+                                    {% elif link.platform == 'tiktok' %}
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14.8 4c.4 1.4 1.2 2.4 2.5 3 .8.4 1.5.6 2.2.6v2.7c-1 0-1.9-.2-2.8-.6v4.9c0 3.1-2.4 5.4-5.6 5.4-2.9 0-5.1-2.1-5.1-4.8 0-2.9 2.5-5 5.4-4.8v2.7c-1.3-.2-2.4.6-2.4 2 0 1.1.9 1.9 2 1.9 1.2 0 2-.9 2-2.2V4h1.8z"/></svg>
+                                    {% elif link.platform == 'linkedin' %}
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.2 8.5A1.7 1.7 0 1 1 6.2 5a1.7 1.7 0 0 1 0 3.5zM4.9 9.8h2.6V19H4.9V9.8zm4.2 0h2.5V11h.1c.4-.7 1.3-1.5 2.8-1.5 3 0 3.5 1.9 3.5 4.4V19h-2.6v-4.4c0-1.1 0-2.4-1.5-2.4s-1.7 1.1-1.7 2.4V19H9.1V9.8z"/></svg>
+                                    {% elif link.platform == 'discord' %}
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.7 6.8a13 13 0 0 0-3.3-1l-.2.4a9 9 0 0 1 2.8 1.3 10.9 10.9 0 0 0-3.3-1 10.2 10.2 0 0 0-5.4 0 9.3 9.3 0 0 0-3.3 1 9 9 0 0 1 2.8-1.3l-.2-.4a13 13 0 0 0-3.3 1C3.5 9.4 3 12 3.2 14.5c1.3 1 2.5 1.5 3.8 1.8l.8-1.2c-.5-.2-1-.4-1.4-.7l.3-.2c2.7 1.2 5.7 1.2 8.4 0l.3.2c-.4.3-.9.5-1.4.7l.8 1.2c1.3-.3 2.5-.9 3.8-1.8.3-2.9-.4-5.5-1.9-7.7zM9.5 13.6c-.8 0-1.4-.7-1.4-1.6 0-.9.6-1.6 1.4-1.6.8 0 1.4.7 1.4 1.6 0 .9-.6 1.6-1.4 1.6zm5 0c-.8 0-1.4-.7-1.4-1.6 0-.9.6-1.6 1.4-1.6.8 0 1.4.7 1.4 1.6 0 .9-.6 1.6-1.4 1.6z"/></svg>
+                                    {% endif %}
+                                    <span>{{ link.label }}</span>
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if user.bio %}
+                            <p class="max-w-3xl text-[15px] leading-7 text-slate-600 font-medium">{{ user.bio }}</p>
+                            {% else %}
+                            <p class="max-w-3xl text-[15px] leading-7 text-slate-400">
+                                {{ 'Tell the Heron community something about yourself.' if is_own_profile else 'This Heron has not added a bio yet.' }}
                             </p>
-                        </div>
-
-                        {% if user.email or user.last_seen_label or user.joined_label %}
-                        <div class="profile-meta-row">
-                            {% if user.email %}
-                            <span class="profile-meta-pill">{{ user.email }}</span>
-                            {% endif %}
-                            {% if user.last_seen_label %}
-                            <span class="profile-meta-pill">Last seen {{ user.last_seen_label }}</span>
-                            {% endif %}
-                            {% if user.joined_label %}
-                            <span class="profile-meta-pill">Joined {{ user.joined_label }}</span>
                             {% endif %}
                         </div>
-                        {% endif %}
-
-                        {% if visible_social_links %}
-                        <div class="flex flex-wrap gap-3">
-                            {% for link in visible_social_links %}
-                            <a href="{{ link.url }}"
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               class="inline-flex min-h-[2.75rem] items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-umak-blue hover:text-umak-blue">
-                                {% if link.platform == 'facebook' %}
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7h2.4l.4-3h-2.8V9.2c0-.9.3-1.5 1.6-1.5H16V5.1c-.3 0-1.1-.1-2-.1-2 0-3.4 1.2-3.4 3.6V11H8v3h2.6v7h2.9z"/></svg>
-                                {% elif link.platform == 'instagram' %}
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4.5"></rect><circle cx="12" cy="12" r="3.4"></circle><circle cx="17.2" cy="6.8" r="1"></circle></svg>
-                                {% elif link.platform == 'tiktok' %}
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14.8 4c.4 1.4 1.2 2.4 2.5 3 .8.4 1.5.6 2.2.6v2.7c-1 0-1.9-.2-2.8-.6v4.9c0 3.1-2.4 5.4-5.6 5.4-2.9 0-5.1-2.1-5.1-4.8 0-2.9 2.5-5 5.4-4.8v2.7c-1.3-.2-2.4.6-2.4 2 0 1.1.9 1.9 2 1.9 1.2 0 2-.9 2-2.2V4h1.8z"/></svg>
-                                {% elif link.platform == 'linkedin' %}
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.2 8.5A1.7 1.7 0 1 1 6.2 5a1.7 1.7 0 0 1 0 3.5zM4.9 9.8h2.6V19H4.9V9.8zm4.2 0h2.5V11h.1c.4-.7 1.3-1.5 2.8-1.5 3 0 3.5 1.9 3.5 4.4V19h-2.6v-4.4c0-1.1 0-2.4-1.5-2.4s-1.7 1.1-1.7 2.4V19H9.1V9.8z"/></svg>
-                                {% elif link.platform == 'discord' %}
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.7 6.8a13 13 0 0 0-3.3-1l-.2.4a9 9 0 0 1 2.8 1.3 10.9 10.9 0 0 0-3.3-1 10.2 10.2 0 0 0-5.4 0 9.3 9.3 0 0 0-3.3 1 9 9 0 0 1 2.8-1.3l-.2-.4a13 13 0 0 0-3.3 1C3.5 9.4 3 12 3.2 14.5c1.3 1 2.5 1.5 3.8 1.8l.8-1.2c-.5-.2-1-.4-1.4-.7l.3-.2c2.7 1.2 5.7 1.2 8.4 0l.3.2c-.4.3-.9.5-1.4.7l.8 1.2c1.3-.3 2.5-.9 3.8-1.8.3-2.9-.4-5.5-1.9-7.7zM9.5 13.6c-.8 0-1.4-.7-1.4-1.6 0-.9.6-1.6 1.4-1.6.8 0 1.4.7 1.4 1.6 0 .9-.6 1.6-1.4 1.6zm5 0c-.8 0-1.4-.7-1.4-1.6 0-.9.6-1.6 1.4-1.6.8 0 1.4.7 1.4 1.6 0 .9-.6 1.6-1.4 1.6z"/></svg>
-                                {% endif %}
-                                <span>{{ link.label }}</span>
-                            </a>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        {% if user.bio %}
-                        <p class="max-w-3xl text-[15px] leading-7 text-slate-600">{{ user.bio }}</p>
-                        {% else %}
-                        <p class="max-w-3xl text-[15px] leading-7 text-slate-400">
-                            {{ 'Tell the Heron community something about yourself.' if is_own_profile else 'This Heron has not added a bio yet.' }}
-                        </p>
-                        {% endif %}
-                    </div>
                     </div>
                 </div>
 
@@ -536,109 +536,17 @@
 
     <section id="profile-tab-posts" class="profile-panel active">
         <div class="profile-panel-shell">
-            {% if posts %}
-                {% for post in posts %}
-                <article class="post-card profile-post-card mb-5" data-post-id="{{ post.id }}">
-                    <div class="post-header flex justify-between items-start">
-                        <div class="flex">
-                            <img src="{{ user.avatar_url if user.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover w-10 h-10 rounded-full">
-                            <div class="post-user-info">
-                                <h4 class="font-black text-slate-800">{{ user.full_name }}</h4>
-                                <span class="text-xs text-slate-400 font-bold">{{ post.relative_created_at }}</span>
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-end gap-2">
-                            <div class="flex items-center gap-2">
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest badge-{{ post.category|lower|replace(' ', '-')|replace('&', 'and') }}">
-                                    {{ post.category }}
-                                </span>
-
-                                {% if is_own_profile %}
-                                <div class="relative">
-                                    <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                                    </button>
-                                    <div id="post-menu-{{ post.id }}" class="post-menu-dropdown absolute right-0 top-full mt-1 w-32 bg-white border border-slate-100 rounded-xl shadow-xl py-1 hidden z-20">
-                                        <button onclick="showEditForm('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">Edit Post</button>
-                                        <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors">Delete Post</button>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
+            <div class="posts-list space-y-5">
+                {% if posts %}
+                    {% for post in posts %}
+                    {% include 'includes/post_card.html' %}
+                    {% endfor %}
+                {% else %}
+                    <div class="profile-section-card p-12 text-center border-dashed">
+                        <p class="text-slate-400 font-bold">{{ "You haven't posted anything yet." if is_own_profile else "No posts to show yet." }}</p>
                     </div>
-
-                    <div class="post-content mt-4" id="post-content-{{ post.id }}">
-                        <p class="text-slate-700 leading-relaxed">{{ post.content }}</p>
-                        {% if post.embed and post.embed.embed_url %}
-                            <div class="post-embed">
-                                <iframe
-                                    src="{{ post.embed.embed_url }}"
-                                    title="Embedded {{ (post.embed.provider or 'media')|title }} content"
-                                    loading="lazy"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                    allowfullscreen
-                                    referrerpolicy="strict-origin-when-cross-origin"></iframe>
-                            </div>
-                        {% endif %}
-                        {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
-                        {% if post_images %}
-                            <div class="fb-grid mt-3 fb-grid-{{ post_images|length if post_images|length <= 5 else 5 }}">
-                                {% for url in post_images %}
-                                    {% if loop.index <= 5 %}
-                                        <div class="relative group overflow-hidden cursor-pointer w-full h-full"
-                                             onclick='{% if post.image_urls or post.image_url %}openImageModal({{ post|tojson|safe }}, {{ loop.index0 }}){% else %}openCommentModal({{ post|tojson|safe }}){% endif %}'>
-                                            <img src="{{ url }}" alt="Post image" class="w-full h-full object-cover rounded-lg">
-                                            {% if loop.index == 5 and post_images|length > 5 %}
-                                                <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-black text-2xl rounded-lg">
-                                                    +{{ post_images|length - 5 }}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="post-actions border-t border-slate-50 mt-4 pt-2">
-                        <button class="action-item group like-btn {% if post.user_has_liked %}text-red-500{% else %}text-slate-400{% endif %} hover:text-red-500"
-                                type="button" onclick="toggleLike('{{ post.id }}', this)">
-                            <span class="flex items-center gap-1.5">
-                                <svg aria-hidden="true" class="action-icon {% if post.user_has_liked %}fill-current{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"></path>
-                                </svg>
-                                <span class="likes-count">{{ post.likes_count }}</span>
-                            </span>
-                        </button>
-                        <button class="action-item text-slate-400 hover:text-blue-500" type="button" onclick='openCommentModal({{ post|tojson|safe }})'>
-                            <span class="flex items-center gap-1.5">
-                                <svg aria-hidden="true" class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 0 1-4.255-.949L3 20l1.395-3.72A7.58 7.58 0 0 1 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8Z"></path>
-                                </svg>
-                                <span class="comments-count">{{ post.comments_count }}</span>
-                            </span>
-                        </button>
-                    </div>
-
-                    <div id="edit-form-{{ post.id }}" class="hidden mt-4">
-                        <form action="{{ url_for('core.update_post', post_id=post.id) }}" method="POST">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <textarea name="content" class="w-full p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm resize-none mb-3">{{ post.content }}</textarea>
-                            <input type="hidden" name="category" value="{{ post.category }}">
-                            <div class="flex justify-end gap-2">
-                                <button type="button" onclick="hideEditForm('{{ post.id }}')" class="px-4 py-2 text-xs font-bold text-slate-400">Cancel</button>
-                                <button type="submit" class="bg-umak-blue text-white px-4 py-2 rounded-xl text-xs font-bold">Save Changes</button>
-                            </div>
-                        </form>
-                    </div>
-                </article>
-                {% endfor %}
-            {% else %}
-                <div class="profile-section-card p-12 text-center border-dashed">
-                    <p class="text-slate-400 font-bold">{{ "You haven't posted anything yet." if is_own_profile else "No posts to show yet." }}</p>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
         </div>
     </section>
 
@@ -703,7 +611,7 @@
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
                             <span class="interaction-meta-icon bg-blue-50 text-blue-500">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h5m8 6-3.8-2.1a2 2 0 00-.97-.24H6a2 2 0 01-2-2V6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-.99 1.73z"></path>
                                 </svg>
                             </span>
@@ -1018,43 +926,6 @@ function setActiveProfileTab(tabName) {
     });
 }
 
-function togglePostMenu(postId, event) {
-    if (event) event.stopPropagation();
-    const menu = document.getElementById(`post-menu-${postId}`);
-    const allMenus = document.querySelectorAll('.post-menu-dropdown');
-    allMenus.forEach((item) => {
-        if (item.id !== `post-menu-${postId}`) item.classList.add('hidden');
-    });
-    if (menu) menu.classList.toggle('hidden');
-}
-
-function showEditForm(postId) {
-    document.getElementById(`post-content-${postId}`)?.classList.add('hidden');
-    document.getElementById(`edit-form-${postId}`)?.classList.remove('hidden');
-}
-
-function hideEditForm(postId) {
-    document.getElementById(`post-content-${postId}`)?.classList.remove('hidden');
-    document.getElementById(`edit-form-${postId}`)?.classList.add('hidden');
-}
-
-async function confirmDeletePost(postId) {
-    showConfirmModal('Delete Post?', 'Are you sure you want to delete this post?', async () => {
-        const response = await fetch(`/posts/${postId}/delete`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCSRFToken() }
-        });
-        const data = await response.json();
-        if (data.status === 'deleted') window.location.reload();
-    });
-}
-
-document.addEventListener('click', (event) => {
-    if (!event.target.closest('.post-menu-dropdown') && !event.target.closest('[onclick*="togglePostMenu"]')) {
-        document.querySelectorAll('.post-menu-dropdown').forEach((menu) => menu.classList.add('hidden'));
-    }
-});
-
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-profile-tab-trigger]').forEach((button) => {
         button.addEventListener('click', () => setActiveProfileTab(button.dataset.profileTabTrigger));
@@ -1264,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const keys = new Set([...Object.keys(initialValues), ...Object.keys(currentValues)]);
             const hasChanges = Array.from(keys).some((key) => currentValues[key] !== initialValues[key]);
 
-            saveBtn.disabled = !hasChanges;
+            saveBtn.disabled = !changes;
             saveBtn.classList.toggle('opacity-50', !hasChanges);
             saveBtn.classList.toggle('cursor-not-allowed', !hasChanges);
         };

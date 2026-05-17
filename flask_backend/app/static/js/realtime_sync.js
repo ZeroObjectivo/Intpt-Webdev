@@ -10,6 +10,10 @@
     const pollIntervalMs = 7000;
     const notificationSyncIntervalMs = 15000;
     const realtimeApplyDelayMs = 300;
+    const skeletonRevealDelayMs = 420;
+    const skeletonMinVisibleMs = 800; // Increased for a more deliberate feel
+    const feedSkeleton = document.getElementById('feedSkeleton');
+    const feedContent = document.getElementById('feedContent');
     let baselineStateVersion = null;
     let latestAdminVersion = null;
     let pollInProgress = false;
@@ -19,6 +23,72 @@
     let interactionFlushTimer = null;
     let realtimeClient = null;
     let interactionsChannel = null;
+    let syncLoadCount = 0;
+    let skeletonRevealTimer = null;
+    let skeletonVisibleAt = Date.now(); // Start counting immediately on load
+
+    // Infinite Scroll State
+    let hasMorePosts = true;
+    let isLoadingMore = false;
+    let lastPostTimestamp = null;
+    const infiniteScrollSkeleton = document.getElementById('infiniteScrollSkeleton');
+    const infiniteScrollSentinel = document.getElementById('infiniteScrollSentinel');
+
+    function showFeedSkeleton() {
+        if (!feedSkeleton || !feedContent) return;
+        if (!feedSkeleton.classList.contains('hidden')) return;
+        feedSkeleton.classList.remove('hidden');
+        feedContent.classList.add('hidden', 'opacity-0');
+        feedContent.classList.remove('opacity-100');
+        feedContent.setAttribute('aria-busy', 'true');
+        skeletonVisibleAt = Date.now();
+    }
+
+    function hideFeedSkeleton(force) {
+        if (!feedSkeleton || !feedContent) return;
+        if (feedSkeleton.classList.contains('hidden')) return;
+
+        const visibleFor = Date.now() - skeletonVisibleAt;
+        const remaining = force ? 0 : Math.max(0, skeletonMinVisibleMs - visibleFor);
+
+        window.setTimeout(() => {
+            if (syncLoadCount > 0 && !force) return;
+            feedSkeleton.classList.add('hidden');
+            feedContent.classList.remove('hidden');
+            
+            // Allow display: block to take effect before removing opacity-0
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    feedContent.classList.remove('opacity-0');
+                    feedContent.classList.add('opacity-100');
+                });
+            });
+            feedContent.setAttribute('aria-busy', 'false');
+        }, remaining);
+    }
+
+    function beginSlowSyncLoading() {
+        if (!feedSkeleton || !feedContent) return;
+        syncLoadCount += 1;
+        if (skeletonRevealTimer || !feedSkeleton.classList.contains('hidden')) return;
+        skeletonRevealTimer = window.setTimeout(() => {
+            skeletonRevealTimer = null;
+            if (syncLoadCount > 0) {
+                showFeedSkeleton();
+            }
+        }, skeletonRevealDelayMs);
+    }
+
+    function endSlowSyncLoading() {
+        if (!feedSkeleton || !feedContent) return;
+        syncLoadCount = Math.max(0, syncLoadCount - 1);
+        if (syncLoadCount > 0) return;
+        if (skeletonRevealTimer) {
+            window.clearTimeout(skeletonRevealTimer);
+            skeletonRevealTimer = null;
+        }
+        hideFeedSkeleton(false);
+    }
 
     function getVisiblePostIds() {
         return Array.from(document.querySelectorAll('.post-card[data-post-id]'))
@@ -208,6 +278,7 @@
     }
 
     async function runLoadSync() {
+        beginSlowSyncLoading();
         try {
             const data = await fetchJson(buildSyncUrl('/sync/dashboard/load', false));
             if (data && data.state && data.state.version) {
@@ -215,6 +286,8 @@
             }
         } catch (error) {
             console.error('Dashboard load sync failed:', error);
+        } finally {
+            endSlowSyncLoading();
         }
     }
 
@@ -295,6 +368,83 @@
         }
     }
 
+    // --- Infinite Scroll Implementation ---
+
+    async function fetchMorePosts() {
+        if (isLoadingMore || !hasMorePosts) return;
+        
+        isLoadingMore = true;
+        if (infiniteScrollSkeleton) {
+            infiniteScrollSkeleton.classList.remove('hidden');
+        }
+
+        try {
+            const params = new URLSearchParams();
+            if (activeCategory) params.set('category', activeCategory);
+            if (lastPostTimestamp) params.set('before', lastPostTimestamp);
+
+            const data = await fetchJson(`/posts/fetch?${params.toString()}`);
+            if (!data || data.status !== 'ok') {
+                hasMorePosts = false;
+                return;
+            }
+
+            const postsHtml = data.posts || [];
+            const rawPosts = data.raw_posts || [];
+
+            if (postsHtml.length === 0) {
+                hasMorePosts = false;
+            } else {
+                const container = document.getElementById('feedContent');
+                if (container) {
+                    postsHtml.forEach(html => {
+                        const temp = document.createElement('div');
+                        temp.innerHTML = html.trim();
+                        const card = temp.firstChild;
+                        container.appendChild(card);
+                    });
+                }
+                
+                // Update global state for modal/other logic
+                if (Array.isArray(window.allPosts)) {
+                    window.allPosts = [...window.allPosts, ...rawPosts];
+                }
+
+                lastPostTimestamp = data.last_timestamp;
+                hasMorePosts = data.has_more;
+            }
+        } catch (error) {
+            console.error('Failed to fetch more posts:', error);
+            hasMorePosts = false;
+        } finally {
+            isLoadingMore = false;
+            if (infiniteScrollSkeleton) {
+                infiniteScrollSkeleton.classList.add('hidden');
+            }
+        }
+    }
+
+    function initInfiniteScroll() {
+        if (!infiniteScrollSentinel) return;
+
+        // Initialize lastPostTimestamp from existing cards
+        const cards = document.querySelectorAll('.post-card[data-created-at]');
+        if (cards.length > 0) {
+            lastPostTimestamp = cards[cards.length - 1].dataset.createdAt;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !isLoadingMore && hasMorePosts) {
+                fetchMorePosts();
+            }
+        }, {
+            rootMargin: '200px', // Start loading before reaching the very bottom
+            threshold: 0.1
+        });
+
+        observer.observe(infiniteScrollSentinel);
+    }
+
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) {
             runLiveSync();
@@ -308,6 +458,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         runLoadSync().finally(function () {
             initRealtimeInteractionSync();
+            initInfiniteScroll();
             runLiveSync();
             window.setInterval(runLiveSync, pollIntervalMs);
         });

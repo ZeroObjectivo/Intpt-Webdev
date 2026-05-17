@@ -138,11 +138,50 @@
     box-shadow: 0 4px 12px rgba(1, 6, 28, 0.12);
 }
 
+.feed-filter-panel {
+    margin: 8px 0 16px;
+    padding: 0 10px 2px;
+}
+
+.feed-filter-meta {
+    margin: 0;
+}
+
+.feed-filter-title {
+    margin: 0;
+    color: #111111;
+    font-family: 'Metropolis', 'Inter', sans-serif;
+    font-size: 1.04rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
+}
+
+.feed-filter-body {
+    margin: 4px 0 0;
+    color: rgba(17, 17, 17, 0.74);
+    font-family: 'Metropolis', 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+.category-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.category-filter-row .category-pills {
+    flex: 1;
+}
+
 .category-pills {
     display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    padding: 6px 0 2px;
+    gap: 10px;
+    margin-bottom: 0;
+    padding: 2px 0 4px;
     overflow-x: auto;
 }
 
@@ -155,17 +194,19 @@
     width: 100%;
     min-height: 40px;
     padding: 8px 12px;
-    border: 1px solid #cfd4de;
+    border: 1px solid rgba(17, 17, 17, 0.28);
     border-radius: 9999px;
-    background: #f4f6fa;
-    color: #111942;
-    font-size: 0.88rem;
+    background: #ffffff;
+    color: #111111;
+    font-family: 'Metropolis', 'Inter', sans-serif;
+    font-size: 0.84rem;
     font-weight: 700;
+    letter-spacing: 0.01em;
     outline: none;
 }
 
 .category-filter-select:focus {
-    border-color: #111942;
+    border-color: #1d4ed8;
     background: #ffffff;
 }
 
@@ -186,6 +227,104 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+
+.feed-skeleton:not(.hidden) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeleton-card {
+    padding: 14px 16px 12px;
+    background: rgba(246, 247, 249, 0.88);
+    border: 1px solid #d6d8df;
+    border-radius: 16px;
+    box-shadow: 0 3px 8px rgba(7, 10, 18, 0.08);
+}
+
+.skeleton-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 9999px;
+    background: #eef2f7;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-text-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.skeleton-line {
+    position: relative;
+    overflow: hidden;
+    height: 10px;
+    border-radius: 4px;
+    background: #eef2f7;
+}
+
+.skeleton-line::after,
+.skeleton-avatar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: hh-skeleton-shimmer 1.2s infinite ease-in-out;
+}
+
+.skeleton-content {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skeleton-actions {
+    display: flex;
+    gap: 16px;
+    padding-top: 10px;
+    border-top: 1px solid #edf1f5;
+}
+
+.skeleton-action-item {
+    width: 64px;
+    height: 12px;
+    background: #eef2f7;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-action-item::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: hh-skeleton-shimmer 1.2s infinite ease-in-out;
+}
+
+.skeleton-line-lg { width: 88%; }
+.skeleton-line-md { width: 56%; }
+.skeleton-line-sm { width: 34%; }
+.skeleton-line-full { width: 100%; }
+.skeleton-line-wide { width: 72%; }
+
+@keyframes hh-skeleton-shimmer {
+    100% { transform: translateX(100%); }
 }
 
 .post-card,
@@ -341,6 +480,9 @@
     flex-direction: column;
     gap: 16px;
     min-width: 0;
+    position: sticky;
+    top: 112px;
+    max-height: calc(100vh - 112px);
 }
 
 .sidebar-section {
@@ -418,7 +560,7 @@
     margin: 0;
     color: #0f172a;
     font-size: 1.2rem;
-    font-weight: 500;
+    font-weight: 700;
     line-height: 1.15;
     text-transform: capitalize;
 }
@@ -487,7 +629,7 @@
     margin: 0 0 5px;
     color: #000000;
     font-size: 1.05rem;
-    font-weight: 500;
+    font-weight: 700;
     line-height: 1.2;
     text-transform: uppercase;
     overflow-wrap: anywhere;
@@ -554,30 +696,76 @@
     font-weight: 700;
 }
 
-.badge-general {
-    background: #D9D9D9;
-    color: #475569;
+/* --- Category & College Badges (Unified System) --- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem 0.6rem;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 6px;
+    line-height: 1;
+    height: 18px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
 }
 
-.badge-lost-found {
-    background: #FFECA7;
-    color: #6E3E1E;
+/* Category Specifics */
+.badge-all, .badge-general { background: #F1F5F9; color: #475569; }
+.badge-lost-found { background: #FFF7ED; color: #9A3412; }
+.badge-buy-sell, .badge-heron-business { background: #ECFDF5; color: #047857; }
+.badge-question { background: #EFF6FF; color: #1D4ED8; }
+.badge-events { background: #FAF5FF; color: #7E22CE; }
+
+/* College Specifics */
+.college-ccis { background: #ECFEFF; color: #0891B2; border-color: #CFFAFE; } /* Cyan */
+.college-cbfs { background: #F0FDF4; color: #166534; border-color: #DCFCE7; } /* Green */
+.college-cthm { background: #FFF7ED; color: #9A3412; border-color: #FFEDD5; } /* Orange */
+.college-cas, .college-clas { background: #EFF6FF; color: #1E40AF; border-color: #DBEAFE; } /* Blue */
+.college-con { background: #FFF1F2; color: #9F1239; border-color: #FFE4E6; } /* Rose/Nursing */
+.college-coe, .college-cet { background: #F5F3FF; color: #5B21B6; border-color: #EDE9FE; } /* Violet */
+.college-hsu { background: #F8FAFC; color: #334155; border-color: #F1F5F9; } /* Slate */
+.college-chk { background: #FEFCE8; color: #854D0E; border-color: #FEF9C3; } /* Yellow */
+.college-cgpp { background: #EEF2FF; color: #3730A3; border-color: #E0E7FF; } /* Indigo */
+.college-ccse { background: #F0FDFA; color: #0F766E; border-color: #CCFBF1; } /* Teal */
+.college-cite { background: #FFF1F2; color: #BE123C; border-color: #FFE4E6; } /* Pink */
+
+/* Filter chip system: black idle, blue active */
+.category-pills .pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    opacity: 1;
+    height: 34px;
+    padding: 0 16px;
+    border: 1px solid rgba(17, 17, 17, 0.24) !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-family: 'Metropolis', 'Inter', sans-serif;
+    font-size: 0.84rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: none;
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
-.badge-buy-sell,
-.badge-heron-business {
-    background: #BFFFDE;
-    color: #145C50;
+.category-pills .pill:hover {
+    opacity: 1;
+    border-color: rgba(17, 17, 17, 0.48) !important;
+    transform: translateY(-1px);
 }
 
-.badge-question {
-    background: #C5DDFF;
-    color: #1A3C8D;
-}
-
-.badge-events {
-    background: #533074;
-    color: #EDF1FF;
+.category-pills .pill.active {
+    border-color: #1d4ed8 !important;
+    background: #1d4ed8 !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 8px rgba(29, 78, 216, 0.24);
+    transform: translateY(0);
 }
 
 @media (max-width: 1320px) {
@@ -591,11 +779,124 @@
     }
 }
 
+/* --- Facebook-style Image Grid System --- */
 .post-card.has-attachment .fb-grid {
-    background: #d3d3d6;
-    border: 1px solid #c4c6cc;
-    border-radius: 8px;
-    padding: 2px;
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    margin-top: 12px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: #f0f2f5;
+    border: 1px solid #e2e8f0;
+    padding: 0; /* Reset previous padding */
+}
+
+.fb-grid .group {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+.fb-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 1 Image: Variable height with cap, no background/border on container */
+.fb-grid-1 {
+    display: block !important;
+    background: transparent !important;
+    border: none !important;
+    overflow: visible !important;
+}
+
+.fb-grid-1 .group {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.fb-grid-1 img {
+    max-height: 520px;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    background: #f8fafc;
+}
+
+/* 2 Images: Side by Side */
+.fb-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    height: 340px;
+}
+
+/* 3 Images: 1 Main (Left), 2 Small (Right Stack) */
+.fb-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    height: 400px;
+}
+
+.fb-grid-3 div:first-child {
+    grid-row: span 2;
+}
+
+/* 4 Images: 2x2 Grid or 1 Top 3 Bottom? Let's do 2x2 for clean look */
+.fb-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    height: 400px;
+}
+
+/* 5 Images: 2 Main (Top), 3 Small (Bottom) */
+.fb-grid-5 {
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    height: 420px;
+}
+
+.fb-grid-5 div:nth-child(1),
+.fb-grid-5 div:nth-child(2) {
+    grid-column: span 3;
+}
+
+.fb-grid-5 div:nth-child(3),
+.fb-grid-5 div:nth-child(4),
+.fb-grid-5 div:nth-child(5) {
+    grid-column: span 2;
+}
+
+/* Overlay for 5+ images */
+.fb-grid .absolute {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 900;
+    font-size: 1.8rem;
+    pointer-events: none; /* Let clicks pass through to the parent */
+}
+
+.fb-grid .group:hover .absolute {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 640px) {
+    .fb-grid-2 { height: 240px; }
+    .fb-grid-3, .fb-grid-4 { height: 320px; }
+    .fb-grid-5 { height: 340px; }
+    
+    .fb-grid .absolute {
+        font-size: 1.4rem;
+    }
 }
 
 @media (max-width: 1024px) {
@@ -655,7 +956,7 @@
 
     .category-pills {
         gap: 6px;
-        margin-bottom: 12px;
+        margin-bottom: 0;
         padding-bottom: 2px;
     }
 
@@ -664,6 +965,27 @@
     }
 
     .category-filter-mobile {
+        display: block;
+    }
+
+    .feed-filter-panel {
+        margin: 6px 0 12px;
+        padding: 0 2px 2px;
+    }
+
+    .feed-filter-meta {
+        margin: 0 1px 7px;
+    }
+
+    .feed-filter-title {
+        font-size: 0.92rem;
+    }
+
+    .feed-filter-body {
+        font-size: 0.72rem;
+    }
+
+    .category-filter-row {
         display: block;
     }
 
