@@ -22,9 +22,10 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Admin Moderation Refactor:** Integrated the post approval system into the general content management dashboard. Streamlined the workflow with high-visibility category pills and a dedicated **"Pending Posts" action button** featuring a real-time numerical indicator for items awaiting review. Consolidated chronological sorting into a standalone dropdown, removing redundant navigation pages. (References: `flask_backend/app/routes/admin.py`, `flask_backend/app/templates/admin/content_manage.html`)
 - **Notification Display Fixes:** 
     - Removed numerical notification count indicators from desktop, mobile, and admin interfaces, replacing them with a cleaner "New" label or a simple red dot. (References: `flask_backend/app/templates/includes/navbar.html`, `flask_backend/app/templates/admin/admin_base.html`)
-    - Migrated notification items to a **robust grid-based layout** (Fixed-width avatar column + flexible content column). This ensures perfect text alignment where wrapped lines always start at the first word (indented), regardless of global styles or page context.
-    - Implemented high-specificity CSS overrides in the navbar to enforce `white-space: normal` and `overflow-wrap: anywhere`, resolving persistent wrapping issues on the dashboard and other subpages.
-    - Standardized notification markup across server-side Jinja2, JavaScript re-rendering, and Supabase realtime handlers for absolute visual consistency. (References: `flask_backend/app/templates/includes/navbar.html`)
+    - **Fixed Notification UI Glitch:** Permanently resolved a persistent UI glitch where notification text would briefly appear with incorrect styling before snapping into place.
+        - **Scoped Conflicting CSS:** Identified and scoped a global `h4` style in `dashboard.css` that was incorrectly affecting the navbar, neutralizing the root cause of the style conflict.
+        - **Restored Server-Side Rendering:** Reverted the previous JavaScript-only rendering strategy, restoring the faster and more stable initial server-side render for notifications.
+        - This ensures notifications display correctly and consistently across all pages from the moment they are rendered, eliminating the visual "glitch". (References: `flask_backend/app/static/css/dashboard.css`, `flask_backend/app/templates/includes/navbar.html`)
     - Simplified interaction notification titles by removing redundant "on your post" and "to your comment" suffixes for a more concise and readable feed. (References: `flask_backend/app/routes/core.py`)
 
 ### Changed
