@@ -291,6 +291,21 @@
         transition: filter 0.2s ease;
     }
 
+    .profile-validation-text {
+        margin-top: 0.5rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.4;
+    }
+
+    .profile-validation-text.is-error {
+        color: #dc2626;
+    }
+
+    .profile-validation-text.is-valid {
+        color: #0f766e;
+    }
+
     .profile-social-editor {
         max-height: 0;
         overflow: hidden;
@@ -438,13 +453,10 @@
                                 </p>
                             </div>
 
-                            {% if user.email or user.last_seen_label or user.joined_label %}
+                            {% if user.email or user.joined_label %}
                             <div class="profile-meta-row">
                                 {% if user.email %}
                                 <span class="profile-meta-pill">{{ user.email }}</span>
-                                {% endif %}
-                                {% if user.last_seen_label %}
-                                <span class="profile-meta-pill">Last seen {{ user.last_seen_label }}</span>
                                 {% endif %}
                                 {% if user.joined_label %}
                                 <span class="profile-meta-pill">Joined {{ user.joined_label }}</span>
@@ -529,6 +541,7 @@
                 <button type="button" class="profile-tab-button active" data-profile-tab-trigger="posts">Posts</button>
                 {% if is_own_profile %}
                 <button type="button" class="profile-tab-button" data-profile-tab-trigger="interactions">Interactions</button>
+                <button type="button" class="profile-tab-button" data-profile-tab-trigger="pending-posts">Pending Posts</button>
                 {% endif %}
             </div>
         </div>
@@ -657,6 +670,32 @@
             </div>
         </div>
     </section>
+
+    <section id="profile-tab-pending-posts" class="profile-panel">
+        <div class="profile-panel-shell">
+            <div class="profile-section-card p-6 sm:p-7">
+                <div class="border-b border-slate-100 pb-4">
+                    <p class="text-xs font-black uppercase tracking-[0.18em] text-amber-400">Pending Posts</p>
+                    <h2 class="mt-2 text-xl font-black text-slate-900">Posts awaiting approval</h2>
+                    <p class="mt-1 text-sm font-medium text-slate-500">Media posts stay here until moderators approve them for public visibility.</p>
+                </div>
+
+                <div class="posts-list space-y-5 mt-5">
+                    {% if pending_posts %}
+                        {% for post in pending_posts %}
+                        <div>
+                            {% include 'includes/post_card.html' %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
+                            <p class="text-sm font-bold text-slate-400">No pending posts right now.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
     {% endif %}
 </div>
 
@@ -684,7 +723,7 @@
                     <h3 class="text-lg font-black text-slate-800 mb-5">Academic Profile</h3>
                     <div class="grid grid-cols-1 gap-y-5 md:grid-cols-3 md:gap-x-8 md:gap-y-5 lg:gap-x-10">
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="college">College / Institute</label>
+                            <label class="mb-2 block text-[13px] font-normal text-slate-500" for="college">College / Institute</label>
                             <select name="college" id="college" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white">
                                 <option value="" {% if not user.college %}selected{% endif %}>Select Unit</option>
                                 <optgroup label="Colleges">
@@ -700,11 +739,11 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="course">Course</label>
+                            <label class="mb-2 block text-[13px] font-normal text-slate-500" for="course">Course</label>
                             <input type="text" name="course" id="course" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white" value="{{ user.course or '' }}" placeholder="e.g., BSIT">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="level">Year Level</label>
+                            <label class="mb-2 block text-[13px] font-normal text-slate-500" for="level">Year Level</label>
                             <select name="level" id="level" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white">
                                 <option value="" {% if not user.level %}selected{% endif %}>Select Level</option>
                                 <option value="1st Year" {% if user.level == '1st Year' %}selected{% endif %}>1st Year</option>
@@ -719,7 +758,7 @@
                         <div class="profile-social-row" data-social-link-row>
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-end">
                                 <div class="min-w-0 flex-[1.4]">
-                                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Social Link</label>
+                                    <label class="mb-2 block text-[13px] font-normal text-slate-500">Social Link</label>
                                     <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                                         <svg class="h-4 w-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5m6.328-1.5a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5"></path>
@@ -734,7 +773,7 @@
                                     </div>
                                 </div>
                                 <div class="w-full lg:w-[162px] lg:flex-shrink-0">
-                                    <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Visibility</label>
+                                    <label class="mb-2 block text-[13px] font-normal text-slate-500">Visibility</label>
                                     <select data-social-visibility
                                             class="profile-form-control w-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white">
                                         <option value="public" selected>Public</option>
@@ -755,11 +794,12 @@
                     <h3 class="text-lg font-black text-slate-800 mb-5">Contact & Privacy</h3>
                     <div class="grid grid-cols-1 gap-y-5 md:grid-cols-2 md:gap-x-8 md:gap-y-5 lg:gap-x-10">
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="contact_number">Contact Number</label>
-                            <input type="text" name="contact_number" id="contact_number" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white" value="{{ user.contact_number or '' }}" placeholder="09XXXXXXXXX">
+                            <label class="mb-2 block text-[13px] font-normal text-slate-500" for="contact_number">Contact Number</label>
+                            <input type="text" name="contact_number" id="contact_number" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white" value="{{ user.contact_number or '' }}" placeholder="09XXXXXXXXX" inputmode="tel" autocomplete="tel" spellcheck="false" maxlength="13">
+                            <p id="contactNumberFeedback" class="profile-validation-text text-slate-400" aria-live="polite"></p>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2" for="contact_privacy">Contact Visibility</label>
+                            <label class="mb-2 block text-[13px] font-normal text-slate-500" for="contact_privacy">Contact Visibility</label>
                             <select name="contact_privacy" id="contact_privacy" class="profile-form-control w-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white">
                                 <option value="public" {% if user.contact_privacy == 'public' %}selected{% endif %}>Public (Everyone can see)</option>
                                 <option value="only_me" {% if user.contact_privacy == 'only_me' %}selected{% endif %}>Only Me (Private)</option>
@@ -791,7 +831,7 @@
                                 <div class="profile-social-row" data-social-link-row>
                                     <div class="flex flex-col gap-4 lg:flex-row lg:items-end">
                                         <div class="min-w-0 flex-[1.4]">
-                                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Social Link</label>
+                                            <label class="mb-2 block text-[13px] font-normal text-slate-500">Social Link</label>
                                             <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                                                 <svg class="h-4 w-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5m6.328-1.5a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5"></path>
@@ -808,7 +848,7 @@
                                             </div>
                                         </div>
                                         <div class="w-full lg:w-[162px] lg:flex-shrink-0">
-                                            <label class="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">Visibility</label>
+                                            <label class="mb-2 block text-[13px] font-normal text-slate-500">Visibility</label>
                                             <select name="social_link_visibility_{{ loop.index }}"
                                                     data-social-visibility
                                                     class="profile-form-control w-full border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-umak-blue focus:bg-white">
@@ -940,6 +980,117 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('settingsForm');
     const saveBtn = document.getElementById('saveBtn');
     const socialLinksRoot = document.querySelector('[data-social-links-root]');
+    const contactNumberInput = document.getElementById('contact_number');
+    const contactNumberFeedback = document.getElementById('contactNumberFeedback');
+    const validPhilippinePrefixRegex = /^(?:\+639(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7}|09(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7})$/;
+
+    const validatePhilippineMobile = (rawValue) => {
+        const candidate = (rawValue || '').trim();
+        if (!candidate) {
+            return {
+                valid: true,
+                normalized: '',
+                message: '',
+                tone: 'idle',
+            };
+        }
+
+        if (/[A-Za-z]/.test(candidate) || /\s/.test(candidate)) {
+            return {
+                valid: false,
+                normalized: candidate,
+                message: 'Invalid phone number.',
+                tone: 'error',
+            };
+        }
+
+        if (candidate.startsWith('+')) {
+            if (!candidate.startsWith('+639')) {
+                return {
+                    valid: false,
+                    normalized: candidate,
+                    message: 'Phone number must start with 09.',
+                    tone: 'error',
+                };
+            }
+            if (!/^\+\d+$/.test(candidate)) {
+                return {
+                    valid: false,
+                    normalized: candidate,
+                    message: 'Invalid phone number.',
+                    tone: 'error',
+                };
+            }
+            if (candidate.length !== 13) {
+                return {
+                    valid: false,
+                    normalized: candidate,
+                    message: 'Phone number must contain exactly 13 characters.',
+                    tone: 'error',
+                };
+            }
+        } else {
+            if (!candidate.startsWith('09')) {
+                return {
+                    valid: false,
+                    normalized: candidate,
+                    message: 'Phone number must start with 09.',
+                    tone: 'error',
+                };
+            }
+            if (!/^\d+$/.test(candidate)) {
+                return {
+                    valid: false,
+                    normalized: candidate,
+                    message: 'Invalid phone number.',
+                    tone: 'error',
+                };
+            }
+            if (candidate.length !== 11) {
+                return {
+                    valid: false,
+                    normalized: candidate,
+                    message: 'Phone number must contain exactly 11 digits.',
+                    tone: 'error',
+                };
+            }
+        }
+
+        if (!/^(?:\+639\d{9}|09\d{9})$/.test(candidate) || !validPhilippinePrefixRegex.test(candidate)) {
+            return {
+                valid: false,
+                normalized: candidate,
+                message: 'Invalid phone number.',
+                tone: 'error',
+            };
+        }
+
+        return {
+            valid: true,
+            normalized: candidate.startsWith('09') ? `+639${candidate.slice(2)}` : candidate,
+            message: '',
+            tone: 'valid',
+        };
+    };
+
+    const renderContactValidation = (result, { force = false } = {}) => {
+        if (!contactNumberInput || !contactNumberFeedback) return result;
+
+        const hasValue = Boolean((contactNumberInput.value || '').trim());
+        const showNeutral = result.tone === 'idle' && (!force || !hasValue);
+        const feedbackText = showNeutral ? '' : result.message;
+
+        contactNumberFeedback.textContent = feedbackText;
+        contactNumberFeedback.classList.toggle('is-error', !result.valid);
+        contactNumberFeedback.classList.toggle('is-valid', result.valid && result.tone === 'valid' && hasValue);
+
+        contactNumberInput.classList.toggle('border-red-300', !result.valid);
+        contactNumberInput.classList.toggle('bg-red-50', !result.valid);
+        contactNumberInput.classList.toggle('focus:border-red-400', !result.valid);
+        contactNumberInput.setAttribute('aria-invalid', result.valid ? 'false' : 'true');
+
+        return result;
+    };
 
     const openModal = () => {
         if (!modal) return;
@@ -1134,14 +1285,48 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentValues = snapshotFormValues();
             const keys = new Set([...Object.keys(initialValues), ...Object.keys(currentValues)]);
             const hasChanges = Array.from(keys).some((key) => currentValues[key] !== initialValues[key]);
+            const phoneValidation = contactNumberInput
+                ? renderContactValidation(validatePhilippineMobile(contactNumberInput.value))
+                : { valid: true };
 
-            saveBtn.disabled = !hasChanges;
-            saveBtn.classList.toggle('opacity-50', !hasChanges);
-            saveBtn.classList.toggle('cursor-not-allowed', !hasChanges);
+            saveBtn.disabled = !hasChanges || !phoneValidation.valid;
+            saveBtn.classList.toggle('opacity-50', !hasChanges || !phoneValidation.valid);
+            saveBtn.classList.toggle('cursor-not-allowed', !hasChanges || !phoneValidation.valid);
         };
+
+        contactNumberInput?.addEventListener('input', () => {
+            renderContactValidation(validatePhilippineMobile(contactNumberInput.value), { force: true });
+        });
+
+        contactNumberInput?.addEventListener('blur', () => {
+            const trimmedValue = (contactNumberInput.value || '').trim();
+            if (contactNumberInput.value !== trimmedValue) {
+                contactNumberInput.value = trimmedValue;
+            }
+            renderContactValidation(validatePhilippineMobile(contactNumberInput.value), { force: true });
+            checkChanges();
+        });
+
+        form.addEventListener('submit', (event) => {
+            const phoneValidation = contactNumberInput
+                ? renderContactValidation(validatePhilippineMobile(contactNumberInput.value), { force: true })
+                : { valid: true, normalized: '' };
+
+            if (!phoneValidation.valid) {
+                event.preventDefault();
+                contactNumberInput?.focus();
+                return;
+            }
+
+            if (contactNumberInput) {
+                contactNumberInput.value = phoneValidation.normalized;
+            }
+        });
 
         form.addEventListener('input', checkChanges, true);
         form.addEventListener('change', checkChanges, true);
+        renderContactValidation(validatePhilippineMobile(contactNumberInput?.value || ''));
+        checkChanges();
     }
 });
 </script>

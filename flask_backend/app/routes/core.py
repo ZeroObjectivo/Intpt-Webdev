@@ -28,6 +28,10 @@ VIMEO_ID_RE = re.compile(r'^\d+$')
 DAILYMOTION_ID_RE = re.compile(r'^[A-Za-z0-9]+$')
 TIKTOK_ID_RE = re.compile(r'^\d{8,}$')
 INSTAGRAM_CODE_RE = re.compile(r'^[A-Za-z0-9_-]+$')
+PH_MOBILE_REGEX = re.compile(r'^(?:\+639\d{9}|09\d{9})$')
+PH_MOBILE_PREFIX_REGEX = re.compile(
+    r'^(?:\+639(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7}|09(?:05|06|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36|37|38|39|45|46|47|48|49|50|51|53|54|55|56|57|58|59|60|61|62|63|64|65|66|67|68|69|70|73|74|75|76|77|78|79|81|90|91|92|93|94|95|96|97|98|99)\d{7})$'
+)
 PROFANITY_WARNING_THRESHOLD = 5
 PROFANITY_SUSPEND_THRESHOLD = 10
 PROFANITY_WEEK_RESET_DAYS = 7
@@ -573,6 +577,38 @@ def format_profile_date(value):
     if parsed is None:
         return ""
     return parsed.astimezone(DISPLAY_TIMEZONE).strftime("%b %d, %Y").replace(" 0", " ")
+
+def normalize_philippine_mobile_number(raw_value):
+    candidate = (raw_value or "").strip()
+    if not candidate:
+        return ""
+    if re.search(r'[A-Za-z]', candidate):
+        raise ValueError("Invalid phone number.")
+    if ' ' in candidate:
+        raise ValueError("Invalid phone number.")
+    if candidate.startswith('+'):
+        if not candidate.startswith('+639'):
+            raise ValueError("Phone number must start with 09.")
+        if not candidate[1:].isdigit():
+            raise ValueError("Invalid phone number.")
+        if len(candidate) != 13:
+            raise ValueError("Phone number must contain exactly 13 characters.")
+    else:
+        if not candidate.startswith('09'):
+            raise ValueError("Phone number must start with 09.")
+        if not candidate.isdigit():
+            raise ValueError("Invalid phone number.")
+        if len(candidate) != 11:
+            raise ValueError("Phone number must contain exactly 11 digits.")
+
+    if not PH_MOBILE_REGEX.fullmatch(candidate):
+        raise ValueError("Invalid phone number.")
+    if not PH_MOBILE_PREFIX_REGEX.fullmatch(candidate):
+        raise ValueError("Invalid phone number.")
+
+    if candidate.startswith('09'):
+        return f"+639{candidate[2:]}"
+    return candidate
 
 SOCIAL_HOST_PLATFORM_MAP = {
     "facebook.com": "facebook",
@@ -1120,7 +1156,7 @@ def view_profile(target_user_id):
     current_user_id = session.get('user').get('id')
 
     try:
-        profile, posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
+        profile, posts, pending_posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
         is_own_profile = (current_user_id == target_user_id)
 
         # Fetch colleges/institutes for settings dropdown
@@ -1132,6 +1168,7 @@ def view_profile(target_user_id):
         return render_template('profile_settings.html',
                                user=profile,
                                posts=posts,
+                               pending_posts=pending_posts,
                                interactions=interactions,
                                college_options=college_options,
                                social_links=social_links,
@@ -1142,11 +1179,17 @@ def view_profile(target_user_id):
                                now=datetime.datetime.now(datetime.timezone.utc))
     except Exception as e:
         if is_jwt_error(e) and refresh_supabase_auth():
-            profile, posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
+            profile, posts, pending_posts, interactions, college_options, social_links, public_social_links = load_profile_data(target_user_id, viewer_id=current_user_id)
             is_own_profile = (current_user_id == target_user_id)
+            client = get_user_client()
+            units_res = client.table('colleges_institutes').select("name, full_name, type").order('name').execute()
+            colleges = [u for u in units_res.data if u['type'] == 'College']
+            institutes = [u for u in units_res.data if u['type'] == 'Institute']
             return render_template('profile_settings.html',
-                                   user=profile, posts=posts, interactions=interactions, college_options=college_options, social_links=social_links, public_social_links=public_social_links,
+                                   user=profile, posts=posts, pending_posts=pending_posts, interactions=interactions, college_options=college_options, social_links=social_links, public_social_links=public_social_links,
                                    is_own_profile=is_own_profile,
+                                   colleges=colleges,
+                                   institutes=institutes,
                                    now=datetime.datetime.now(datetime.timezone.utc))
         elif is_jwt_error(e):
             session.clear()
@@ -1240,14 +1283,12 @@ def load_profile_data(user_id, viewer_id=None):
 
     posts_query = client.table('posts')\
         .select("*, profiles(full_name, avatar_url, college, course, level)")\
-        .eq("user_id", user_id)
+        .eq("user_id", user_id)\
+        .eq('status', 'approved')
     
-    # If not owner, only show approved posts
-    if str(viewer_id) != str(user_id):
-        posts_query = posts_query.eq('status', 'approved')
-        
     posts_response = posts_query.order("created_at", desc=True).execute()
     posts = posts_response.data
+    pending_posts = []
 
     liked_post_ids = set()
     if viewer_id:
@@ -1281,6 +1322,23 @@ def load_profile_data(user_id, viewer_id=None):
     }
     is_own_profile = str(viewer_id) == str(user_id)
     if is_own_profile:
+        pending_posts_res = client.table('posts')\
+            .select("*, profiles(full_name, avatar_url, college, course, level)")\
+            .eq("user_id", user_id)\
+            .eq('status', 'pending')\
+            .order("created_at", desc=True).execute()
+        pending_posts = pending_posts_res.data or []
+
+        pending_comments_count_map = build_comment_count_map(client, [p['id'] for p in pending_posts])
+        for post in pending_posts:
+            post['user_has_liked'] = False
+            post['likes_count'] = post.get('likes_count') or 0
+            post['comments_count'] = pending_comments_count_map.get(post['id'], 0)
+            post['relative_created_at'] = format_relative_time(post.get('created_at'))
+            attach_embed_metadata(post)
+            if post.get('created_at'):
+                activity_timestamps.append(post.get('created_at'))
+
         likes_activity = client.table('likes')\
             .select("created_at, posts(id, content, category)")\
             .eq("user_id", user_id)\
@@ -1331,7 +1389,7 @@ def load_profile_data(user_id, viewer_id=None):
                 "group": "Colleges",
             })
 
-    return profile, posts, interactions, college_options, social_links, public_social_links
+    return profile, posts, pending_posts, interactions, college_options, social_links, public_social_links
 
 @core.route('/settings/profile', methods=['POST'])
 @login_required
@@ -1359,9 +1417,10 @@ def update_profile():
     client = get_user_client()
 
     try:
+        normalized_contact_number = normalize_philippine_mobile_number(contact_number)
         normalized_social_links = normalize_social_links_input(social_links_raw, social_visibility_raw)
         update_data = {
-            "contact_number": contact_number,
+            "contact_number": normalized_contact_number or None,
             "contact_privacy": contact_privacy,
             "college": college,
             "course": course,

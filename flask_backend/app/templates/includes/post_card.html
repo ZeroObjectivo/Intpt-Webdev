@@ -41,12 +41,12 @@
                     <button onclick="togglePostMenu('{{ post.id }}', event)" class="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
                     </button>
-                    <div id="post-menu-{{ post.id }}" class="post-menu-dropdown absolute right-0 top-full mt-1 w-36 bg-white border border-slate-100 rounded-xl shadow-xl shadow-slate-200/50 py-1 hidden z-20">
+                    <div id="post-menu-{{ post.id }}" class="post-menu-dropdown absolute right-0 top-full mt-1 w-36 overflow-hidden rounded-lg border border-slate-200 bg-white/95 py-1 shadow-lg shadow-slate-200/60 backdrop-blur-xl hidden z-20">
                         {% if post.user_id == user.id %}
-                        <button onclick="showEditForm('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">Edit Post</button>
-                        <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 transition-colors">Delete Post</button>
+                        <button onclick="showEditForm('{{ post.id }}')" class="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100/80 hover:text-slate-800">Edit Post</button>
+                        <button onclick="confirmDeletePost('{{ post.id }}')" class="w-full text-left px-4 py-2.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50/85 hover:text-red-600">Delete Post</button>
                         {% else %}
-                        <button onclick="reportPost('{{ post.id }}')" class="w-full text-left px-4 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50 transition-colors">Report Post</button>
+                        <button onclick="reportPost('{{ post.id }}')" class="w-full text-left px-4 py-2.5 text-xs font-bold text-amber-600 transition-colors hover:bg-amber-50/85 hover:text-amber-700">Report Post</button>
                         {% endif %}
                     </div>
                 </div>
