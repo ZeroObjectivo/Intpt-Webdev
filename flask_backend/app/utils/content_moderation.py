@@ -129,6 +129,20 @@ def detect_toxic_pattern(text):
     return None
 
 
+def _word_boundary_match(text, term):
+    """Check if term appears in text as a standalone word or as the core of a word.
+    For short terms (< 4 chars), require exact word match.
+    For longer terms, allow substring match (catches compound evasion like 'putangina').
+    """
+    if len(term) < 4:
+        # Short terms: exact word boundary only
+        pattern = r'(?:^|\s)' + re.escape(term) + r'(?:\s|$)'
+        return bool(re.search(pattern, text))
+    else:
+        # Longer terms: substring is fine — "puta" in "putangina" should match
+        return term in text
+
+
 # --- Main Entry Point ---
 
 def smart_profanity_check(content, forbidden_terms):
@@ -169,22 +183,47 @@ def smart_profanity_check(content, forbidden_terms):
         term_stripped = re.sub(r'\s+', '', term)
         term_collapsed = collapse_to_two(term)
         term_stripped_collapsed = collapse_to_two(term_stripped)
+        has_space = ' ' in term
 
-        # Layer 1: Exact substring
-        if term in normalized or term_stripped in stripped:
+        # Layer 1: Exact match
+        # Multi-word terms (e.g. "tang ina"): substring match against full text
+        # Single-word terms: word-boundary match to avoid "puta" matching "computer"
+        if has_space:
+            if term in normalized:
+                return term, 'exact'
+        else:
+            if _word_boundary_match(normalized, term):
+                return term, 'exact'
+        # Also check stripped text for space-evasion (e.g. "p u t a" → "puta")
+        # but only if the term is long enough to avoid false positives
+        if len(term_stripped) >= 4 and term_stripped in stripped:
             return term, 'exact'
 
         # Layer 2: Elongation — collapse repeated chars then match
-        if term in collapsed_text or term_stripped in collapsed_stripped:
-            return term, 'elongation'
-        if term_collapsed in aggressive_collapsed or term_stripped_collapsed in aggressive_stripped:
-            return term, 'elongation'
+        if has_space:
+            if term in collapsed_text:
+                return term, 'elongation'
+        else:
+            if _word_boundary_match(collapsed_text, term):
+                return term, 'elongation'
+        if len(term_stripped) >= 4:
+            if term_stripped in collapsed_stripped:
+                return term, 'elongation'
+            if term_collapsed in aggressive_collapsed or term_stripped_collapsed in aggressive_stripped:
+                return term, 'elongation'
 
         # Layer 3: Leetspeak — normalize leet then match
-        if term in leet_normalized or term_stripped in leet_stripped:
-            return term, 'leetspeak'
-        if term_collapsed in leet_collapsed or term_stripped_collapsed in leet_collapsed:
-            return term, 'leetspeak'
+        if has_space:
+            if term in leet_normalized:
+                return term, 'leetspeak'
+        else:
+            if _word_boundary_match(leet_normalized, term):
+                return term, 'leetspeak'
+        if len(term_stripped) >= 4:
+            if term_stripped in leet_stripped:
+                return term, 'leetspeak'
+            if term_collapsed in leet_collapsed or term_stripped_collapsed in leet_collapsed:
+                return term, 'leetspeak'
 
         # Layer 4: Fuzzy — catch misspellings (terms >= 5 chars only)
         if len(term_stripped) >= 5:
