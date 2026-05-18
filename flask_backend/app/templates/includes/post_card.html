@@ -1,6 +1,12 @@
 {% set post_images = post.image_urls if post.image_urls else ([post.image_url] if post.image_url else []) %}
-<article class="post-card {% if post_images %}has-attachment{% else %}no-attachment{% endif %}" data-post-id="{{ post.id }}" data-created-at="{{ post.created_at }}">
-    {% set post_category = post.category or 'General' %}
+{% set post_category = post.category or 'General' %}
+{% set is_business_post = post_category in ['Buy & Sell', 'Heron Business'] %}
+<article class="post-card {% if post_images %}has-attachment{% else %}no-attachment{% endif %} {% if is_business_post %}marketplace-card{% endif %}"
+         data-post-id="{{ post.id }}"
+         data-created-at="{{ post.created_at }}"
+         data-marketplace-name="{{ (post.product_name or post.content or '')|lower }}"
+         data-marketplace-price="{{ post.price or 0 }}"
+         data-marketplace-availability="{{ (post.listing_availability or 'Available')|lower }}">
     <div class="post-header flex justify-between items-start gap-4">
         <div class="flex items-start min-w-0">
             <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
@@ -8,7 +14,7 @@
                 <div class="flex items-center gap-2 flex-wrap">
                     <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="post-author-name capitalize hover:underline decoration-slate-300 underline-offset-2">{{ post.profiles.full_name | title }}</a>
                     {% if post.profiles.college %}
-                        <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
+                        <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">&bull;</span>
                         {% set coll_name = post.profiles.college %}
                         {% set coll_code = coll_name.split(' ')[0] %}
                         {% set coll_color = college_colors.get(coll_name) or college_colors.get(coll_code) or '#64748B' %}
@@ -22,7 +28,7 @@
                     <span class="post-meta" title="{{ post_local.strftime('%A, %B %d, %Y at %I:%M:%S %p') }}">
                         Posted {{ post.relative_created_at }}
                     </span>
-                    <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">•</span>
+                    <span class="text-slate-400 text-[10px] font-black leading-none mx-0.5">&bull;</span>
                     {% if post_category == 'Lost & Found' %}
                         <span class="badge badge-lost-found">Lost & Found</span>
                     {% elif post_category in ['Buy & Sell', 'Heron Business'] %}
@@ -53,20 +59,33 @@
                     </div>
                 </div>
             </div>
-            {% set show_status = post.status and (post_category == 'Lost & Found' or (post_category in ['Buy & Sell', 'Heron Business'] and post.status in ['Available', 'Sold'])) %}
-            {% if show_status %}
-            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {% if post.status in ['Lost', 'Sold'] %}bg-red-50 text-red-500{% else %}bg-green-50 text-green-500{% endif %}">
+            {% set business_availability = post.listing_availability if is_business_post else None %}
+            {% set show_status = post.status and (post_category == 'Lost & Found') %}
+            {% if business_availability %}
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {% if business_availability == 'Not Available' %}bg-red-50 text-red-500{% else %}bg-green-50 text-green-500{% endif %}">
+                {{ business_availability }}
+            </span>
+            {% elif show_status %}
+            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase {% if post.status == 'Lost' %}bg-red-50 text-red-500{% else %}bg-green-50 text-green-500{% endif %}">
                 {{ post.status }}
             </span>
             {% endif %}
         </div>
     </div>
-    <div class="post-content" id="post-content-{{ post.id }}">
+    <div class="post-content {% if is_business_post %}marketplace-post-content{% endif %}" id="post-content-{{ post.id }}">
+        {% if is_business_post %}
+        <div class="marketplace-title-row">
+            <h3 class="marketplace-product-name">{{ post.product_name or 'Marketplace Listing' }}</h3>
+            {% if post.price %}
+            <span class="marketplace-product-price">PHP {{ "{:,.2f}".format(post.price) }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
         {% if post.category in ['Buy & Sell', 'Heron Business', 'Lost & Found', 'Events'] %}
         <div class="flex flex-wrap gap-4 mb-4 text-xs font-bold">
-            {% if post.price %}
+            {% if post.price and not is_business_post %}
             <div class="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-                <span>₱{{ "{:,.2f}".format(post.price) }}</span>
+                <span>PHP {{ "{:,.2f}".format(post.price) }}</span>
             </div>
             {% endif %}
             {% if post.location %}
@@ -83,7 +102,31 @@
             {% endif %}
         </div>
         {% endif %}
-        <p>{{ post.content|linkify }}</p>
+        <p class="{% if is_business_post %}marketplace-description{% endif %}">{{ post.content|linkify }}</p>
+        {% if is_business_post %}
+            {% if post.public_social_links %}
+            <div class="marketplace-social-list">
+                {% for social in post.public_social_links %}
+                <a href="{{ social.url }}" target="_blank" rel="noopener noreferrer" class="marketplace-social-chip">
+                    {% if social.platform == 'facebook' %}
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M13.5 9H16V6h-2.5C11.57 6 10 7.57 10 9.5V12H8v3h2v5h3v-5h2.2l.3-3H13V9.8c0-.44.36-.8.8-.8z"/></svg>
+                    {% elif social.platform == 'instagram' %}
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke-width="1.8"/><circle cx="12" cy="12" r="4" stroke-width="1.8"/><circle cx="17.5" cy="6.8" r="1"/></svg>
+                    {% elif social.platform == 'tiktok' %}
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M14 3h3.2c.4 1.8 1.8 3.2 3.6 3.6V10c-1.8-.1-3.5-.8-4.8-1.9v7.1a5.2 5.2 0 1 1-5.2-5.2c.3 0 .6 0 .9.1v3.2a2 2 0 1 0 1.9 1.9V3z"/></svg>
+                    {% elif social.platform == 'linkedin' %}
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6.9 8.1a1.9 1.9 0 1 1 0-3.8 1.9 1.9 0 0 1 0 3.8zM5.3 9.8h3.2V20H5.3V9.8zm5 0h3v1.4h.1c.4-.8 1.4-1.7 3-1.7 3.2 0 3.8 2.1 3.8 4.8V20H17v-5.1c0-1.2 0-2.8-1.7-2.8s-2 1.3-2 2.7V20h-3.1V9.8z"/></svg>
+                    {% elif social.platform == 'discord' %}
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.5 5.5A16.8 16.8 0 0 0 15.5 4l-.2.5a11.7 11.7 0 0 1 3.4 1.6 12.2 12.2 0 0 0-3.4-1.5 13.3 13.3 0 0 0-6.6 0 12 12 0 0 0-3.4 1.5A11.8 11.8 0 0 1 8.7 4.5L8.5 4A16.6 16.6 0 0 0 4.5 5.5 16.6 16.6 0 0 0 3 16.8a16.5 16.5 0 0 0 5 2.5l.4-.7c-.9-.3-1.8-.7-2.6-1.3l.6-.4c1.6.7 3.3 1 5 .9 1.7 0 3.4-.3 5-.9l.6.4a11.5 11.5 0 0 1-2.6 1.3l.4.7a16.4 16.4 0 0 0 5-2.5 16.5 16.5 0 0 0-1.5-11.3zM9.4 14.6c-.7 0-1.2-.6-1.2-1.4 0-.8.6-1.4 1.2-1.4.7 0 1.3.6 1.3 1.4 0 .8-.6 1.4-1.3 1.4zm5.2 0c-.7 0-1.2-.6-1.2-1.4 0-.8.6-1.4 1.2-1.4.7 0 1.3.6 1.3 1.4 0 .8-.6 1.4-1.3 1.4z"/></svg>
+                    {% endif %}
+                    <span>{{ social.label }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="marketplace-no-social">Seller has not shared public social links yet.</p>
+            {% endif %}
+        {% endif %}
         {% if post.embed and post.embed.embed_url %}
             <div class="post-embed">
                 <iframe
@@ -128,6 +171,20 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <textarea name="content" class="w-full p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all resize-none mb-3">{{ post.content }}</textarea>
             <input type="hidden" name="category" value="{{ post.category }}">
+            {% if is_business_post %}
+            <div class="grid gap-2 mb-3">
+                <input type="text" name="product_name" value="{{ post.product_name or '' }}" placeholder="Product name"
+                       class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="number" step="0.01" name="price" value="{{ post.price or '' }}" placeholder="Price"
+                           class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                    <select name="listing_availability" class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                        <option value="Available" {% if (post.listing_availability or 'Available') == 'Available' %}selected{% endif %}>Available</option>
+                        <option value="Not Available" {% if post.listing_availability == 'Not Available' %}selected{% endif %}>Not Available</option>
+                    </select>
+                </div>
+            </div>
+            {% endif %}
             <div class="flex justify-end gap-2">
                 <button type="button" onclick="hideEditForm('{{ post.id }}')" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
                 <button type="submit" class="bg-umak-blue text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-umak-blue/20 hover:bg-blue-700 transition-all">Save Changes</button>

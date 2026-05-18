@@ -90,6 +90,21 @@
                 </div>
                 </section>
 
+                {% if active_category == 'Heron Business' %}
+                <section class="marketplace-toolbar">
+                    <div class="marketplace-toolbar-search">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.6-5.4a6.75 6.75 0 11-13.5 0 6.75 6.75 0 0113.5 0z"></path></svg>
+                        <input id="marketplaceSearchInput" type="text" placeholder="Search marketplace listings..." class="marketplace-toolbar-input">
+                    </div>
+                    <select id="marketplaceSortSelect" class="marketplace-toolbar-select">
+                        <option value="newest" selected>Newest</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                        <option value="available_first">Available First</option>
+                    </select>
+                </section>
+                {% endif %}
+
                 <div id="feedSkeleton" class="feed-skeleton" aria-hidden="true">
                     {% if posts %}
                         {% for post in posts %}
@@ -141,7 +156,7 @@
                     {% endif %}
                 </div>
 
-                <div id="feedContent" class="posts-list hidden opacity-0 transition-all duration-500 ease-out" aria-busy="true">
+                <div id="feedContent" class="posts-list {% if active_category == 'Heron Business' %}marketplace-feed-grid{% endif %} hidden opacity-0 transition-all duration-500 ease-out" aria-busy="true">
                     {% if posts %}
                         {% for post in posts %}
                             <div class="hidden" data-relative-created-at="{{ post.relative_created_at }}"></div>
@@ -291,6 +306,10 @@
                             <span class="bg-slate-100 px-4 flex items-center text-[12px] font-bold font-sans text-slate-500 border-r border-slate-200">PHP</span>
                             <input id="businessPrice" name="price" type="number" step="0.01" class="flex-1 px-4 py-2.5 text-[14px] font-sans outline-none focus:bg-white" placeholder="Price">
                         </div>
+                        <select id="businessAvailability" name="listing_availability" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans text-slate-600 outline-none focus:border-umak-blue/50 focus:ring-2 focus:ring-umak-blue/5 transition-all bg-white">
+                            <option value="Available" selected>Available</option>
+                            <option value="Not Available">Not Available</option>
+                        </select>
                     </div>
 
                     <div id="eventFields" class="category-specific-fields hidden space-y-3 bg-white rounded-xl border border-slate-200 shadow-sm p-3 animate-in fade-in zoom-in duration-200 font-sans">
@@ -426,6 +445,61 @@
         const globalImageFeedback = document.getElementById('globalImageFeedback');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
         const globalImageFilename = document.getElementById('globalImageFilename');
+        const marketplaceSearchInput = document.getElementById('marketplaceSearchInput');
+        const marketplaceSortSelect = document.getElementById('marketplaceSortSelect');
+        const feedContent = document.getElementById('feedContent');
+
+        function initMarketplaceFilters() {
+            if (!feedContent || !marketplaceSearchInput || !marketplaceSortSelect) return;
+
+            const cards = Array.from(feedContent.querySelectorAll('.marketplace-card'));
+            if (!cards.length) return;
+
+            const toNumber = (value) => {
+                const parsed = parseFloat(value || '0');
+                return Number.isFinite(parsed) ? parsed : 0;
+            };
+
+            const applyMarketplaceFilters = () => {
+                const keyword = (marketplaceSearchInput.value || '').trim().toLowerCase();
+                const sortBy = marketplaceSortSelect.value || 'newest';
+
+                const filtered = cards.filter((card) => {
+                    const title = (card.dataset.marketplaceName || '').toLowerCase();
+                    if (!keyword) return true;
+                    return title.includes(keyword);
+                });
+
+                const sorted = filtered.sort((a, b) => {
+                    if (sortBy === 'price_low') {
+                        return toNumber(a.dataset.marketplacePrice) - toNumber(b.dataset.marketplacePrice);
+                    }
+                    if (sortBy === 'price_high') {
+                        return toNumber(b.dataset.marketplacePrice) - toNumber(a.dataset.marketplacePrice);
+                    }
+                    if (sortBy === 'available_first') {
+                        const aAvailable = (a.dataset.marketplaceAvailability || '').toLowerCase() === 'available' ? 0 : 1;
+                        const bAvailable = (b.dataset.marketplaceAvailability || '').toLowerCase() === 'available' ? 0 : 1;
+                        if (aAvailable !== bAvailable) return aAvailable - bAvailable;
+                    }
+                    const aTs = Date.parse(a.dataset.createdAt || '') || 0;
+                    const bTs = Date.parse(b.dataset.createdAt || '') || 0;
+                    return bTs - aTs;
+                });
+
+                cards.forEach((card) => { card.style.display = 'none'; });
+                sorted.forEach((card) => {
+                    card.style.display = '';
+                    feedContent.appendChild(card);
+                });
+            };
+
+            marketplaceSearchInput.addEventListener('input', applyMarketplaceFilters);
+            marketplaceSortSelect.addEventListener('change', applyMarketplaceFilters);
+            applyMarketplaceFilters();
+        }
+
+        initMarketplaceFilters();
 
         if (!form || !contentInput || !submitButton || !categorySelect) {
             return;
