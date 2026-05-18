@@ -2775,16 +2775,21 @@ def create_post():
             "content": content,
             "category": category,
             "event_title": event_title,
-            "product_name": product_name,
             "price": price,
             "location": location,
             "status": post_status,
-            "listing_availability": listing_availability,
             "event_date": event_date,
             "event_end_date": event_end_date,
             "image_url": image_urls[0] if image_urls else None,
             "image_urls": image_urls
         }
+
+        # Only add marketplace fields if they are provided to avoid errors if columns are missing
+        if product_name:
+            post_data["product_name"] = product_name
+        if listing_availability:
+            post_data["listing_availability"] = listing_availability
+
         client.table('posts').insert(post_data).execute()
 
         session['last_post_time'] = current_time
