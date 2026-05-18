@@ -53,23 +53,22 @@
 
                 <section class="feed-filter-panel" aria-label="Feed filter controls">
                 <div class="category-filter-mobile">
-                    <div class="feed-filter-heading mb-2">
-                        <div class="feed-filter-title-icon" aria-hidden="true">
+                    <div class="feed-filter-heading">
+                        <div class="feed-filter-title-icon mobile-filter-picker">
+                            <label for="mobileCategoryFilter" class="sr-only">Filter posts by category</label>
                             <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M4 6h16M7 12h10M10 18h4"></path>
                             </svg>
+                            <select id="mobileCategoryFilter" class="category-filter-select" onchange="if (this.value) { window.location.href = this.value; }" aria-label="Filter posts by category">
+                                <option value="{{ url_for('core.dashboard') }}" {% if not active_category %}selected{% endif %}>All Post</option>
+                                <option value="{{ url_for('core.dashboard', category='General') }}" {% if active_category == 'General' %}selected{% endif %}>General</option>
+                                <option value="{{ url_for('core.dashboard', category='Lost & Found') }}" {% if active_category == 'Lost & Found' %}selected{% endif %}>Lost & Found</option>
+                                <option value="{{ url_for('core.dashboard', category='Heron Business') }}" {% if active_category == 'Heron Business' %}selected{% endif %}>Heron Business</option>
+                                <option value="{{ url_for('core.dashboard', category='Question') }}" {% if active_category == 'Question' %}selected{% endif %}>Question</option>
+                                <option value="{{ url_for('core.dashboard', category='Events') }}" {% if active_category == 'Events' %}selected{% endif %}>Events</option>
+                            </select>
                         </div>
-                        <span class="sr-only">Filter posts</span>
                     </div>
-                    <label for="mobileCategoryFilter" class="hidden">Filter posts by category</label>
-                    <select id="mobileCategoryFilter" class="category-filter-select" onchange="if (this.value) { window.location.href = this.value; }">
-                        <option value="{{ url_for('core.dashboard') }}" {% if not active_category %}selected{% endif %}>All Post</option>
-                        <option value="{{ url_for('core.dashboard', category='General') }}" {% if active_category == 'General' %}selected{% endif %}>General</option>
-                        <option value="{{ url_for('core.dashboard', category='Lost & Found') }}" {% if active_category == 'Lost & Found' %}selected{% endif %}>Lost & Found</option>
-                        <option value="{{ url_for('core.dashboard', category='Heron Business') }}" {% if active_category == 'Heron Business' %}selected{% endif %}>Heron Business</option>
-                        <option value="{{ url_for('core.dashboard', category='Question') }}" {% if active_category == 'Question' %}selected{% endif %}>Question</option>
-                        <option value="{{ url_for('core.dashboard', category='Events') }}" {% if active_category == 'Events' %}selected{% endif %}>Events</option>
-                    </select>
                 </div>
                 <div class="category-filter-row category-pills-desktop">
                     <div class="feed-filter-heading">

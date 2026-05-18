@@ -52,6 +52,10 @@
         gap: 8px;
     }
 
+    .calendar-grid-shell {
+        width: 100%;
+    }
+
     .calendar-weekday {
         padding: 8px 6px;
         text-align: center;
@@ -233,30 +237,117 @@
         font-weight: 700;
     }
 
+    @media (max-width: 1200px) {
+        .calendar-day,
+        .calendar-day-empty {
+            min-height: 112px;
+        }
+    }
+
     @media (max-width: 1024px) {
+        .calendar-hero {
+            padding: 14px 16px;
+            gap: 12px;
+        }
+
+        .calendar-hero h1 {
+            font-size: 1.65rem;
+        }
+
         .calendar-grid {
             gap: 6px;
         }
+
         .calendar-day,
         .calendar-day-empty {
-            min-height: 108px;
+            min-height: 104px;
             padding: 8px;
         }
     }
 
+    @media (max-width: 860px) {
+        .calendar-hero p {
+            font-size: 0.84rem;
+            line-height: 1.35;
+        }
+
+        .month-nav {
+            gap: 6px;
+        }
+
+        .month-nav-btn {
+            width: 32px;
+            height: 32px;
+        }
+    }
+
     @media (max-width: 760px) {
+        .calendar-hero {
+            margin-bottom: 12px;
+            padding: 13px 14px;
+        }
+
+        .calendar-hero h1 {
+            font-size: 1.45rem;
+            line-height: 1.1;
+        }
+
+        .month-nav-label {
+            font-size: 0.78rem;
+            letter-spacing: 0.06em;
+        }
+
+        .calendar-grid-shell {
+            overflow-x: auto;
+            padding-bottom: 2px;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .calendar-grid {
-            grid-template-columns: repeat(1, minmax(0, 1fr));
+            min-width: 700px;
+            gap: 6px;
         }
+
         .calendar-weekday {
-            display: none;
+            padding: 6px 5px;
+            font-size: 0.66rem;
         }
+
+        .calendar-day,
+        .calendar-day-empty {
+            min-height: 92px;
+            padding: 7px;
+            border-radius: 10px;
+        }
+
+        .calendar-day-number {
+            font-size: 0.88rem;
+        }
+
+        .calendar-day-count,
+        .calendar-event-text,
+        .calendar-more {
+            font-size: 0.64rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .calendar-grid {
+            min-width: 640px;
+            gap: 5px;
+        }
+
         .calendar-day,
         .calendar-day-empty {
             min-height: 84px;
+            padding: 6px;
         }
-        .calendar-day-empty {
-            display: none;
+
+        .calendar-event-dot {
+            width: 7px;
+            height: 7px;
+            margin-top: 5px;
+            flex-basis: 7px;
         }
     }
 </style>
@@ -277,12 +368,13 @@
                     </div>
                     <div class="month-nav">
                         <a class="month-nav-btn" href="{{ url_for('core.event_calendar', month=prev_month) }}" aria-label="Previous month">&#8592;</a>
-                        <span class="text-sm font-black text-slate-700 uppercase tracking-wider">{{ month_label }}</span>
+                        <span class="month-nav-label text-sm font-black text-slate-700 uppercase tracking-wider">{{ month_label }}</span>
                         <a class="month-nav-btn" href="{{ url_for('core.event_calendar', month=next_month) }}" aria-label="Next month">&#8594;</a>
                     </div>
                 </section>
 
                 <section class="posts-list">
+                    <div class="calendar-grid-shell">
                     <div class="calendar-grid">
                         {% for label in weekday_labels %}
                         <div class="calendar-weekday">{{ label }}</div>
@@ -313,6 +405,7 @@
                             <div class="calendar-day-empty" aria-hidden="true"></div>
                             {% endif %}
                         {% endfor %}
+                    </div>
                     </div>
                 </section>
             </main>
