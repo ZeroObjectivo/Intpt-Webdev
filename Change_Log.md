@@ -12,6 +12,11 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Dashboard Layout Tests:** Updated layout tests to align with current template structures, including sidebar navigation labels, attribute quoting conventions, and dynamic form field styling.
 
 ### Fixed
+- **Mobile Notification Alignment:** Fixed a critical styling issue where action notifications (toasts/flash messages) were misaligned or partially off-screen on mobile devices.
+    - Corrected the `#flash-container` CSS override in `base.html` to properly center the container using `left: 50%` and `transform: translateX(-50%)`.
+    - Defined the missing `@keyframes slideIn` animation for server-rendered flashed messages.
+    - Centered notification text horizontally and added a balancing spacer to offset the close button for a perfectly symmetrical look.
+    - Unified the auto-dismiss animations across the platform for a smoother user experience.
 - **Event Field Styling:** Corrected a container styling mismatch for event fields in the "Create Post" modal to ensure consistency with other category-specific sections and pass layout validation.
 
 ## [Unreleased] - 2026-05-17
