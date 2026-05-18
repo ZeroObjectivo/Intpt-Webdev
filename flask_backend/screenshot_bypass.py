@@ -29,11 +29,13 @@ app.register_blueprint(admin)
 
 @app.template_filter('datetime_obj')
 def datetime_obj(value):
-    ts = value.replace('Z', '').split('.')[0]
+    if not value:
+        return None
     try:
-        return datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
-    except ValueError:
-        return datetime.datetime.strptime(value.replace('Z', ''), '%Y-%m-%dT%H:%M:%S.%f')
+        cleaned_value = value.replace('Z', '+00:00')
+        return datetime.datetime.fromisoformat(cleaned_value)
+    except Exception:
+        return None
 
 @app.context_processor
 def inject_globals():

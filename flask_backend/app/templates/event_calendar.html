@@ -11,197 +11,222 @@
         align-items: center;
         justify-content: space-between;
         gap: 14px;
-        margin-bottom: 14px;
-        padding: 16px 18px;
-        border-radius: 16px;
-        border: 1px solid #d8d9de;
-        background: rgba(248, 249, 251, 0.9);
-        box-shadow: 0 2px 8px rgba(7, 10, 18, 0.08);
-        flex-wrap: wrap;
+        margin-bottom: 32px;
+        padding: 0 4px;
     }
 
     .month-nav {
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        background: #f1f3f4;
+        padding: 4px;
+        border-radius: 9999px;
     }
 
     .month-nav-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 9999px;
-        border: 1px solid #d6d8df;
-        background: #ffffff;
-        color: #111942;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        color: #3c4043;
         font-weight: 800;
         text-decoration: none;
-        transition: background-color 0.16s ease, transform 0.16s ease;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .month-nav-btn:hover {
-        background: #eef4fb;
-        transform: translateY(-1px);
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(60,64,67,0.3);
+        transform: scale(1.05);
+    }
+
+    .today-btn {
+        padding: 0 16px;
+        height: 36px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #3c4043;
+        background: transparent;
+        border-radius: 9999px;
+        transition: all 0.2s;
+    }
+
+    .today-btn:hover {
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(60,64,67,0.3);
+    }
+
+    .calendar-grid-shell {
+        width: 100%;
+        background: transparent;
     }
 
     .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 8px;
-    }
-
-    .calendar-grid-shell {
-        width: 100%;
+        gap: 12px;
     }
 
     .calendar-weekday {
-        padding: 8px 6px;
+        padding: 0 0 12px 0;
         text-align: center;
-        font-size: 0.72rem;
-        font-weight: 900;
-        letter-spacing: 0.06em;
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: #9aa0a6;
         text-transform: uppercase;
-        color: #64748b;
+        letter-spacing: 0.1em;
     }
 
     .calendar-day {
-        min-height: 120px;
-        padding: 10px;
-        border-radius: 12px;
-        border: 1px solid #d6d8df;
-        background: rgba(246, 247, 249, 0.88);
-        box-shadow: 0 2px 7px rgba(7, 10, 18, 0.07);
+        min-height: 150px;
+        padding: 12px;
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
         display: flex;
         flex-direction: column;
-        gap: 7px;
+        gap: 6px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
 
     .calendar-day:hover {
-        background: #ffffff;
-        border-color: #111942;
-        transform: translateY(-2px);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+        border-color: rgba(0,0,0,0.08);
+        z-index: 10;
     }
 
     .calendar-day.selected {
-        border-color: #2563eb;
-        background: #eff6ff;
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        background: #ffffff;
+        border-color: #1a73e8;
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
     }
 
     .calendar-day-empty {
-        min-height: 120px;
-        border-radius: 12px;
-        border: 1px dashed #e2e8f0;
-        background: rgba(248, 250, 252, 0.66);
+        min-height: 150px;
+        background: rgba(0,0,0,0.02);
+        border-radius: 20px;
     }
 
     .calendar-day.is-today {
-        border-color: #111942;
-        box-shadow: 0 0 0 1px rgba(17, 25, 66, 0.25);
+        background: #ffffff;
+        border-color: rgba(26, 115, 232, 0.3);
+    }
+
+    .calendar-day.is-today .calendar-day-number {
+        color: #1a73e8;
+        background: #e8f0fe;
     }
 
     .calendar-day-head {
         display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 8px;
+        align-items: center;
+        justify-content: flex-end;
     }
 
     .calendar-day-number {
-        font-size: 0.98rem;
-        font-weight: 900;
-        color: #111942;
-    }
-
-    .calendar-day-count {
-        font-size: 0.65rem;
+        font-size: 0.85rem;
         font-weight: 800;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+        color: #3c4043;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
     }
 
     .calendar-event-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 6px;
+        display: block;
         min-width: 0;
     }
 
-    .calendar-event-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 9999px;
-        margin-top: 6px;
-        flex: 0 0 8px;
-        background: #64748b;
-    }
-
-    .calendar-event-dot.ongoing {
-        background: #f59e0b;
-    }
-
-    .calendar-event-dot.upcoming {
-        background: #2563eb;
-    }
-
-    .calendar-event-text {
-        min-width: 0;
-        font-size: 0.74rem;
+    .calendar-event-pill {
+        display: block;
+        padding: 5px 10px;
+        border-radius: 10px;
+        font-size: 0.72rem;
         font-weight: 700;
         line-height: 1.2;
-        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .calendar-event-pill.ongoing {
+        background: #fff8e1;
+        color: #b45309;
+        border-color: #fef3c7;
+    }
+
+    .calendar-event-pill.upcoming {
+        background: #eef2ff;
+        color: #4338ca;
+        border-color: #e0e7ff;
+    }
+
+    .calendar-event-pill:hover {
+        transform: scale(1.02);
+        filter: brightness(0.98);
     }
 
     .calendar-more {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: 800;
-        color: #475569;
-        margin-top: 2px;
+        color: #9aa0a6;
+        padding: 2px 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     .calendar-side-list {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 16px;
     }
 
     .calendar-side-card {
-        border: 1px solid #d6d8df;
-        border-radius: 14px;
-        background: rgba(246, 247, 249, 0.88);
-        box-shadow: 0 2px 7px rgba(7, 10, 18, 0.07);
-        padding: 12px;
+        border-radius: 20px;
+        background: #ffffff;
+        padding: 16px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        border: 1px solid rgba(0,0,0,0.04);
     }
 
     .calendar-side-card:hover {
-        background: #ffffff;
-        border-color: #111942;
-        transform: scale(1.02);
+        transform: scale(1.03);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+        border-color: rgba(0,0,0,0.08);
     }
 
     .calendar-status-pill {
         display: inline-flex;
         align-items: center;
-        border-radius: 9999px;
-        padding: 3px 9px;
-        font-size: 0.64rem;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 0.6rem;
         font-weight: 800;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        background: #dbe4f6;
-        color: #0f172a;
+        background: #f1f3f4;
+        color: #5f6368;
     }
 
     .calendar-status-pill.ongoing {
-        background: #fef3c7;
-        color: #92400e;
+        background: #fff8e1;
+        color: #b45309;
     }
 
     .day-events-modal {
@@ -211,25 +236,36 @@
         display: none;
         align-items: center;
         justify-content: center;
-        padding: 20px;
-        background: rgba(15, 23, 42, 0.55);
-        backdrop-filter: blur(3px);
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(8px);
     }
 
     .day-events-modal.is-open {
         display: flex;
+        animation: modal-fade-in 0.3s ease;
+    }
+
+    @keyframes modal-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     .day-events-dialog {
-        width: min(460px, 100%);
-        max-height: min(78vh, 640px);
-        background: #ffffff;
-        border-radius: 18px;
-        border: 1px solid #d4dce8;
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+        width: min(440px, 100%);
+        max-height: min(85vh, 640px);
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 32px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        animation: modal-slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modal-slide-up {
+        from { transform: translateY(40px) scale(0.95); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
     }
 
     .day-events-head {
@@ -237,169 +273,68 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 14px 16px;
-        border-bottom: 1px solid #e2e8f0;
-        background: #f8fafc;
+        padding: 24px 28px 16px;
     }
 
     .day-events-title {
-        font-size: 0.95rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: #0f172a;
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #1e293b;
+        letter-spacing: -0.02em;
     }
 
     .day-events-close {
-        width: 32px;
-        height: 32px;
-        border: 1px solid #d3dae5;
-        border-radius: 9999px;
-        background: #ffffff;
-        color: #334155;
-        font-size: 1rem;
-        font-weight: 900;
-        line-height: 1;
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 1.2rem;
         cursor: pointer;
-        transition: background-color 0.16s ease, color 0.16s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
     }
 
     .day-events-close:hover {
         background: #e2e8f0;
-        color: #0f172a;
+        color: #1e293b;
+        transform: rotate(90deg);
     }
 
     .day-events-body {
         overflow-y: auto;
-        padding: 12px;
+        padding: 0 24px 32px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 16px;
     }
 
     .day-events-empty {
-        padding: 24px;
+        padding: 48px 24px;
         text-align: center;
-        background: rgba(248, 250, 252, 0.74);
-        border: 1px dashed #cbd5e1;
-        border-radius: 14px;
-        color: #64748b;
-        font-size: 0.78rem;
-        font-weight: 700;
+        color: #94a3b8;
+        font-size: 0.95rem;
+        font-weight: 600;
     }
 
     @media (max-width: 1200px) {
-        .calendar-day,
-        .calendar-day-empty {
-            min-height: 112px;
-        }
+        .calendar-grid { gap: 10px; }
+        .calendar-day, .calendar-day-empty { min-height: 130px; }
     }
 
     @media (max-width: 1024px) {
-        .calendar-hero {
-            padding: 14px 16px;
-            gap: 12px;
-        }
-
-        .calendar-hero h1 {
-            font-size: 1.65rem;
-        }
-
-        .calendar-grid {
-            gap: 6px;
-        }
-
-        .calendar-day,
-        .calendar-day-empty {
-            min-height: 104px;
-            padding: 8px;
-        }
-    }
-
-    @media (max-width: 860px) {
-        .calendar-hero p {
-            font-size: 0.84rem;
-            line-height: 1.35;
-        }
-
-        .month-nav {
-            gap: 6px;
-        }
-
-        .month-nav-btn {
-            width: 32px;
-            height: 32px;
-        }
+        .calendar-hero { margin-bottom: 24px; }
+        .calendar-day, .calendar-day-empty { min-height: 110px; padding: 10px; }
     }
 
     @media (max-width: 760px) {
-        .calendar-hero {
-            margin-bottom: 12px;
-            padding: 13px 14px;
-        }
-
-        .calendar-hero h1 {
-            font-size: 1.45rem;
-            line-height: 1.1;
-        }
-
-        .month-nav-label {
-            font-size: 0.78rem;
-            letter-spacing: 0.06em;
-        }
-
-        .calendar-grid-shell {
-            overflow-x: auto;
-            padding-bottom: 2px;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .calendar-grid {
-            min-width: 700px;
-            gap: 6px;
-        }
-
-        .calendar-weekday {
-            padding: 6px 5px;
-            font-size: 0.66rem;
-        }
-
-        .calendar-day,
-        .calendar-day-empty {
-            min-height: 92px;
-            padding: 7px;
-            border-radius: 10px;
-        }
-
-        .calendar-day-number {
-            font-size: 0.88rem;
-        }
-
-        .calendar-day-count,
-        .calendar-event-text,
-        .calendar-more {
-            font-size: 0.64rem;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .calendar-grid {
-            min-width: 640px;
-            gap: 5px;
-        }
-
-        .calendar-day,
-        .calendar-day-empty {
-            min-height: 84px;
-            padding: 6px;
-        }
-
-        .calendar-event-dot {
-            width: 7px;
-            height: 7px;
-            margin-top: 5px;
-            flex-basis: 7px;
-        }
+        .calendar-hero { gap: 20px; }
+        .calendar-grid-shell { overflow-x: auto; padding: 4px; }
+        .calendar-grid { min-width: 800px; gap: 8px; }
+        .calendar-day, .calendar-day-empty { min-height: 100px; border-radius: 16px; }
     }
 </style>
 {% endblock %}
@@ -412,75 +347,80 @@
             {% include 'includes/primary_sidebar.html' %}
 
             <main class="feed-column">
-                <section class="calendar-hero">
+                <header class="calendar-hero">
                     <div>
-                        <h1 class="text-2xl font-black text-[#111942]">Event Calendar</h1>
-                        <p class="text-sm font-semibold text-slate-500">Monthly grid of Events posts with a quick summary per day.</p>
+                        <h1 class="text-3xl font-black text-[#1e293b] tracking-tight">{{ month_label }}</h1>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Herons' Hub Events Feed</p>
                     </div>
-                    <div class="month-nav">
-                        <a class="month-nav-btn" href="{{ url_for('core.event_calendar', month=prev_month) }}" aria-label="Previous month">&#8592;</a>
-                        <span class="month-nav-label text-sm font-black text-slate-700 uppercase tracking-wider">{{ month_label }}</span>
-                        <a class="month-nav-btn" href="{{ url_for('core.event_calendar', month=next_month) }}" aria-label="Next month">&#8594;</a>
-                    </div>
-                </section>
+                    <nav class="month-nav shadow-sm">
+                        <button class="today-btn" onclick="window.location.href='{{ url_for('core.event_calendar') }}'">Today</button>
+                        <a class="month-nav-btn" href="{{ url_for('core.event_calendar', month=prev_month) }}" aria-label="Previous month">&#8249;</a>
+                        <a class="month-nav-btn" href="{{ url_for('core.event_calendar', month=next_month) }}" aria-label="Next month">&#8250;</a>
+                    </nav>
+                </header>
 
                 <section class="posts-list">
                     <div class="calendar-grid-shell">
-                    <div class="calendar-grid">
-                        {% for label in weekday_labels %}
-                        <div class="calendar-weekday">{{ label }}</div>
-                        {% endfor %}
+                        <div class="calendar-grid">
+                            {% for label in weekday_labels %}
+                            <div class="calendar-weekday">{{ label[:3] }}</div>
+                            {% endfor %}
 
-                        {% for cell in calendar_cells %}
-                            {% if cell %}
-                            <article class="calendar-day {% if cell.is_today %}is-today{% endif %}" data-day="{{ cell.day }}" role="button" tabindex="0" aria-label="View events on {{ month_label }} {{ cell.day }}">
-                                <div class="calendar-day-head">
-                                    <span class="calendar-day-number">{{ cell.day }}</span>
-                                    {% if cell.event_count %}
-                                    <span class="calendar-day-count">{{ cell.event_count }} event{% if cell.event_count != 1 %}s{% endif %}</span>
-                                    {% endif %}
-                                </div>
-                                {% if cell.events %}
-                                    {% for event in cell.events %}
-                                    <div class="calendar-event-item">
-                                        <span class="calendar-event-dot {% if event.status == 'Ongoing' %}ongoing{% elif event.status == 'Upcoming' %}upcoming{% endif %}"></span>
-                                        <div class="calendar-event-text line-clamp-1" title="{{ event.title }}">{{ event.title }}</div>
+                            {% for cell in calendar_cells %}
+                                {% if cell %}
+                                <article class="calendar-day {% if cell.is_today %}is-today{% endif %}" data-day="{{ cell.day }}" role="button" tabindex="0" aria-label="View events on {{ month_label }} {{ cell.day }}">
+                                    <div class="calendar-day-head">
+                                        <span class="calendar-day-number">{{ cell.day }}</span>
                                     </div>
-                                    {% endfor %}
-                                    {% if cell.event_count > 2 %}
-                                    <div class="calendar-more">+{{ cell.event_count - 2 }} more</div>
-                                    {% endif %}
+                                    <div class="flex-1 space-y-1">
+                                        {% if cell.events %}
+                                            {% for event in cell.events[:2] %}
+                                            <div class="calendar-event-item">
+                                                <div class="calendar-event-pill {% if event.status == 'Ongoing' %}ongoing{% elif event.status == 'Upcoming' %}upcoming{% endif %}" title="{{ event.title }}">{{ event.title }}</div>
+                                            </div>
+                                            {% endfor %}
+                                            {% if cell.event_count > 2 %}
+                                            <div class="calendar-more">+{{ cell.event_count - 2 }} more</div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </article>
+                                {% else %}
+                                <div class="calendar-day-empty" aria-hidden="true"></div>
                                 {% endif %}
-                            </article>
-                            {% else %}
-                            <div class="calendar-day-empty" aria-hidden="true"></div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </section>
             </main>
 
             <aside class="sidebar">
                 <div class="sidebar-section">
-                    <h3 class="sidebar-heading">This Month</h3>
+                    <h3 class="sidebar-heading">Schedule Summary</h3>
                     <div class="calendar-side-list">
                         {% if month_events %}
                             {% for event in month_events[:8] %}
                             <article class="calendar-side-card" onclick="openPostModal('{{ event.id }}')">
-                                <div class="flex items-start justify-between gap-3 mb-1.5">
-                                    <h4 class="text-sm font-black text-[#111942] leading-tight">{{ event.title }}</h4>
+                                <div class="flex items-start justify-between gap-3 mb-2">
+                                    <h4 class="text-sm font-extrabold text-[#1e293b] leading-tight">${{ event.title }}</h4>
                                     <span class="calendar-status-pill {% if event.status == 'Ongoing' %}ongoing{% endif %}">{{ event.status }}</span>
                                 </div>
-                                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{{ event.day_label }} · {{ event.time_display }}</p>
-                                <p class="text-xs font-semibold text-slate-600 mt-1">{{ event.location }}</p>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="w-1.5 h-1.5 rounded-full {% if event.status == 'Ongoing' %}bg-amber-400{% else %}bg-indigo-400{% endif %}"></div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ event.day_label }} · {{ event.time_display }}</p>
+                                </div>
+                                <div class="flex items-start gap-1.5 opacity-70">
+                                    <svg class="w-3 h-3 text-slate-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    <p class="text-xs font-bold text-slate-500 truncate">{{ event.location or 'Location TBD' }}</p>
+                                </div>
                             </article>
                             {% endfor %}
                         {% else %}
-                            <p class="text-sm text-slate-500 font-medium">No event posts found for this month.</p>
+                            <div class="bg-slate-50 rounded-3xl p-8 text-center border border-dashed border-slate-200">
+                                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">No Events Found</p>
+                            </div>
                         {% endif %}
                     </div>
-
                 </div>
             </aside>
         </div>

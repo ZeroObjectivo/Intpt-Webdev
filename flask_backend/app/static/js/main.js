@@ -129,15 +129,92 @@ function togglePostMenu(postId, event) {
     }
 }
 
+function toggleSaveMenu(postId, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const menu = document.getElementById(`save-menu-${postId}`);
+    const allMenus = document.querySelectorAll('[id^="save-menu-"]');
+
+    // Close others
+    allMenus.forEach(m => {
+        if (m.id !== `save-menu-${postId}`) m.classList.add('hidden');
+    });
+
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
 // Global click listener to close menus when clicking outside
 document.addEventListener('click', (e) => {
-    const isMenuButton = e.target.closest('button[onclick^="togglePostMenu"]');
-    const isInsideMenu = e.target.closest('.post-menu-dropdown');
+    const isMenuButton = e.target.closest('button[onclick^="togglePostMenu"]') || e.target.closest('button[onclick^="toggleSaveMenu"]');
+    const isInsideMenu = e.target.closest('.post-menu-dropdown') || e.target.closest('[id^="save-menu-"]');
     
     if (!isMenuButton && !isInsideMenu) {
         document.querySelectorAll('.post-menu-dropdown').forEach(m => m.classList.add('hidden'));
+        document.querySelectorAll('[id^="save-menu-"]').forEach(m => m.classList.add('hidden'));
     }
 });
+
+function saveToGoogle(title, startStr, endStr, location, details) {
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    };
+
+    const start = formatDate(startStr);
+    const end = endStr ? formatDate(endStr) : formatDate(new Date(new Date(startStr).getTime() + 3600000)); // Default +1 hour
+
+    const url = new URL('https://calendar.google.com/calendar/render');
+    url.searchParams.append('action', 'TEMPLATE');
+    url.searchParams.append('text', title);
+    url.searchParams.append('dates', `${start}/${end}`);
+    url.searchParams.append('details', details);
+    url.searchParams.append('location', location);
+    url.searchParams.append('sf', 'true');
+    url.searchParams.append('output', 'xml');
+
+    window.open(url.toString(), '_blank');
+}
+
+function downloadICS(title, startStr, endStr, location, details) {
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toISOString().replace(/-|:|\.\d\d\d/g, "").split('Z')[0] + 'Z';
+    };
+
+    const start = formatDate(startStr);
+    const end = endStr ? formatDate(endStr) : formatDate(new Date(new Date(startStr).getTime() + 3600000));
+
+    const icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Herons Hub//Event Calendar//EN',
+        'BEGIN:VEVENT',
+        `UID:${Date.now()}@heronshub.social`,
+        `DTSTAMP:${formatDate(new Date())}`,
+        `DTSTART:${start}`,
+        `DTEND:${end}`,
+        `SUMMARY:${title}`,
+        `DESCRIPTION:${details.replace(/\n/g, '\\n')}`,
+        `LOCATION:${location}`,
+        'END:VEVENT',
+        'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${title.replace(/\s+/g, '_')}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 function showEditForm(postId) {
     const content = document.getElementById(`post-content-${postId}`);

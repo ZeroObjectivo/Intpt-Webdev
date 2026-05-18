@@ -80,8 +80,85 @@
             <span class="marketplace-product-price">PHP {{ "{:,.2f}".format(post.price) }}</span>
             {% endif %}
         </div>
+        {% elif post_category == 'Events' and post.event_title %}
+        {% set host_info = post.hosting_college or post.profiles.college %}
+        {# Use the name exactly as stored in colleges_institutes for the lookup #}
+        {% set host_color = college_colors.get(host_info) or '#6366f1' %}
+        <div class="mb-5 rounded-3xl p-5 border shadow-md transition-all hover:shadow-lg relative" 
+             style="background: linear-gradient(145deg, {{ host_color }}0D 0%, {{ host_color }}1A 100%); border-color: {{ host_color }}30;">
+            <!-- Modern Color Accent -->
+            <div class="absolute top-0 left-0 w-1.5 h-full rounded-l-3xl" style="background: {{ host_color }};"></div>
+            
+            <div class="flex items-start gap-4">
+                {% if post.event_date %}
+                    {% set ev_dt = post.event_date|datetime_obj %}
+                    {% set ev_local = ev_dt.astimezone(DISPLAY_TIMEZONE) %}
+                    <div class="flex flex-col items-center justify-center bg-white rounded-2xl p-2.5 min-w-[64px] shadow-sm border border-slate-100">
+                        <span class="text-[10px] font-black uppercase tracking-[0.25em]" style="color: {{ host_color }};">{{ ev_local.strftime('%b') }}</span>
+                        <span class="text-2xl font-black text-slate-800 leading-none mt-1">{{ ev_local.strftime('%d') }}</span>
+                    </div>
+                {% endif %}
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm" 
+                              style="background: {{ host_color }}; color: #ffffff;">Event</span>
+                        {% if host_info %}
+                        <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest truncate">Presented by {{ host_info }}</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="text-xl font-black text-slate-900 leading-tight truncate drop-shadow-sm">{{ post.event_title }}</h3>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mt-6 pt-5 border-t" style="border-color: {{ host_color }}20;">
+                <div class="flex items-center gap-6">
+                    {% if post.event_date %}
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-slate-50" style="color: {{ host_color }};">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] leading-none mb-1">Time</span>
+                            <span class="text-[11px] font-black text-slate-700">{{ ev_local.strftime('%I:%M %p').lstrip('0') }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if post.location %}
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-slate-50" style="color: {{ host_color }};">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] leading-none mb-1">Venue</span>
+                            <span class="text-[11px] font-black text-slate-700 truncate max-w-[140px]">{{ post.location }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="relative inline-block text-left">
+                    <button onclick="toggleSaveMenu('{{ post.id }}', event)" 
+                            class="h-10 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-[1.03] active:scale-[0.97] shadow-sm flex items-center justify-center gap-2.5 group"
+                            style="background: {{ host_color }}; color: #ffffff; border: 1px solid {{ host_color }};">
+                        <svg class="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Save Event
+                    </button>
+                    <!-- Positioned to be relative to the card container, ensuring visibility -->
+                    <div id="save-menu-{{ post.id }}" class="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-2xl border border-slate-100 bg-white/95 py-1.5 shadow-xl backdrop-blur-xl hidden z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <button onclick="saveToGoogle('{{ post.event_title|escape }}', '{{ post.event_date }}', '{{ post.event_end_date or '' }}', '{{ post.location|escape }}', '{{ post.content|striptags|truncate(100)|escape }}')" 
+                                class="w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Google Calendar
+                        </button>
+                        <button onclick="downloadICS('{{ post.event_title|escape }}', '{{ post.event_date }}', '{{ post.event_end_date or '' }}', '{{ post.location|escape }}', '{{ post.content|striptags|truncate(100)|escape }}')" 
+                                class="w-full text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center gap-3">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> iCal / Outlook
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% endif %}
-        {% if post.category in ['Buy & Sell', 'Heron Business', 'Lost & Found', 'Events'] %}
+        {% if post.category in ['Buy & Sell', 'Heron Business', 'Lost & Found'] %}
         <div class="flex flex-wrap gap-4 mb-4 text-xs font-bold">
             {% if post.price and not is_business_post %}
             <div class="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
@@ -92,12 +169,6 @@
             <div class="flex items-center gap-1.5 text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span>{{ post.location }}</span>
-            </div>
-            {% endif %}
-            {% if post.event_date %}
-            <div class="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <span>{{ post.event_date[:16].replace('T', ' ') }}</span>
             </div>
             {% endif %}
         </div>
@@ -182,6 +253,25 @@
                         <option value="Available" {% if (post.listing_availability or 'Available') == 'Available' %}selected{% endif %}>Available</option>
                         <option value="Not Available" {% if post.listing_availability == 'Not Available' %}selected{% endif %}>Not Available</option>
                     </select>
+                </div>
+            </div>
+            {% elif post_category == 'Events' %}
+            <div class="grid gap-2 mb-3">
+                <input type="text" name="event_title" value="{{ post.event_title or '' }}" placeholder="Event Title"
+                       class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                <input type="text" name="location" value="{{ post.location or '' }}" placeholder="Event Location"
+                       class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                <select name="hosting_college" class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                    <option value="" {% if not post.hosting_college %}selected{% endif %}>Select Hosting College</option>
+                    {% for college in colleges %}
+                    <option value="{{ college.name }}" {% if post.hosting_college == college.name %}selected{% endif %}>{{ college.full_name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="datetime-local" name="event_date" value="{{ post.event_date[:16] if post.event_date else '' }}"
+                           class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                    <input type="datetime-local" name="event_end_date" value="{{ post.event_end_date[:16] if post.event_end_date else '' }}"
+                           class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
                 </div>
             </div>
             {% endif %}
