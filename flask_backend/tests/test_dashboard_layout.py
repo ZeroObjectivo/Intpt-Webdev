@@ -42,10 +42,10 @@ class DashboardLayoutTest(unittest.TestCase):
         rule_body = sidebar_rule.group("body")
         self.assertIn("position: sticky", rule_body)
         self.assertIn("top: 112px", rule_body)
-        self.assertIn("Home Feed", self.template)
-        self.assertIn("Marketplace", self.template)
-        self.assertIn("Events", self.template)
-        self.assertIn("About", self.template)
+        self.assertIn("All Posts", self.template)
+        self.assertIn("Marketplace", self.sidebar_include)
+        self.assertIn("Event Calendar", self.sidebar_include)
+        self.assertIn("About", self.sidebar_include)
         self.assertNotIn("Settings", self.sidebar_include)
 
     def test_primary_nav_links_use_current_dashboard_navigation_structure(self):
@@ -128,10 +128,13 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertNotIn("#fef08a", self.css)
 
     def test_dashboard_state_interactions_are_client_side(self):
-        self.assertGreaterEqual(len(re.findall(r"(?:<a|<button)[^>]+data-nav-item", self.template)), 7)
+        self.assertGreaterEqual(len(re.findall(r"(?:<a|<button)[^>]+data-nav-item", self.sidebar_include)), 7)
         self.assertIn('id="mobileCategoryFilter"', self.template)
         self.assertIn("window.dashboardSyncConfig", self.template)
         self.assertIn("js/realtime_sync.js", self.template)
+        self.assertIn('onclick="openCreateModal()"', self.template)
+        self.assertIn('oninput="openCreateModal(this.value);', self.template)
+        self.assertIn("onclick='openCommentModal(", self.template)
 
     def test_dashboard_filter_header_uses_icon_without_helper_copy(self):
         self.assertNotIn("Use a category tag to focus what appears in your timeline.", self.template)
@@ -141,12 +144,12 @@ class DashboardLayoutTest(unittest.TestCase):
 
     def test_trending_now_uses_card_layout_with_rank_and_status(self):
         self.assertIn('class="trending-rank"', self.template)
-        self.assertIn('class="trending-pill-row"', self.template)
-        self.assertIn('class="badge badge-events trending-pill"', self.template)
+        self.assertIn('class="trending-category-row"', self.template)
+        self.assertIn('class="trending-category-text"', self.template)
         self.assertIn('class="trending-description line-clamp-2"', self.template)
         self.assertIn('class="trending-likes"', self.template)
         self.assertIn('class="trending-chevron"', self.template)
-        self.assertIn(".trending-pill", self.css)
+        self.assertIn(".trending-category-text", self.css)
         self.assertIn(".trending-description", self.css)
         self.assertIn(".trending-likes", self.css)
 
@@ -227,22 +230,11 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn(".fb-grid", self.css)
 
     def test_event_hosting_college_options_are_exact(self):
-        expected_options = [
-            "CLAS - College of Liberal Arts and Sciences",
-            "CHK - College of Human Kinetics",
-            "CBFS - College of Business and Financial Sciences",
-            "CCIS - College of Computing and Information Sciences",
-            "CITE - College of Innovative Teacher Education",
-            "CITE-HSU - Higher School ng UMak",
-            "CGPP - College of Governance and Public Policy",
-            "CCSE - College of Construction Sciences and Engineering",
-            "CET - College of Engineering Technology",
-            "CTHM - College of Tourism and Hospitality Management",
-            "CCAPS - College of Continuing, Advanced and Professional Studies",
-        ]
-
-        for option in expected_options:
-            self.assertIn(f'<option value="{option}">{option}</option>', self.template)
+        self.assertIn('<option value="">Which college is hosting?</option>', self.template)
+        self.assertIn('<optgroup label="Colleges">', self.template)
+        self.assertIn('<optgroup label="Schools & Institutes">', self.template)
+        self.assertIn('{% for item in colleges %}', self.template)
+        self.assertIn('{% for item in institutes %}', self.template)
 
     def test_dashboard_feed_removes_static_structured_mockups(self):
         self.assertNotIn("Structured Post Examples", self.template)

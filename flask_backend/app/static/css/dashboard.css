@@ -719,20 +719,22 @@
     gap: 6px;
 }
 
-.trending-pill-row {
+.trending-category-row {
     position: relative;
     display: flex;
     align-items: center;
-    min-height: 1.5rem;
+    min-height: 1.25rem;
+    margin-bottom: 2px;
 }
 
-.trending-pill {
+.trending-category-text {
     position: relative;
-    top: 0;
-    left: 0;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 700;
     line-height: 1;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
 }
 
 .trending-description {
@@ -1305,7 +1307,7 @@
         font-size: 1.4rem;
     }
 
-    .trending-pill {
+    .trending-category-text {
         font-size: 0.66rem;
     }
 

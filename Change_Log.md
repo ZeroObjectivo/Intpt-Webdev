@@ -5,6 +5,15 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 
 ---
 
+## [Unreleased] - 2026-05-18
+
+### Changed
+- **Trending Now Styling:** Removed the category pill styling in the "Trending Now" sidebar section, replaced with plain text labels for a cleaner, more focused aesthetic.
+- **Dashboard Layout Tests:** Updated layout tests to align with current template structures, including sidebar navigation labels, attribute quoting conventions, and dynamic form field styling.
+
+### Fixed
+- **Event Field Styling:** Corrected a container styling mismatch for event fields in the "Create Post" modal to ensure consistency with other category-specific sections and pass layout validation.
+
 ## [Unreleased] - 2026-05-17
 
 ### Added
