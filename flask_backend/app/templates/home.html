@@ -553,12 +553,24 @@
 {% endblock %}
 
 {% block content %}
+{# Icon map for feature cards #}
+{% set icon_svgs = {
+    'user': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"></path></svg>',
+    'document': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 8h10M7 12h10M7 16h6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"></path></svg>',
+    'calendar': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>',
+    'list': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h16M4 17h10"></path></svg>',
+    'shield': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>',
+    'chat': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>',
+    'globe': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"></path></svg>',
+    'star': '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>'
+} %}
+
 <div class="home-page">
     <section class="home-hero">
         <div class="home-hero-inner">
             <img src="{{ url_for('static', filename='images/landing/landing-logo-large.svg') }}" alt="Herons Hub mark" class="hero-logo-mark">
-            <h1 class="hero-title">Herons' Hub</h1>
-            <p class="hero-subtitle">Community for everyone</p>
+            <h1 class="hero-title">{{ site.get('hero_title', "Herons' Hub") }}</h1>
+            <p class="hero-subtitle">{{ site.get('hero_subtitle', 'Community for everyone') }}</p>
             {% if session.get('user') %}
             <a href="{{ url_for('core.dashboard') }}" class="hero-dashboard-cta">
                 Go to Dashboard
@@ -569,54 +581,35 @@
 
     <section class="home-content">
         <div class="home-section scroll-reveal" style="--reveal-delay: 80ms;">
-            <p class="section-kicker">About Us</p>
-            <p class="about-copy">
-                Herons' Hub is a University of Makati digital community where students can share campus updates, discover opportunities, join events, and connect through verified school identities.
-                Built for collaboration, it keeps discussions relevant, student-focused, and easy to navigate.
-            </p>
+            <p class="section-kicker">{{ site.get('about_kicker', 'About Us') }}</p>
+            <p class="about-copy">{{ site.get('about_description', "Herons' Hub is a University of Makati digital community where students can share campus updates, discover opportunities, join events, and connect through verified school identities. Built for collaboration, it keeps discussions relevant, student-focused, and easy to navigate.") }}</p>
 
             <div class="features-section scroll-reveal" style="--reveal-delay: 120ms;">
-                <p class="section-kicker">Features</p>
+                <p class="section-kicker">{{ site.get('features_kicker', 'Features') }}</p>
                 <div class="features-grid">
-                    <article class="feature-card scroll-reveal" style="--reveal-delay: 150ms;">
+                    {% for i in [1, 2, 3, 4] %}
+                    {% set defaults = {1: {'label': 'Only UMak Students allowed', 'desc': 'Access is limited to verified @umak.edu.ph accounts to keep the community safe and school-focused.', 'icon': 'user'}, 2: {'label': 'Community Posts', 'desc': 'Share updates, marketplace offers, and questions in one moderated student feed.', 'icon': 'document'}, 3: {'label': 'Unified Platform', 'desc': 'Events, scholarship listings, and UMak Coop catalogs are accessible in one place.', 'icon': 'calendar'}, 4: {'label': 'Student-Based Application', 'desc': 'Built around student needs with campus-first features, reporting, and real-time interactions.', 'icon': 'list'}} %}
+                    {% set f_label = site.get('feature_' ~ i ~ '_label', defaults[i].label) %}
+                    {% set f_desc = site.get('feature_' ~ i ~ '_desc', defaults[i].desc) %}
+                    {% set f_icon = site.get('feature_' ~ i ~ '_icon', defaults[i].icon) %}
+                    {% if f_label %}
+                    <article class="feature-card scroll-reveal" style="--reveal-delay: {{ 90 + i * 60 }}ms;">
                         <div class="feature-icon-wrap">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"></path></svg>
+                            {{ icon_svgs.get(f_icon, icon_svgs['star']) | safe }}
                         </div>
-                        <p class="feature-label">Only UMak Students allowed</p>
-                        <p class="feature-note">Access is limited to verified <code>@umak.edu.ph</code> accounts to keep the community safe and school-focused.</p>
+                        <p class="feature-label">{{ f_label }}</p>
+                        <p class="feature-note">{{ f_desc }}</p>
                     </article>
-
-                    <article class="feature-card scroll-reveal" style="--reveal-delay: 210ms;">
-                        <div class="feature-icon-wrap">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 8h10M7 12h10M7 16h6M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"></path></svg>
-                        </div>
-                        <p class="feature-label">Community Posts</p>
-                        <p class="feature-note">Share updates, marketplace offers, and questions in one moderated student feed.</p>
-                    </article>
-
-                    <article class="feature-card scroll-reveal" style="--reveal-delay: 270ms;">
-                        <div class="feature-icon-wrap">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>
-                        </div>
-                        <p class="feature-label">Unified Platform</p>
-                        <p class="feature-note">Events, scholarship listings, and UMak Coop catalogs are accessible in one place.</p>
-                    </article>
-
-                    <article class="feature-card scroll-reveal" style="--reveal-delay: 330ms;">
-                        <div class="feature-icon-wrap">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h16M4 17h10"></path></svg>
-                        </div>
-                        <p class="feature-label">Student-Based Application</p>
-                        <p class="feature-note">Built around student needs with campus-first features, reporting, and real-time interactions.</p>
-                    </article>
+                    {% endif %}
+                    {% endfor %}
                 </div>
             </div>
 
             <!-- Team Section -->
             <div class="team-section scroll-reveal" style="--reveal-delay: 180ms;">
-                <p class="section-kicker">The Team</p>
-                <h2 class="team-title">Meet the Team</h2>
-                <p class="team-desc">The people behind Herons' Hub — building a better campus experience for every UMak student.</p>
+                <p class="section-kicker">{{ site.get('team_kicker', 'The Team') }}</p>
+                <h2 class="team-title">{{ site.get('team_title', 'Meet the Team') }}</h2>
+                <p class="team-desc">{{ site.get('team_desc', "The people behind Herons' Hub — building a better campus experience for every UMak student.") }}</p>
 
                 <!-- Group Photo -->
                 <div class="team-group-frame scroll-reveal" style="--reveal-delay: 220ms;">
@@ -661,8 +654,9 @@
                     <img src="{{ url_for('static', filename='images/Top Navigation Bar Logo.svg') }}" alt="University of Makati Herons' Hub">
                 </div>
                 <div class="home-footer-contact">
-                    <h3>Developers / Contact</h3>
-                    <a href="mailto:sample@heronshub.social">sample@heronshub.social</a>
+                    <h3>{{ site.get('footer_contact_title', 'Developers / Contact') }}</h3>
+                    {% set footer_email = site.get('footer_contact_email', 'sample@heronshub.social') %}
+                    <a href="mailto:{{ footer_email }}">{{ footer_email }}</a>
                 </div>
             </div>
         </footer>

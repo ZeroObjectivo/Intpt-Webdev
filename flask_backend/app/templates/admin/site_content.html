@@ -1,0 +1,168 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Landing Page Content | Admin Hub{% endblock %}
+
+{% block header_title %}Landing Page Content{% endblock %}
+
+{% block admin_content %}
+<div>
+    <div class="mb-6 flex flex-wrap items-center gap-3">
+        <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back
+        </a>
+        <a href="{{ url_for('admin.manage_team') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            Team Photos
+        </a>
+    </div>
+
+    <form action="{{ url_for('admin.save_site_content') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Hero Section -->
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 mb-6">
+            <div class="mb-6">
+                <h3 class="text-lg font-black text-slate-800">Hero Section</h3>
+                <p class="text-sm text-slate-400 font-bold">The main banner visitors see first.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Title</label>
+                    <input type="text" name="hero_title" value="{{ site.get('hero_title', "Herons' Hub") }}"
+                           class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Subtitle</label>
+                    <input type="text" name="hero_subtitle" value="{{ site.get('hero_subtitle', 'Community for everyone') }}"
+                           class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 mb-6">
+            <div class="mb-6">
+                <h3 class="text-lg font-black text-slate-800">About Section</h3>
+                <p class="text-sm text-slate-400 font-bold">Introduction text below the hero.</p>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Section Label</label>
+                    <input type="text" name="about_kicker" value="{{ site.get('about_kicker', 'About Us') }}"
+                           class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Description</label>
+                    <textarea name="about_description" rows="4"
+                              class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all resize-y">{{ site.get('about_description', '') }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 mb-6">
+            <div class="mb-6">
+                <h3 class="text-lg font-black text-slate-800">Features Section</h3>
+                <p class="text-sm text-slate-400 font-bold">Four feature cards. Leave a label blank to hide that card.</p>
+            </div>
+            <div class="mb-5">
+                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Section Label</label>
+                <input type="text" name="features_kicker" value="{{ site.get('features_kicker', 'Features') }}"
+                       class="w-full md:w-1/2 px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+            </div>
+
+            {% set default_features = {
+                1: {'label': 'Only UMak Students allowed', 'desc': 'Access is limited to verified @umak.edu.ph accounts to keep the community safe and school-focused.', 'icon': 'user'},
+                2: {'label': 'Community Posts', 'desc': 'Share updates, marketplace offers, and questions in one moderated student feed.', 'icon': 'document'},
+                3: {'label': 'Unified Platform', 'desc': 'Events, scholarship listings, and UMak Coop catalogs are accessible in one place.', 'icon': 'calendar'},
+                4: {'label': 'Student-Based Application', 'desc': 'Built around student needs with campus-first features, reporting, and real-time interactions.', 'icon': 'list'}
+            } %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {% for i in [1, 2, 3, 4] %}
+                <div class="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-3">
+                    <p class="text-[11px] font-black uppercase text-slate-300 tracking-widest">Feature {{ i }}</p>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Label</label>
+                        <input type="text" name="feature_{{ i }}_label" value="{{ site.get('feature_' ~ i ~ '_label', default_features[i].label) }}"
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-white text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Description</label>
+                        <textarea name="feature_{{ i }}_desc" rows="2"
+                                  class="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-white text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all resize-y">{{ site.get('feature_' ~ i ~ '_desc', default_features[i].desc) }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Icon</label>
+                        <select name="feature_{{ i }}_icon"
+                                class="w-full px-4 py-2.5 rounded-xl border border-slate-100 bg-white text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                            {% set current_icon = site.get('feature_' ~ i ~ '_icon', default_features[i].icon) %}
+                            {% for opt in [('user', 'User / Person'), ('document', 'Document'), ('calendar', 'Calendar'), ('list', 'List'), ('shield', 'Shield / Security'), ('chat', 'Chat / Messages'), ('globe', 'Globe / Web'), ('star', 'Star')] %}
+                            <option value="{{ opt[0] }}" {{ 'selected' if current_icon == opt[0] else '' }}>{{ opt[1] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Team Section Text -->
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 mb-6">
+            <div class="mb-6">
+                <div class="flex flex-col gap-1 md:flex-row md:justify-between md:items-center">
+                    <div>
+                        <h3 class="text-lg font-black text-slate-800">Team Section Text</h3>
+                        <p class="text-sm text-slate-400 font-bold">Heading and description above the team photo. Manage photos in <a href="{{ url_for('admin.manage_team') }}" class="text-umak-blue hover:underline">Team Photos</a>.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Section Label</label>
+                    <input type="text" name="team_kicker" value="{{ site.get('team_kicker', 'The Team') }}"
+                           class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Title</label>
+                    <input type="text" name="team_title" value="{{ site.get('team_title', 'Meet the Team') }}"
+                           class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Description</label>
+                    <textarea name="team_desc" rows="2"
+                              class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all resize-y">{{ site.get('team_desc', '') }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 mb-6">
+            <div class="mb-6">
+                <h3 class="text-lg font-black text-slate-800">Footer</h3>
+                <p class="text-sm text-slate-400 font-bold">Contact info at the bottom of the landing page.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Contact Title</label>
+                    <input type="text" name="footer_contact_title" value="{{ site.get('footer_contact_title', 'Developers / Contact') }}"
+                           class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Contact Email</label>
+                    <input type="email" name="footer_contact_email" value="{{ site.get('footer_contact_email', 'sample@heronshub.social') }}"
+                           class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="sticky bottom-4 z-10">
+            <button type="submit" class="w-full bg-umak-blue text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-blue-200/50 hover:bg-blue-700 transition-all">
+                Save All Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

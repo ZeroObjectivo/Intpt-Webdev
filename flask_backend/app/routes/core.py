@@ -1140,6 +1140,7 @@ def home():
     metrics = load_home_metrics()
     team_photo = None
     lead_developer = None
+    site = {}
     try:
         client = supabase_service or get_user_client()
         res = client.table('team_members').select('name, role, photo_url, member_type').order('display_order').execute()
@@ -1150,7 +1151,13 @@ def home():
                 lead_developer = row
     except Exception as e:
         logger.warning("Failed to load team members: %s", e)
-    return render_template('home.html', user=user, metrics=metrics, team_photo=team_photo, lead_developer=lead_developer)
+    try:
+        client = supabase_service or get_user_client()
+        res = client.table('site_content').select('key, value').execute()
+        site = {row['key']: row['value'] for row in (res.data or [])}
+    except Exception as e:
+        logger.warning("Failed to load site content: %s", e)
+    return render_template('home.html', user=user, metrics=metrics, team_photo=team_photo, lead_developer=lead_developer, site=site)
 
 @core.route('/dashboard')
 @login_required

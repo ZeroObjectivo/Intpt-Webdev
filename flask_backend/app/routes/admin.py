@@ -1611,6 +1611,45 @@ def delete_forbidden_word(word):
 
     return redirect(url_for('admin.manage_forbidden_words'))
 
+# --- Landing Page Content Management ---
+
+@admin.route('/admin/site-content')
+@login_required
+@admin_required
+def manage_site_content():
+    client = get_admin_read_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    res = client.table('site_content').select('key, value').execute()
+    site = {row['key']: row['value'] for row in (res.data or [])}
+    return render_template('admin/site_content.html', site=site, user=session.get('user'), permissions=permissions)
+
+@admin.route('/admin/site-content/save', methods=['POST'])
+@login_required
+@admin_required
+def save_site_content():
+    client = get_service_client()
+    fields = [
+        'hero_title', 'hero_subtitle',
+        'about_kicker', 'about_description',
+        'features_kicker',
+        'feature_1_label', 'feature_1_desc', 'feature_1_icon',
+        'feature_2_label', 'feature_2_desc', 'feature_2_icon',
+        'feature_3_label', 'feature_3_desc', 'feature_3_icon',
+        'feature_4_label', 'feature_4_desc', 'feature_4_icon',
+        'team_kicker', 'team_title', 'team_desc',
+        'footer_contact_title', 'footer_contact_email',
+    ]
+    try:
+        for key in fields:
+            value = request.form.get(key, '').strip()
+            client.table('site_content').upsert({"key": key, "value": value}, on_conflict='key').execute()
+        flash("Landing page content saved.", "success")
+    except Exception as e:
+        logger.error("Error saving site content: %s", e)
+        flash("Error saving content.", "error")
+    return redirect(url_for('admin.manage_site_content'))
+
 # --- Team Members Management ---
 
 @admin.route('/admin/team')
@@ -1840,7 +1879,8 @@ def global_search():
         {"title": "UMak Coop Catalog", "url": "/admin/catalog/umak-coop", "keywords": ["coop", "items", "products", "store", "shop"], "icon": "shopping"},
         {"title": "Colleges & Institutes", "url": "/admin/colleges", "keywords": ["colleges", "institutes", "academic units", "departments"], "icon": "office"},
         {"title": "Profanity Filter", "url": "/admin/forbidden-words", "keywords": ["profanity", "forbidden", "filter", "words", "banned words"], "icon": "chat"},
-        {"title": "Team Members", "url": "/admin/team", "keywords": ["team", "members", "landing page", "developers", "about"], "icon": "users"},
+        {"title": "Landing Page Content", "url": "/admin/site-content", "keywords": ["landing", "home", "hero", "about", "features", "footer", "site content"], "icon": "document"},
+        {"title": "Team Photos", "url": "/admin/team", "keywords": ["team", "members", "developers", "group photo", "lead developer"], "icon": "users"},
         {"title": "Support Inbox", "url": "/admin/support", "keywords": ["support", "inbox", "tickets", "help", "messages"], "icon": "mail"},
         {"title": "System Logs", "url": "/admin/logs", "keywords": ["logs", "audit", "history", "activity"], "icon": "clipboard"}
     ]
