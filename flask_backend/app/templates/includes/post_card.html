@@ -255,6 +255,25 @@
                     </select>
                 </div>
             </div>
+            {% elif post_category == 'Events' %}
+            <div class="grid gap-2 mb-3">
+                <input type="text" name="event_title" value="{{ post.event_title or '' }}" placeholder="Event Title"
+                       class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                <input type="text" name="location" value="{{ post.location or '' }}" placeholder="Event Location"
+                       class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                <select name="hosting_college" class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                    <option value="" {% if not post.hosting_college %}selected{% endif %}>Select Hosting College</option>
+                    {% for college in colleges %}
+                    <option value="{{ college.name }}" {% if post.hosting_college == college.name %}selected{% endif %}>{{ college.full_name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="datetime-local" name="event_date" value="{{ post.event_date[:16] if post.event_date else '' }}"
+                           class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                    <input type="datetime-local" name="event_end_date" value="{{ post.event_end_date[:16] if post.event_end_date else '' }}"
+                           class="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-umak-blue/20">
+                </div>
+            </div>
             {% endif %}
             <div class="flex justify-end gap-2">
                 <button type="button" onclick="hideEditForm('{{ post.id }}')" class="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>

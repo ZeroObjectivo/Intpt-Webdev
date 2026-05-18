@@ -111,6 +111,24 @@ function showInlineDialog(options = {}) {
     });
 }
 
+function togglePostMenu(postId, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const menu = document.getElementById(`post-menu-${postId}`);
+    const allMenus = document.querySelectorAll('.post-menu-dropdown');
+
+    // Close others
+    allMenus.forEach(m => {
+        if (m.id !== `post-menu-${postId}`) m.classList.add('hidden');
+    });
+
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
 function toggleSaveMenu(postId, event) {
     if (event) {
         event.preventDefault();
