@@ -1138,14 +1138,19 @@ def load_home_metrics():
 def home():
     user = session.get('user')
     metrics = load_home_metrics()
-    team_members = []
+    team_photo = None
+    lead_developer = None
     try:
         client = supabase_service or get_user_client()
-        res = client.table('team_members').select('name, role, photo_url').order('display_order').execute()
-        team_members = res.data or []
+        res = client.table('team_members').select('name, role, photo_url, member_type').order('display_order').execute()
+        for row in (res.data or []):
+            if row.get('member_type') == 'team_photo' and not team_photo:
+                team_photo = row
+            elif row.get('member_type') == 'lead' and not lead_developer:
+                lead_developer = row
     except Exception as e:
         logger.warning("Failed to load team members: %s", e)
-    return render_template('home.html', user=user, metrics=metrics, team_members=team_members)
+    return render_template('home.html', user=user, metrics=metrics, team_photo=team_photo, lead_developer=lead_developer)
 
 @core.route('/dashboard')
 @login_required

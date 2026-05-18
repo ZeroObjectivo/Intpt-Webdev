@@ -5,7 +5,17 @@
 {% block header_title %}Team Members{% endblock %}
 
 {% block admin_content %}
-<div x-data="{ showAddModal: false, showEditModal: false, editId: '', editName: '', editRole: '', editOrder: 0 }">
+{% set team_photo = None %}
+{% set lead_dev = None %}
+{% for m in members %}
+    {% if m.member_type == 'team_photo' and not team_photo %}
+        {% set team_photo = m %}
+    {% elif m.member_type == 'lead' and not lead_dev %}
+        {% set lead_dev = m %}
+    {% endif %}
+{% endfor %}
+
+<div>
     <div class="mb-6">
         <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -13,157 +23,122 @@
         </a>
     </div>
 
-    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-        <div class="flex flex-col gap-3 md:flex-row md:justify-between md:items-center mb-8">
+    <!-- Team Group Photo -->
+    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 mb-6">
+        <div class="flex flex-col gap-3 md:flex-row md:justify-between md:items-center mb-6">
             <div>
-                <h3 class="text-lg font-black text-slate-800">Landing Page Team</h3>
-                <p class="text-sm text-slate-400 font-bold">Manage team members displayed on the public landing page.</p>
+                <h3 class="text-lg font-black text-slate-800">Team Group Photo</h3>
+                <p class="text-sm text-slate-400 font-bold">This single image appears on the landing page as the main team photo.</p>
             </div>
-            <button @click="showAddModal = true" class="bg-umak-blue text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all w-full md:w-auto">
-                Add Member
-            </button>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {% if members %}
-                {% for m in members %}
-                <div class="group relative bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden hover:border-umak-blue/30 transition-all hover:shadow-md">
-                    <!-- Photo -->
-                    <div class="aspect-square bg-slate-100 overflow-hidden">
-                        {% if m.photo_url %}
-                        <img src="{{ m.photo_url }}" alt="{{ m.name }}" class="w-full h-full object-cover">
-                        {% else %}
-                        <div class="w-full h-full flex items-center justify-center bg-slate-100">
-                            <svg class="w-16 h-16 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"></path></svg>
-                        </div>
-                        {% endif %}
-                    </div>
-                    <!-- Info -->
-                    <div class="p-4">
-                        <p class="text-sm font-black text-slate-800">{{ m.name }}</p>
-                        {% if m.role %}
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{{ m.role }}</p>
-                        {% endif %}
-                        <p class="text-[10px] font-bold text-slate-300 mt-1">Order: {{ m.display_order }}</p>
-                    </div>
-                    <!-- Actions -->
-                    <div class="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button @click="editId='{{ m.id }}'; editName='{{ m.name }}'; editRole='{{ m.role or '' }}'; editOrder={{ m.display_order }}; showEditModal=true"
-                                class="w-8 h-8 bg-white/90 backdrop-blur rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:text-umak-blue hover:border-umak-blue/30 transition-all shadow-sm">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-                        <form action="{{ url_for('admin.delete_team_member', member_id=m.id) }}" method="POST" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" onclick="return confirm('Remove this team member?')"
-                                    class="w-8 h-8 bg-white/90 backdrop-blur rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </form>
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <!-- Current Photo Preview -->
+            <div class="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 aspect-video flex items-center justify-center">
+                {% if team_photo and team_photo.photo_url %}
+                <img src="{{ team_photo.photo_url }}" alt="Team photo" class="w-full h-full object-cover">
+                {% else %}
+                <div class="text-center p-8">
+                    <svg class="w-16 h-16 text-slate-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <p class="text-slate-300 font-bold italic text-sm">No team photo uploaded yet</p>
                 </div>
-                {% endfor %}
-            {% else %}
-                <div class="col-span-full py-12 text-center">
-                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    </div>
-                    <p class="text-slate-400 font-bold italic">No team members yet. Add your first one above.</p>
+                {% endif %}
+            </div>
+
+            <!-- Upload Form -->
+            <form action="{{ url_for('admin.add_team_member') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="member_type" value="team_photo">
+                <input type="hidden" name="name" value="Team Photo">
+                {% if team_photo %}
+                <input type="hidden" name="edit_id" value="{{ team_photo.id }}">
+                {% endif %}
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">{{ 'Replace' if team_photo else 'Upload' }} Photo</label>
+                    <input type="file" name="photo" accept="image/*" required
+                           class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-600 hover:file:bg-slate-200 transition-all">
+                    <p class="text-[10px] text-slate-400 font-medium px-1 mt-1.5 italic">Recommended: 16:9 landscape. JPG, PNG, or WEBP.</p>
                 </div>
+                <button type="submit" class="bg-umak-blue text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all w-full">
+                    {{ 'Replace Photo' if team_photo else 'Upload Photo' }}
+                </button>
+                {% if team_photo %}
+                <form action="{{ url_for('admin.delete_team_member', member_id=team_photo.id) }}" method="POST" class="inline w-full">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" onclick="return confirm('Remove the team photo?')"
+                            class="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border border-rose-100 text-rose-400 hover:bg-rose-50 transition-all">
+                        Remove Photo
+                    </button>
+                </form>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Lead Developer -->
+    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+        <div class="flex flex-col gap-3 md:flex-row md:justify-between md:items-center mb-6">
+            <div>
+                <h3 class="text-lg font-black text-slate-800">Lead Developer</h3>
+                <p class="text-sm text-slate-400 font-bold">Displayed separately below the team photo on the landing page.</p>
+            </div>
+        </div>
+
+        <form action="{{ url_for('admin.add_team_member') }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="member_type" value="lead">
+            {% if lead_dev %}
+            <input type="hidden" name="edit_id" value="{{ lead_dev.id }}">
             {% endif %}
-        </div>
-    </div>
 
-    <!-- Add Member Modal -->
-    <div x-show="showAddModal" class="fixed inset-0 z-[110] overflow-y-auto" style="display: none;" x-cloak>
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="showAddModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 transition-opacity bg-slate-900/50 backdrop-blur-sm" @click="showAddModal = false"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="showAddModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-[2.5rem] shadow-2xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form action="{{ url_for('admin.add_team_member') }}" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="px-8 pt-8 pb-6 bg-white">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xl font-black text-slate-800 uppercase tracking-tight">Add Team Member</h3>
-                            <button type="button" @click="showAddModal = false" class="text-slate-400 hover:text-slate-600 transition-colors">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <!-- Current Preview -->
+                <div class="flex items-center gap-4 p-5 rounded-2xl border border-slate-100 bg-slate-50">
+                    <div class="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-100 bg-white">
+                        {% if lead_dev and lead_dev.photo_url %}
+                        <img src="{{ lead_dev.photo_url }}" alt="{{ lead_dev.name }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <svg class="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"></path></svg>
                         </div>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Full Name *</label>
-                                <input type="text" name="name" required class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all" placeholder="e.g. Juan Dela Cruz">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Role / Title</label>
-                                <input type="text" name="role" class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all" placeholder="e.g. Lead Developer">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Photo</label>
-                                <input type="file" name="photo" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-600 hover:file:bg-slate-200 transition-all">
-                                <p class="text-[10px] text-slate-400 font-medium px-1 mt-1 italic">Square photos work best. JPG, PNG, or WEBP.</p>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Display Order</label>
-                                <input type="number" name="display_order" value="0" class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all" placeholder="0">
-                                <p class="text-[10px] text-slate-400 font-medium px-1 mt-1 italic">Lower numbers appear first.</p>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
-                    <div class="px-8 py-6 bg-slate-50 flex gap-3">
-                        <button type="button" @click="showAddModal = false" class="flex-1 py-3 bg-white text-slate-400 text-xs font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-100 transition-all">Cancel</button>
-                        <button type="submit" class="flex-1 py-3 bg-umak-blue text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">Add Member</button>
+                    <div>
+                        {% if lead_dev %}
+                        <p class="text-sm font-black text-slate-800">{{ lead_dev.name }}</p>
+                        <p class="text-[11px] font-bold text-umak-blue uppercase tracking-wider mt-0.5">{{ lead_dev.role or 'Lead Developer' }}</p>
+                        {% else %}
+                        <p class="text-sm font-bold text-slate-300 italic">Not set yet</p>
+                        {% endif %}
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
+                </div>
 
-    <!-- Edit Member Modal -->
-    <div x-show="showEditModal" class="fixed inset-0 z-[110] overflow-y-auto" style="display: none;" x-cloak>
-        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="showEditModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 transition-opacity bg-slate-900/50 backdrop-blur-sm" @click="showEditModal = false"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="showEditModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-[2.5rem] shadow-2xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form :action="'/admin/team/' + editId + '/edit'" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="px-8 pt-8 pb-6 bg-white">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xl font-black text-slate-800 uppercase tracking-tight">Edit Member</h3>
-                            <button type="button" @click="showEditModal = false" class="text-slate-400 hover:text-slate-600 transition-colors">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Full Name *</label>
-                                <input type="text" name="name" x-model="editName" required class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Role / Title</label>
-                                <input type="text" name="role" x-model="editRole" class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Replace Photo</label>
-                                <input type="file" name="photo" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-600 hover:file:bg-slate-200 transition-all">
-                                <p class="text-[10px] text-slate-400 font-medium px-1 mt-1 italic">Leave empty to keep the current photo.</p>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Display Order</label>
-                                <input type="number" name="display_order" x-model="editOrder" class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all">
-                            </div>
-                        </div>
+                <!-- Edit Form Fields -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Full Name *</label>
+                        <input type="text" name="name" value="{{ lead_dev.name if lead_dev else '' }}" required
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all"
+                               placeholder="e.g. Juan Dela Cruz">
                     </div>
-                    <div class="px-8 py-6 bg-slate-50 flex gap-3">
-                        <button type="button" @click="showEditModal = false" class="flex-1 py-3 bg-white text-slate-400 text-xs font-black uppercase tracking-widest rounded-2xl border border-slate-200 hover:bg-slate-100 transition-all">Cancel</button>
-                        <button type="submit" class="flex-1 py-3 bg-umak-blue text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all">Save Changes</button>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Role / Title</label>
+                        <input type="text" name="role" value="{{ lead_dev.role if lead_dev else 'Lead Developer' }}"
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-umak-blue/20 outline-none transition-all"
+                               placeholder="e.g. Lead Developer">
                     </div>
-                </form>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">{{ 'Replace' if lead_dev and lead_dev.photo_url else 'Upload' }} Photo</label>
+                        <input type="file" name="photo" accept="image/*" {{ '' if lead_dev else 'required' }}
+                               class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:tracking-wider file:bg-slate-100 file:text-slate-600 hover:file:bg-slate-200 transition-all">
+                        <p class="text-[10px] text-slate-400 font-medium px-1 mt-1 italic">Square photos work best. Leave empty to keep current.</p>
+                    </div>
+                    <button type="submit" class="bg-umak-blue text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all w-full">
+                        {{ 'Update Lead Developer' if lead_dev else 'Set Lead Developer' }}
+                    </button>
+                </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 {% endblock %}

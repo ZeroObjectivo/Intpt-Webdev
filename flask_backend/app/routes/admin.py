@@ -1629,10 +1629,11 @@ def manage_team():
 def add_team_member():
     name = request.form.get('name', '').strip()
     role = request.form.get('role', '').strip()
-    display_order = int(request.form.get('display_order', 0) or 0)
+    member_type = request.form.get('member_type', 'lead').strip()
+    edit_id = request.form.get('edit_id', '').strip()
     image_file = request.files.get('photo')
 
-    if not name:
+    if member_type == 'lead' and not name:
         flash("Name is required.", "error")
         return redirect(url_for('admin.manage_team'))
 
@@ -1646,16 +1647,26 @@ def add_team_member():
 
     try:
         client = get_service_client()
-        client.table('team_members').insert({
-            "name": name,
-            "role": role,
-            "photo_url": photo_url,
-            "display_order": display_order
-        }).execute()
-        flash(f"Added {name} to the team.", "success")
+        if edit_id:
+            update_data = {"name": name, "role": role, "member_type": member_type}
+            if photo_url:
+                update_data["photo_url"] = photo_url
+            client.table('team_members').update(update_data).eq('id', edit_id).execute()
+            flash("Updated successfully.", "success")
+        else:
+            if not photo_url and member_type == 'team_photo':
+                flash("Please upload a photo.", "error")
+                return redirect(url_for('admin.manage_team'))
+            client.table('team_members').insert({
+                "name": name or "Team Photo",
+                "role": role,
+                "photo_url": photo_url,
+                "member_type": member_type
+            }).execute()
+            flash("Added successfully.", "success")
     except Exception as e:
-        logger.error("Error adding team member: %s", e)
-        flash("Error adding team member.", "error")
+        logger.error("Error saving team member: %s", e)
+        flash("Error saving team member.", "error")
 
     return redirect(url_for('admin.manage_team'))
 
