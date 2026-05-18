@@ -207,18 +207,14 @@
                                 </div>
                                 <div class="trending-details">
                                     {% set trending_category = item.category or 'General' %}
-                                    <div class="trending-pill-row">
-                                        {% if trending_category == 'Lost & Found' %}
-                                            <span class="badge badge-lost-found trending-pill">Lost &amp; Found</span>
-                                        {% elif trending_category in ['Buy & Sell', 'Heron Business'] %}
-                                            <span class="badge badge-heron-business trending-pill">Heron Business</span>
-                                        {% elif trending_category == 'Question' %}
-                                            <span class="badge badge-question trending-pill">Question</span>
-                                        {% elif trending_category == 'Events' %}
-                                            <span class="badge badge-events trending-pill">Events</span>
-                                        {% else %}
-                                            <span class="badge badge-general trending-pill">General</span>
-                                        {% endif %}
+                                    <div class="trending-category-row">
+                                        <span class="trending-category-text">
+                                            {% if trending_category in ['Buy & Sell', 'Heron Business'] %}
+                                                Heron Business
+                                            {% else %}
+                                                {{ trending_category }}
+                                            {% endif %}
+                                        </span>
                                     </div>
                                     <h4 class="trending-description line-clamp-2">{{ item.content }}</h4>
                                     <p class="trending-likes">
@@ -330,7 +326,7 @@
                         </select>
                     </div>
 
-                    <div id="eventFields" class="category-specific-fields hidden space-y-3 bg-white rounded-xl border border-slate-200 shadow-sm p-3 animate-in fade-in zoom-in duration-200 font-sans">
+                    <div id="eventFields" class="category-specific-fields hidden space-y-3 bg-white rounded-[12px] border border-slate-200 shadow-sm overflow-hidden p-3 animate-in fade-in zoom-in duration-200 font-sans">
                         <input id="eventTitle" name="event_title" type="text" class="w-full rounded-lg border border-slate-200 px-4 py-2.5 text-[14px] font-sans outline-none focus:border-umak-blue focus:ring-4 focus:ring-umak-blue/5 transition-all placeholder-slate-400" placeholder="Event Name">
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
