@@ -88,10 +88,10 @@
     justify-content: space-between;
     gap: 16px;
     margin-bottom: 16px;
-    padding: 14px;
+    padding: var(--card-padding);
     background: rgba(248, 249, 251, 0.86);
     border: 1px solid #d8d9de;
-    border-radius: 16px;
+    border-radius: var(--card-radius);
     box-shadow: 0 2px 8px rgba(7, 10, 18, 0.08);
 }
 
@@ -294,10 +294,10 @@
 }
 
 .skeleton-card {
-    padding: 14px 16px 12px;
+    padding: var(--card-padding);
     background: rgba(246, 247, 249, 0.88);
     border: 1px solid #d6d8df;
-    border-radius: 16px;
+    border-radius: var(--card-radius);
     box-shadow: 0 3px 8px rgba(7, 10, 18, 0.08);
 }
 
@@ -389,12 +389,12 @@
 .empty-feed {
     background: rgba(246, 247, 249, 0.88);
     border: 1px solid #d6d8df;
-    border-radius: 16px;
+    border-radius: var(--card-radius);
     box-shadow: 0 3px 8px rgba(7, 10, 18, 0.08);
 }
 
 .post-card {
-    padding: 14px 16px 12px;
+    padding: var(--card-padding);
     transition: box-shadow 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
@@ -466,7 +466,7 @@
 }
 
 .marketplace-post-content {
-    border-radius: 12px;
+    border-radius: var(--card-radius-inner);
     background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%);
     border: 1px solid #e6edf7;
     padding: 10px 12px 8px;
@@ -543,7 +543,7 @@
 
 .post-embed {
     margin: 10px 0 12px;
-    border-radius: 12px;
+    border-radius: var(--card-radius-inner);
     overflow: hidden;
     border: 1px solid #d9dde6;
     background: #ffffff;
@@ -771,7 +771,7 @@
     padding: 12px;
     background: #ffffff;
     border: 0;
-    border-radius: 31.69px;
+    border-radius: 24px;
     box-shadow: 0 1.52px 1.52px rgba(0, 0, 0, 0.08);
     gap: 10px;
 }
@@ -966,7 +966,7 @@
     gap: 4px;
     width: 100%;
     margin-top: 12px;
-    border-radius: 12px;
+    border-radius: var(--card-radius-inner);
     overflow: hidden;
     position: relative;
     background: #f0f2f5;
@@ -997,7 +997,7 @@
 }
 
 .fb-grid-1 .group {
-    border-radius: 12px;
+    border-radius: var(--card-radius-inner);
     overflow: hidden;
     border: 1px solid #e2e8f0;
 }

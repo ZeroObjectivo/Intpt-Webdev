@@ -24,6 +24,11 @@
         --radius-xl: 2.5rem;
         --radius-2xl: 3rem;
 
+        /* Concentric Radius System (outer = inner + padding) */
+        --card-padding: 14px;
+        --card-radius: 20px;
+        --card-radius-inner: calc(var(--card-radius) - var(--card-padding));
+
         /* Shadows */
         --shadow-soft: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
         --shadow-strong: 0 30px 80px rgba(0, 0, 0, 0.1);
@@ -42,7 +47,8 @@
         --hh-text-main: #1a1d20;
         --hh-text-muted: #6c757d;
         --hh-border: #e2e8f0;
-        --hh-radius: 16px;
+        --hh-radius: var(--card-radius);
+        --hh-radius-inner: var(--card-radius-inner);
         --hh-shadow-light: 0 2px 4px rgba(1, 6, 28, 0.05);
         --hh-shadow-hover: 0 4px 12px rgba(1, 6, 28, 0.1);
     }

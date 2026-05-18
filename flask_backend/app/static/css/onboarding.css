@@ -40,12 +40,25 @@
     opacity: 0.8;
 }
 
-/* T&C Card Styling */
+/* T&C Card Styling — concentric radius: inner = outer − padding */
 .tc-card {
+    --tc-radius: 48px;
+    --tc-padding: 2rem;      /* p-8 = 32px */
+    --tc-radius-inner: calc(var(--tc-radius) - var(--tc-padding));
     background: #FFFFFF;
     border: 1px solid rgba(255, 255, 255, 0.8);
     box-shadow: 0px 60px 100px rgba(0, 16, 53, 0.12);
-    border-radius: 60px;
+    border-radius: var(--tc-radius);
+}
+
+@media (min-width: 1024px) {
+    .tc-card {
+        --tc-padding: 3rem;  /* lg:p-12 = 48px */
+    }
+}
+
+.tc-inner-box {
+    border-radius: var(--tc-radius-inner);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -114,13 +127,35 @@
     transform: translateX(20px);
 }
 
+/* Form Section Cards — concentric inner radius */
+.ob-section {
+    background: #F8FAFC;
+    border: 1px solid #F1F5F9;
+    border-radius: var(--tc-radius-inner);
+    padding: 1.5rem;
+    transition: border-color 0.3s ease;
+}
+
+.ob-section:focus-within {
+    border-color: #E2E8F0;
+}
+
+.ob-section-required {
+    border-color: #E8EDF5;
+    background: linear-gradient(180deg, #FAFBFF 0%, #F8FAFC 100%);
+}
+
+.ob-submit-btn {
+    border-radius: var(--tc-radius-inner);
+}
+
 /* Form Styling */
 .onboarding-form-control {
     width: 100%;
-    background: #F8FAFC;
-    border: 2px solid #F1F5F9;
-    border-radius: 1.25rem;
-    padding: 1rem 1.25rem;
+    background: #FFFFFF;
+    border: 2px solid #EEF2F7;
+    border-radius: 0.875rem;
+    padding: 0.875rem 1.125rem;
     font-size: 0.95rem;
     font-weight: 600;
     color: #0F172A;
@@ -141,16 +176,16 @@
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: #94A3B8;
-    margin-bottom: 0.6rem;
-    margin-left: 0.5rem;
+    margin-bottom: 0.5rem;
+    margin-left: 0.25rem;
 }
 
 /* Social Links Editor (consistent with profile settings) */
 .onboarding-social-row {
-    background: #F8FAFC;
-    border: 1px solid #F1F5F9;
-    border-radius: 1.5rem;
-    padding: 1.25rem;
+    background: #FFFFFF;
+    border: 1px solid #EEF2F7;
+    border-radius: 0.875rem;
+    padding: 1.125rem;
     margin-bottom: 1rem;
 }
 
