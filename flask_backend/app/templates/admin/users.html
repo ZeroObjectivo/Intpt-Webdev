@@ -59,10 +59,17 @@
                         </span>
                     </td>
                     <td class="py-4">
-                        <span class="flex items-center gap-1.5">
-                            <span class="status-dot w-2 h-2 rounded-full" data-last-active="{{ u.updated_at }}"></span>
-                            <span class="text-[10px] font-black uppercase text-slate-600 status-label" data-last-active="{{ u.updated_at }}"></span>
-                        </span>
+                        <div class="flex flex-col gap-1.5">
+                            <span class="flex items-center gap-1.5">
+                                <span class="status-dot w-2 h-2 rounded-full" data-last-active="{{ u.updated_at }}"></span>
+                                <span class="text-[10px] font-black uppercase text-slate-600 status-label" data-last-active="{{ u.updated_at }}"></span>
+                            </span>
+                            {% if u.status == 'banned' %}
+                            <span class="px-2 py-0.5 bg-rose-600 text-white text-[8px] font-black uppercase rounded w-fit">Banned</span>
+                            {% elif u.status == 'suspended' %}
+                            <span class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded w-fit">Suspended</span>
+                            {% endif %}
+                        </div>
                     </td>
                     <td class="py-4 text-xs font-bold text-slate-400 time-ago" data-timestamp="{{ u.updated_at }}">
                         {{ u.updated_at }}
@@ -101,6 +108,11 @@
                     <span class="status-dot w-2 h-2 rounded-full" data-last-active="{{ u.updated_at }}"></span>
                     <span class="text-[10px] font-black uppercase text-slate-600 status-label" data-last-active="{{ u.updated_at }}"></span>
                 </span>
+                {% if u.status == 'banned' %}
+                <span class="px-2.5 py-1 bg-rose-50 text-rose-600 rounded-full text-[9px] font-black uppercase border border-rose-100">Banned</span>
+                {% elif u.status == 'suspended' %}
+                <span class="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase border border-amber-100">Suspended</span>
+                {% endif %}
                 <span class="ml-auto text-[10px] font-bold text-slate-400 time-ago" data-timestamp="{{ u.updated_at }}">{{ u.updated_at }}</span>
             </div>
         </article>
@@ -188,10 +200,14 @@
                         </span>
                     </td>
                     <td class="py-4">
-                        <span class="flex items-center gap-1.5">
-                            <span class="status-dot w-2 h-2 rounded-full" data-last-active="${u.updated_at}"></span>
-                            <span class="text-[10px] font-black uppercase text-slate-600 status-label" data-last-active="${u.updated_at}"></span>
-                        </span>
+                        <div class="flex flex-col gap-1.5">
+                            <span class="flex items-center gap-1.5">
+                                <span class="status-dot w-2 h-2 rounded-full" data-last-active="${u.updated_at}"></span>
+                                <span class="text-[10px] font-black uppercase text-slate-600 status-label" data-last-active="${u.updated_at}"></span>
+                            </span>
+                            ${u.status === 'banned' ? '<span class="px-2 py-0.5 bg-rose-600 text-white text-[8px] font-black uppercase rounded w-fit">Banned</span>' : 
+                              u.status === 'suspended' ? '<span class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded w-fit">Suspended</span>' : ''}
+                        </div>
                     </td>
                     <td class="py-4 text-xs font-bold text-slate-400 time-ago" data-timestamp="${u.updated_at}">
                         ${u.updated_at}
@@ -227,6 +243,8 @@
                             <span class="status-dot w-2 h-2 rounded-full" data-last-active="${u.updated_at}"></span>
                             <span class="text-[10px] font-black uppercase text-slate-600 status-label" data-last-active="${u.updated_at}"></span>
                         </span>
+                        ${u.status === 'banned' ? '<span class="px-2.5 py-1 bg-rose-50 text-rose-600 rounded-full text-[9px] font-black uppercase border border-rose-100">Banned</span>' : 
+                          u.status === 'suspended' ? '<span class="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase border border-amber-100">Suspended</span>' : ''}
                         <span class="ml-auto text-[10px] font-bold text-slate-400 time-ago" data-timestamp="${u.updated_at}">${u.updated_at}</span>
                     </div>
                 </article>

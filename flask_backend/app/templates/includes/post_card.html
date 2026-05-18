@@ -9,7 +9,9 @@
          data-marketplace-availability="{{ (post.listing_availability or 'Available')|lower }}">
     <div class="post-header flex justify-between items-start gap-4">
         <div class="flex items-start min-w-0">
-            <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover">
+            <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="shrink-0">
+                <img src="{{ post.profiles.avatar_url if post.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" alt="" class="post-user-avatar object-cover hover:opacity-80 transition-opacity">
+            </a>
             <div class="post-user-info">
                 <div class="flex items-center gap-2 flex-wrap">
                     <a href="{{ url_for('core.view_profile', target_user_id=post.user_id) }}" class="post-author-name capitalize hover:underline decoration-slate-300 underline-offset-2">{{ post.profiles.full_name | title }}</a>

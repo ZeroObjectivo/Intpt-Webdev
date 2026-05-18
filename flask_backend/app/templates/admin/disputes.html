@@ -45,12 +45,18 @@
                         <form action="{{ url_for('admin.resolve_dispute', dispute_id=d.id) }}" method="POST" style="display:inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="approved">
-                            <button type="submit" class="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-100 w-full sm:w-auto">Approve</button>
+                            <button type="button" class="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-100 w-full sm:w-auto"
+                                    onclick="showConfirmModal('Approve Dispute?', 'Are you sure you want to approve this verification request? The user will be granted access immediately.', () => { this.form.submit(); })">
+                                Approve
+                            </button>
                         </form>
                         <form action="{{ url_for('admin.resolve_dispute', dispute_id=d.id) }}" method="POST" style="display:inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="rejected">
-                            <button type="submit" class="px-4 py-2 bg-white text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 w-full sm:w-auto">Reject</button>
+                            <button type="button" class="px-4 py-2 bg-white text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 w-full sm:w-auto"
+                                    onclick="showConfirmModal('Reject Dispute?', 'Are you sure you want to deny this verification request?', () => { this.form.submit(); })">
+                                Reject
+                            </button>
                         </form>
                     </div>
                     {% elif d.status == 'auto_rejected' %}
