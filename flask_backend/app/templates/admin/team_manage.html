@@ -5,15 +5,16 @@
 {% block header_title %}Team Members{% endblock %}
 
 {% block admin_content %}
-{% set team_photo = None %}
-{% set lead_dev = None %}
+{% set ns = namespace(team_photo=None, lead_dev=None) %}
 {% for m in members %}
-    {% if m.member_type == 'team_photo' and not team_photo %}
-        {% set team_photo = m %}
-    {% elif m.member_type == 'lead' and not lead_dev %}
-        {% set lead_dev = m %}
+    {% if m.member_type == 'team_photo' and not ns.team_photo %}
+        {% set ns.team_photo = m %}
+    {% elif m.member_type == 'lead' and not ns.lead_dev %}
+        {% set ns.lead_dev = m %}
     {% endif %}
 {% endfor %}
+{% set team_photo = ns.team_photo %}
+{% set lead_dev = ns.lead_dev %}
 
 <div>
     <div class="mb-6">
