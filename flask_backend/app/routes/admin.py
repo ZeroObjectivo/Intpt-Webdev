@@ -1611,6 +1611,131 @@ def delete_forbidden_word(word):
 
     return redirect(url_for('admin.manage_forbidden_words'))
 
+# --- Team Members Management ---
+
+@admin.route('/admin/team')
+@login_required
+@admin_required
+def manage_team():
+    client = get_admin_read_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    res = client.table('team_members').select("*").order('display_order').execute()
+    return render_template('admin/team_manage.html', members=res.data or [], user=session.get('user'), permissions=permissions)
+
+@admin.route('/admin/team/add', methods=['POST'])
+@login_required
+@admin_required
+def add_team_member():
+    name = request.form.get('name', '').strip()
+    role = request.form.get('role', '').strip()
+    display_order = int(request.form.get('display_order', 0) or 0)
+    image_file = request.files.get('photo')
+
+    if not name:
+        flash("Name is required.", "error")
+        return redirect(url_for('admin.manage_team'))
+
+    photo_url = None
+    if image_file and image_file.filename:
+        try:
+            photo_url = _upload_team_photo(image_file)
+        except Exception as e:
+            flash(f"Failed to upload photo: {e}", "error")
+            return redirect(url_for('admin.manage_team'))
+
+    try:
+        client = get_service_client()
+        client.table('team_members').insert({
+            "name": name,
+            "role": role,
+            "photo_url": photo_url,
+            "display_order": display_order
+        }).execute()
+        flash(f"Added {name} to the team.", "success")
+    except Exception as e:
+        logger.error("Error adding team member: %s", e)
+        flash("Error adding team member.", "error")
+
+    return redirect(url_for('admin.manage_team'))
+
+@admin.route('/admin/team/<member_id>/edit', methods=['POST'])
+@login_required
+@admin_required
+def edit_team_member(member_id):
+    name = request.form.get('name', '').strip()
+    role = request.form.get('role', '').strip()
+    display_order = int(request.form.get('display_order', 0) or 0)
+    image_file = request.files.get('photo')
+
+    if not name:
+        flash("Name is required.", "error")
+        return redirect(url_for('admin.manage_team'))
+
+    update_data = {
+        "name": name,
+        "role": role,
+        "display_order": display_order
+    }
+
+    if image_file and image_file.filename:
+        try:
+            update_data["photo_url"] = _upload_team_photo(image_file)
+        except Exception as e:
+            flash(f"Failed to upload photo: {e}", "error")
+            return redirect(url_for('admin.manage_team'))
+
+    try:
+        client = get_service_client()
+        client.table('team_members').update(update_data).eq('id', member_id).execute()
+        flash(f"Updated {name}.", "success")
+    except Exception as e:
+        logger.error("Error updating team member: %s", e)
+        flash("Error updating team member.", "error")
+
+    return redirect(url_for('admin.manage_team'))
+
+@admin.route('/admin/team/<member_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_team_member(member_id):
+    try:
+        client = get_service_client()
+        client.table('team_members').delete().eq('id', member_id).execute()
+        flash("Team member removed.", "success")
+    except Exception as e:
+        logger.error("Error deleting team member: %s", e)
+        flash("Error removing team member.", "error")
+    return redirect(url_for('admin.manage_team'))
+
+def _upload_team_photo(image_file):
+    """Upload a team member photo to Supabase storage."""
+    filename = image_file.filename.strip()
+    if '.' not in filename:
+        raise ValueError("Image must have a valid extension.")
+
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext not in ALLOWED_CATALOG_IMAGE_EXTENSIONS:
+        raise ValueError("Unsupported image type. Use JPG, PNG, WEBP, or GIF.")
+
+    timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+    object_path = f"team/{timestamp}_{uuid.uuid4().hex}.{ext}"
+    bucket_name = (os.getenv('CATALOG_IMAGE_BUCKET') or 'post-images').strip() or 'post-images'
+    content_type = image_file.mimetype or image_file.content_type or f"image/{ext}"
+
+    image_file.seek(0)
+    file_bytes = image_file.read()
+    if not file_bytes:
+        raise ValueError("Uploaded image is empty.")
+
+    admin_client = get_service_client()
+    admin_client.storage.from_(bucket_name).upload(
+        path=object_path,
+        file=file_bytes,
+        file_options={"content-type": content_type}
+    )
+    return admin_client.storage.from_(bucket_name).get_public_url(object_path)
+
 def _parse_catalog_price(raw_value):
     if raw_value is None:
         return None
@@ -1704,6 +1829,7 @@ def global_search():
         {"title": "UMak Coop Catalog", "url": "/admin/catalog/umak-coop", "keywords": ["coop", "items", "products", "store", "shop"], "icon": "shopping"},
         {"title": "Colleges & Institutes", "url": "/admin/colleges", "keywords": ["colleges", "institutes", "academic units", "departments"], "icon": "office"},
         {"title": "Profanity Filter", "url": "/admin/forbidden-words", "keywords": ["profanity", "forbidden", "filter", "words", "banned words"], "icon": "chat"},
+        {"title": "Team Members", "url": "/admin/team", "keywords": ["team", "members", "landing page", "developers", "about"], "icon": "users"},
         {"title": "Support Inbox", "url": "/admin/support", "keywords": ["support", "inbox", "tickets", "help", "messages"], "icon": "mail"},
         {"title": "System Logs", "url": "/admin/logs", "keywords": ["logs", "audit", "history", "activity"], "icon": "clipboard"}
     ]

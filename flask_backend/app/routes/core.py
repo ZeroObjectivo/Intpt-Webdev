@@ -1138,7 +1138,14 @@ def load_home_metrics():
 def home():
     user = session.get('user')
     metrics = load_home_metrics()
-    return render_template('home.html', user=user, metrics=metrics)
+    team_members = []
+    try:
+        client = supabase_service or get_user_client()
+        res = client.table('team_members').select('name, role, photo_url').order('display_order').execute()
+        team_members = res.data or []
+    except Exception as e:
+        logger.warning("Failed to load team members: %s", e)
+    return render_template('home.html', user=user, metrics=metrics, team_members=team_members)
 
 @core.route('/dashboard')
 @login_required

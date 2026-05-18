@@ -251,6 +251,146 @@
         filter: blur(0);
     }
 
+    /* --- Team Section --- */
+    .team-section {
+        margin-top: clamp(1rem, 3vw, 2rem);
+        padding-bottom: clamp(4rem, 7vw, 7.2rem);
+    }
+
+    .team-title {
+        margin: 1.6rem 0 0;
+        text-align: center;
+        font-family: 'Marcellus SC', Georgia, serif;
+        font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+        font-weight: 400;
+        color: #f8fafc;
+        letter-spacing: 0.04em;
+        line-height: 1.15;
+    }
+
+    .team-desc {
+        margin: 1rem auto 0;
+        max-width: 640px;
+        text-align: center;
+        font-size: clamp(0.92rem, 1.2vw, 1.05rem);
+        font-weight: 500;
+        line-height: 1.7;
+        color: #94a3b8;
+    }
+
+    .team-grid {
+        margin-top: 2.8rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.6rem;
+        max-width: 960px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .team-card {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(219, 234, 254, 0.12);
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.08), rgba(100, 116, 139, 0.08));
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: transform 500ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 500ms ease, border-color 500ms ease;
+    }
+
+    .team-card:hover {
+        transform: translateY(-6px);
+        border-color: rgba(186, 230, 253, 0.3);
+        box-shadow: 0 20px 40px rgba(2, 6, 23, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .team-photo-wrap {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4));
+    }
+
+    .team-photo-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 600ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .team-card:hover .team-photo-wrap img {
+        transform: scale(1.04);
+    }
+
+    .team-photo-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, #0f172a, #1e293b);
+    }
+
+    .team-photo-placeholder svg {
+        width: 64px;
+        height: 64px;
+        color: #334155;
+    }
+
+    .team-info {
+        padding: 1.15rem 1.25rem 1.3rem;
+        text-align: center;
+    }
+
+    .team-name {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #f1f5f9;
+        letter-spacing: 0.01em;
+    }
+
+    .team-role {
+        margin: 0.25rem 0 0;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .team-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #475569;
+        font-size: 0.95rem;
+        font-weight: 600;
+        font-style: italic;
+    }
+
+    @media (max-width: 640px) {
+        .team-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .team-card {
+            border-radius: 18px;
+        }
+
+        .team-info {
+            padding: 0.85rem 0.75rem 1rem;
+        }
+
+        .team-name {
+            font-size: 0.92rem;
+        }
+    }
+
     .home-footer {
         position: relative;
         z-index: 1;
@@ -423,6 +563,38 @@
                         <p class="feature-label">Student-Based Application</p>
                         <p class="feature-note">Built around student needs with campus-first features, reporting, and real-time interactions.</p>
                     </article>
+                </div>
+            </div>
+
+            <!-- Team Section -->
+            <div class="team-section scroll-reveal" style="--reveal-delay: 180ms;">
+                <p class="section-kicker">The Team</p>
+                <h2 class="team-title">Meet the Team</h2>
+                <p class="team-desc">The people behind Herons' Hub — building a better campus experience for every UMak student.</p>
+                <div class="team-grid">
+                    {% if team_members %}
+                        {% for member in team_members %}
+                        <div class="team-card scroll-reveal" style="--reveal-delay: {{ 220 + loop.index0 * 70 }}ms;">
+                            <div class="team-photo-wrap">
+                                {% if member.photo_url %}
+                                <img src="{{ member.photo_url }}" alt="{{ member.name }}" loading="lazy">
+                                {% else %}
+                                <div class="team-photo-placeholder">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 1116 0"></path></svg>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="team-info">
+                                <p class="team-name">{{ member.name }}</p>
+                                {% if member.role %}
+                                <p class="team-role">{{ member.role }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="team-empty">Team members coming soon.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
