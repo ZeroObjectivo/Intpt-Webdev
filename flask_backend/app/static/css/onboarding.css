@@ -178,81 +178,61 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding: 13.5rem 4.9rem 4.7rem;
-    background: linear-gradient(135deg, #e2e8f0 0%, #dbeafe 8%, #cbd5e1 100%);
+    padding: 216px 78px 84px;
+    background: #001850;
 }
 
-.intro-left-layer {
+.intro-left-bg {
     position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    z-index: 0;
     pointer-events: none;
     user-select: none;
 }
 
-.intro-left-gradient {
-    inset: 0;
-    background: linear-gradient(180deg, rgba(14, 41, 102, 0.88) 12%, rgba(17, 24, 39, 0.15) 100%);
-    mix-blend-mode: multiply;
-}
-
-.intro-left-rectangle {
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.72;
-    mix-blend-mode: multiply;
-}
-
-.intro-left-ellipse {
-    width: 1080px;
-    max-width: none;
-    left: -130px;
-    top: -640px;
-    opacity: 0.95;
-}
-
-.intro-left-vector {
-    width: 34px;
-    left: 78px;
-    top: 88px;
-    filter: brightness(0) invert(1);
-    opacity: 0.85;
-}
-
 .intro-left-copy {
     position: relative;
-    z-index: 2;
-    max-width: 600px;
+    z-index: 1;
+    max-width: 628px;
 }
 
 .intro-left-title {
-    margin: 0 0 1.2rem;
-    color: #cbd5e1;
+    margin: 0 0 22px;
     font-family: 'Metropolis', 'Inter', sans-serif;
-    font-size: clamp(2.8rem, 4.2vw, 4.35rem);
+    font-size: clamp(3.5rem, 5.2vw, 82px);
     font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1;
+    line-height: 82px;
+    letter-spacing: -0.01em;
+    background: linear-gradient(94.05deg, #bccfda -39.53%, #3892c3 53.3%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
 }
 
 .intro-left-subtitle {
     margin: 0;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.64);
     font-family: 'Inter', sans-serif;
-    font-size: clamp(1rem, 1.4vw, 1.5rem);
-    line-height: 1.45;
-    max-width: 39rem;
+    font-size: clamp(1.05rem, 1.65vw, 26px);
+    line-height: 1.36;
+    letter-spacing: -0.01em;
+    opacity: 0.84;
 }
 
 .intro-left-footer {
     position: relative;
-    z-index: 2;
+    z-index: 1;
     margin: auto 0 0;
-    max-width: 40rem;
+    max-width: 637px;
     color: #ffffff;
     font-family: 'Inter', sans-serif;
-    font-size: clamp(0.95rem, 1.15vw, 1.2rem);
-    line-height: 1.45;
+    font-size: clamp(0.95rem, 1.35vw, 21.7px);
+    line-height: 1.34;
+    letter-spacing: -0.005em;
 }
 
 /* ===== Intro Flow Animations ===== */
@@ -355,26 +335,15 @@
     }
 
     .intro-left-panel {
-        padding: 5.5rem 2.2rem 2rem;
-    }
-
-    .intro-left-vector {
-        left: 36px;
-        top: 30px;
-        width: 26px;
-    }
-
-    .intro-left-ellipse {
-        width: 760px;
-        left: -180px;
-        top: -540px;
+        padding: 104px 2.2rem 2.1rem;
     }
 
     .intro-left-title {
-        margin-bottom: 0.8rem;
+        margin-bottom: 0.7rem;
+        line-height: 1;
     }
 
     .intro-left-footer {
-        margin-top: 1.3rem;
+        margin-top: 1.2rem;
     }
 }
