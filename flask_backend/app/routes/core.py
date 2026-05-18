@@ -783,6 +783,47 @@ def load_profile_social_links(client, user_id):
         if row.get("url")
     ]
 
+def load_public_social_links_for_users(client, user_ids):
+    unique_user_ids = [uid for uid in set(user_ids or []) if uid]
+    if not unique_user_ids:
+        return {}
+
+    response = client.table('profile_social_links')\
+        .select("profile_id, platform, url, visibility, position")\
+        .in_("profile_id", unique_user_ids)\
+        .eq("visibility", "public")\
+        .order("position")\
+        .execute()
+
+    links_by_user = {}
+    for row in (response.data or []):
+        profile_id = row.get("profile_id")
+        url = row.get("url")
+        platform = row.get("platform")
+        if not profile_id or not url:
+            continue
+        links_by_user.setdefault(profile_id, []).append({
+            "platform": platform,
+            "url": url,
+            "label": SOCIAL_PLATFORM_LABELS.get(platform, (platform or "").title()),
+            "visibility": "public",
+            "position": row.get("position"),
+        })
+
+    return links_by_user
+
+def attach_public_social_links_to_posts(client, posts):
+    if not posts:
+        return
+
+    links_by_user = load_public_social_links_for_users(
+        client,
+        [post.get("user_id") for post in posts if isinstance(post, dict)]
+    )
+    for post in posts:
+        user_id = post.get("user_id")
+        post["public_social_links"] = links_by_user.get(user_id, [])
+
 def load_college_institute_options():
     client = supabase_service or get_user_client()
     try:
@@ -1502,6 +1543,7 @@ def load_profile_data(user_id, viewer_id=None):
     posts_response = posts_query.order("created_at", desc=True).execute()
     posts = posts_response.data
     pending_posts = []
+    attach_public_social_links_to_posts(client, posts)
 
     liked_post_ids = set()
     if viewer_id:
@@ -1542,6 +1584,7 @@ def load_profile_data(user_id, viewer_id=None):
             .eq('status', 'pending')\
             .order("created_at", desc=True).execute()
         pending_posts = pending_posts_res.data or []
+        attach_public_social_links_to_posts(client, pending_posts)
 
         pending_comments_count_map = build_comment_count_map(client, [p['id'] for p in pending_posts])
         for post in pending_posts:
@@ -1691,6 +1734,7 @@ def load_dashboard_data(user_id, category=None, before_timestamp=None):
 
     posts_response = query.order("created_at", desc=True).limit(20).execute()
     posts = posts_response.data
+    attach_public_social_links_to_posts(client, posts)
 
     post_ids = [p['id'] for p in posts]
     liked_post_ids = set()
@@ -2214,9 +2258,11 @@ def update_post(post_id):
     content = request.form.get('content')
     category = request.form.get('category')
     event_title = request.form.get('event_title')
+    product_name = request.form.get('product_name')
     price = request.form.get('price')
     location = request.form.get('location')
     status = request.form.get('status')
+    listing_availability = request.form.get('listing_availability')
     event_date = request.form.get('event_date')
     event_end_date = request.form.get('event_end_date')
 
@@ -2246,8 +2292,14 @@ def update_post(post_id):
 
         if price is not None: update_data["price"] = float(price) if price.strip() else None
         if event_title is not None: update_data["event_title"] = event_title.strip()
+        if product_name is not None: update_data["product_name"] = product_name.strip() or None
         if location is not None: update_data["location"] = location.strip()
         if status is not None: update_data["status"] = status.strip()
+        if listing_availability is not None:
+            normalized_availability = (listing_availability or "").strip()
+            if normalized_availability not in {"Available", "Not Available"}:
+                normalized_availability = "Available"
+            update_data["listing_availability"] = normalized_availability
         if event_date is not None: update_data["event_date"] = event_date if event_date.strip() else None
         if event_end_date is not None: update_data["event_end_date"] = event_end_date if event_end_date.strip() else None
 
@@ -2510,15 +2562,26 @@ def create_post():
     image_files = request.files.getlist('image')
 
     event_title = request.form.get('event_title')
+    product_name = request.form.get('product_name')
     price = request.form.get('price')
     location = request.form.get('location')
     status = request.form.get('status')
+    listing_availability = request.form.get('listing_availability')
     event_date = request.form.get('event_date')
     event_end_date = request.form.get('event_end_date')
 
+    product_name = product_name.strip() if product_name and product_name.strip() else None
     price = float(price) if price and price.strip() else None
     location = location.strip() if location and location.strip() else None
     status = status.strip() if status and status.strip() else None
+    listing_availability = listing_availability.strip() if listing_availability and listing_availability.strip() else None
+    if listing_availability not in {"Available", "Not Available"}:
+        listing_availability = "Available"
+
+    if category not in HERON_BUSINESS_CATEGORIES:
+        product_name = None
+        listing_availability = None
+
     if category != 'Lost & Found' and status == 'Lost':
         status = None
 
@@ -2578,9 +2641,11 @@ def create_post():
             "content": content,
             "category": category,
             "event_title": event_title,
+            "product_name": product_name,
             "price": price,
             "location": location,
             "status": post_status,
+            "listing_availability": listing_availability,
             "event_date": event_date,
             "event_end_date": event_end_date,
             "image_url": image_urls[0] if image_urls else None,
