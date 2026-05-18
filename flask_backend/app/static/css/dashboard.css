@@ -642,6 +642,24 @@
     letter-spacing: 0.01em;
 }
 
+.sidebar-heading-display {
+    font-family: 'Marcellus SC', Georgia, serif;
+    font-weight: 700;
+    font-size: 1.35rem;
+    color: #000000;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.trending-now-heading {
+    font-family: 'Marcellus SC', Georgia, serif;
+    font-weight: 700;
+    font-size: 1.35rem;
+    color: #000000;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
 .modal-heading {
     margin: 0;
     color: var(--hh-blue-500);
@@ -658,25 +676,35 @@
 }
 
 .trending-item {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    padding: 10px;
-    border-radius: 14px;
-    border: 1px solid transparent;
-    transition: background 0.16s ease, border-color 0.16s ease;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 16px;
+    align-items: start;
+    column-gap: 12px;
+    padding: 12px 14px;
+    background: #ffffff;
+    border: 0;
+    border-radius: 24px;
+    box-shadow: 0 1.52px 1.52px rgba(0, 0, 0, 0.08);
+    position: relative;
 }
 
 .trending-item:hover {
-    background: rgba(15, 23, 42, 0.04);
-    border-color: rgba(15, 23, 42, 0.08);
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.trending-rank {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100%;
+    padding-top: 2px;
 }
 
 .trending-number {
-    min-width: 28px;
     color: #000000;
     font-family: 'Marcellus SC', Georgia, serif;
-    font-size: 2.15rem;
+    font-size: 1.8rem;
     font-weight: 400;
     line-height: 1;
 }
@@ -684,34 +712,54 @@
 .trending-details {
     flex: 1;
     min-width: 0;
-    padding: 5px;
+    padding: 0;
     display: inline-flex;
     flex-direction: column;
-    gap: 2px;
+    align-items: flex-start;
+    gap: 6px;
 }
 
-.trending-details h4 {
-    margin: 0;
-    color: #0f172a;
-    font-size: 1.2rem;
-    font-weight: 700;
-    line-height: 1.15;
-    text-transform: capitalize;
+.trending-pill-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 1.5rem;
 }
 
-.trending-category {
-    color: rgba(0, 0, 0, 0.7);
+.trending-pill {
+    position: relative;
+    top: 0;
+    left: 0;
     font-size: 0.72rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.01em;
+    font-weight: 700;
+    line-height: 1;
 }
 
-.trending-details .likes {
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.74rem;
-    font-weight: 500;
-    text-transform: lowercase;
+.trending-description {
+    margin: 0;
+    color: #1f2937;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+
+.trending-likes {
+    margin: 0;
+    color: #7c8aa5;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.trending-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: #94a3b8;
+    padding-top: 4px;
 }
 
 .event-card {
@@ -762,7 +810,7 @@
 .event-info h4 {
     margin: 0 0 5px;
     color: #000000;
-    font-size: 1.05rem;
+    font-size: clamp(0.88rem, 0.78rem + 0.35vw, 0.98rem);
     font-weight: 700;
     line-height: 1.2;
     text-transform: uppercase;
@@ -774,7 +822,7 @@
     color: rgba(0, 0, 0, 0.6);
     font-size: 0.75rem;
     font-weight: 500;
-    line-height: 1.35;
+    line-height: 1.45;
     text-transform: uppercase;
 }
 
@@ -782,27 +830,24 @@
     flex: 1;
     min-width: 0;
     padding: 0 4px;
-}
-
-.event-status-stack {
-    display: inline-flex;
+    display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 84px;
+    align-items: flex-start;
+    gap: 0;
 }
 
-.event-status-label {
-    color: rgba(0, 0, 0, 0.4);
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-    line-height: 1;
+.event-location {
+    margin-bottom: 10px;
+    margin-top: 0;
 }
 
 .event-status {
-    width: 78px;
-    padding: 5px 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 78px;
+    padding: 5px 10px;
+    margin-top: 8px;
     border-radius: 9999px;
     font-size: 0.72rem;
     font-weight: 900;
@@ -1228,30 +1273,48 @@
     }
 
     .event-info h4 {
-        font-size: 0.86rem;
+        font-size: clamp(0.8rem, 0.76rem + 0.18vw, 0.88rem);
     }
 
     .event-info p {
         font-size: 0.68rem;
     }
 
+    .event-location {
+        margin-bottom: 8px;
+    }
+
     .event-status {
-        width: 68px;
+        min-width: 68px;
         font-size: 0.64rem;
+        margin-top: 6px;
+    }
+
+    .trending-item {
+        grid-template-columns: 32px minmax(0, 1fr) 14px;
+        border-radius: 20px;
+        column-gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .trending-rank {
+        padding-top: 1px;
     }
 
     .trending-number {
-        font-size: 1.65rem;
-        min-width: 22px;
+        font-size: 1.4rem;
     }
 
-    .trending-details h4 {
-        font-size: 0.95rem;
-    }
-
-    .trending-category,
-    .trending-details .likes {
+    .trending-pill {
         font-size: 0.66rem;
+    }
+
+    .trending-description {
+        font-size: 0.76rem;
+    }
+
+    .trending-likes {
+        font-size: 0.7rem;
     }
 }
 

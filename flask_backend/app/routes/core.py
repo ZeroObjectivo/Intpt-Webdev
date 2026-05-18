@@ -77,6 +77,42 @@ def normalize_text_for_moderation(text):
     collapsed = re.sub(r"[^\w]+", " ", lowered, flags=re.UNICODE)
     return re.sub(r"\s+", " ", collapsed).strip()
 
+
+def normalize_person_display_name(name):
+    normalized = " ".join(str(name or "").split()).strip()
+    if not normalized:
+        return ""
+    return normalized.title()
+
+
+def normalize_notification_title_case(title):
+    raw_title = " ".join(str(title or "").split()).strip()
+    if not raw_title:
+        return ""
+
+    like_suffix = " liked your post."
+    comment_suffixes = (" commented.", " replied.")
+
+    if raw_title.endswith(like_suffix):
+        prefix = raw_title[:-len(like_suffix)]
+        pieces = re.split(r"(, | and )", prefix)
+        normalized_pieces = []
+        for piece in pieces:
+            if piece in {", ", " and "}:
+                normalized_pieces.append(piece)
+            elif re.fullmatch(r"\d+\s+others?", piece, flags=re.IGNORECASE):
+                normalized_pieces.append(piece.lower())
+            else:
+                normalized_pieces.append(normalize_person_display_name(piece))
+        return "".join(normalized_pieces) + like_suffix
+
+    for suffix in comment_suffixes:
+        if raw_title.endswith(suffix):
+            prefix = raw_title[:-len(suffix)]
+            return f"{normalize_person_display_name(prefix)}{suffix}"
+
+    return raw_title
+
 def _strip_spaces(text):
     """Remove all spaces — catches evasion like 'f u c k'."""
     return re.sub(r"\s+", "", (text or ""))
@@ -161,7 +197,7 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                     names = []
                     for l in likers:
                         full_name = (l.get('profiles') or {}).get('full_name') or "A user"
-                        names.append(full_name.split()[0])
+                        names.append(normalize_person_display_name(full_name.split()[0]))
                     
                     if total_count == 1:
                         new_title = f"{names[0]} liked your post."
@@ -193,7 +229,7 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                         return
                     
                     # No existing unread notif, use the merged title for the new insert
-                    title = new_title
+                    title = normalize_notification_title_case(new_title)
                     message = ""
             except Exception as e:
                 logger.warning("Like merging failed: %s", e)
@@ -224,7 +260,7 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
             "type": notif_type,
             "reference_id": reference_id,
             "actor_id": actor_id,
-            "title": title,
+            "title": normalize_notification_title_case(title),
             "message": message,
             "scope": scope
         }).execute()
@@ -1906,6 +1942,7 @@ def build_notification_payload(client, user_id, scope="user"):
         else:
             n['actor_name'] = "System"
             n['actor_avatar'] = None
+        n['title'] = normalize_notification_title_case(n.get('title'))
         # Cleanup
         if 'actor' in n: del n['actor']
 
