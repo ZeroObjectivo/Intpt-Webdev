@@ -464,7 +464,6 @@
                     <a href="{{ url_for('admin.manage_users') }}" class="dropdown-item">User Management</a>
                     <a href="{{ url_for('admin.manage_sanctions') }}" class="dropdown-item">Managed Sanctions</a>
                     <a href="{{ url_for('admin.manage_disputes') }}" class="dropdown-item">Verification Disputes</a>
-                    <a href="{{ url_for('admin.manage_disputes') }}" class="dropdown-item">Verification Disputes</a>
                     <a href="{{ url_for('admin.reports_queue') }}" class="dropdown-item flex items-center justify-between">
                         Reports Queue
                         {% if stats and stats.get('new_reports_count', 0) > 0 %}
@@ -594,20 +593,20 @@
                             </div>
                         </div>
 
-                        <div class="max-h-[32rem] overflow-y-auto custom-scrollbar" id="admin-notification-list-container">
+                        <div class="max-h-[350px] overflow-y-auto custom-scrollbar" id="admin-notification-list-container">
                             <div id="admin-notification-items-container">
                             {% if notifications %}
                                 {% for n in notifications %}
                                     <div class="admin-notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
                                          data-notification-id="{{ n.id }}"
-                                         onclick="markAsRead('{{ n.id }}', this)">
+                                         onclick="handleAdminNotifClick('{{ n.id }}', '#', this)">
                                         <div class="mb-2">
                                             <div class="flex justify-between items-start gap-4">
-                                                <h4 class="text-[15px] font-black {% if not n.is_read %}text-umak-blue{% else %}text-slate-600{% endif %} break-words whitespace-normal flex-1">{{ n.title }}</h4>
-                                                <span class="text-[11px] font-bold text-slate-300 uppercase whitespace-nowrap">{{ n.created_at[:10] }}</span>
+                                                <h4 class="text-[15px] {% if not n.is_read %}font-black text-slate-900{% else %}font-bold text-slate-500{% endif %} break-words whitespace-normal flex-1 group-hover:underline underline-offset-2 decoration-slate-300">{{ n.title }}</h4>
+                                                <span class="text-[10px] font-black text-slate-300 uppercase whitespace-nowrap">{{ n.created_at|datetime_obj|relative_time if n.created_at else '' }}</span>
                                             </div>
                                         </div>
-                                        <p class="text-[13px] text-slate-500 leading-relaxed break-words whitespace-normal font-medium">{{ n.message }}</p>
+                                        <p class="text-[13px] {% if not n.is_read %}font-black text-slate-900{% else %}font-medium text-slate-400{% endif %} leading-relaxed break-words whitespace-normal">{{ n.message }}</p>
                                     </div>
                                 {% endfor %}
                                 <div id="admin-notification-empty-state" class="px-8 py-12 text-center hidden">
@@ -619,6 +618,9 @@
                                 </div>
                             {% endif %}
                             </div>
+                        </div>
+                        <div class="p-4 border-t border-slate-50 bg-slate-50/30 text-center">
+                            <a href="{{ url_for('admin.admin_notifications') }}" class="text-[11px] font-black text-umak-blue uppercase tracking-widest hover:text-blue-700 transition-colors">See all administrative alerts</a>
                         </div>
                     </div>                </div>
             </div>
@@ -632,11 +634,11 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
           {% for category, message in messages %}
-            <div class="flash-message p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-500 animate-slide-in 
+            <div class="flash-message p-4 rounded-2xl shadow-2xl flex items-center gap-4 transform transition-all duration-500 animate-slide-in 
               {% if category == 'success' %} bg-emerald-500 text-white {% elif category == 'error' %} bg-rose-500 text-white {% else %} bg-sky-500 text-white {% endif %}">
-              <div class="flex-1 font-bold text-sm tracking-tight">{{ message }}</div>
+              <div class="flex-1 font-black text-xs uppercase tracking-widest">{{ message }}</div>
               <button onclick="this.parentElement.remove()" class="p-1 hover:bg-white/20 rounded-lg transition-colors">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>
           {% endfor %}
@@ -667,6 +669,7 @@
             if (dot) dot.classList.toggle('hidden', !hasUnread);
             if (count) {
                 count.classList.toggle('hidden', !hasUnread);
+                count.textContent = unreadCount;
             }
         }
 
@@ -685,19 +688,42 @@
 
             list.querySelectorAll('.admin-notification-item').forEach((el) => el.remove());
             const html = items.map((n) => {
-                const titleClass = n.is_read ? 'text-slate-600' : 'text-umak-blue';
-                const createdAt = (n.created_at || '').slice(0, 10);
+                const titleClass = n.is_read ? 'font-bold text-slate-500' : 'font-black text-slate-900';
+                const msgClass = n.is_read ? 'font-medium text-slate-400' : 'font-black text-slate-900';
+                const timeLabel = n.relative_time || (n.created_at ? formatPostTime(n.created_at) : 'Some time ago');
+                
+                // Smart Routing Logic
+                let targetUrl = '#';
+                const lowerTitle = (n.title || '').toLowerCase();
+                const refId = n.reference_id || '';
+
+                if (lowerTitle.includes('post pending approval') || lowerTitle.includes('approval')) {
+                    targetUrl = `/admin/content/All?view=pending&search=${encodeURIComponent(refId)}`;
+                } else if (lowerTitle.includes('new comment report')) {
+                    targetUrl = `/admin/reports?type=comments&search=${encodeURIComponent(refId)}`;
+                } else if (lowerTitle.includes('new user report') || lowerTitle.includes('account report')) {
+                    targetUrl = `/admin/reports?type=accounts&search=${encodeURIComponent(refId)}`;
+                } else if (lowerTitle.includes('new post report')) {
+                    targetUrl = `/admin/reports?type=posts&search=${encodeURIComponent(refId)}`;
+                } else if (lowerTitle.includes('report')) {
+                    targetUrl = `/admin/reports?search=${encodeURIComponent(refId)}`;
+                } else if (lowerTitle.includes('ticket') || lowerTitle.includes('support')) {
+                    targetUrl = '/admin/support';
+                } else if (lowerTitle.includes('dispute')) {
+                    targetUrl = '/admin/disputes';
+                }
+
                 return `
                     <div class="admin-notification-item px-8 py-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
                          data-notification-id="${escapeNotifHtml(n.id)}"
-                         onclick="markAsRead('${escapeNotifHtml(n.id)}', this)">
+                         onclick="handleAdminNotifClick('${escapeNotifHtml(n.id)}', '${targetUrl}', this)">
                         <div class="mb-2">
                             <div class="flex justify-between items-start gap-4">
-                                <h4 class="text-[15px] font-black ${titleClass} break-words whitespace-normal flex-1">${escapeNotifHtml(n.title || 'Notification')}</h4>
-                                <span class="text-[11px] font-bold text-slate-300 uppercase whitespace-nowrap">${escapeNotifHtml(createdAt)}</span>
+                                <h4 class="text-[15px] ${titleClass} break-words whitespace-normal flex-1 group-hover:underline underline-offset-2 decoration-slate-300">${escapeNotifHtml(n.title || 'Notification')}</h4>
+                                <span class="text-[10px] font-black text-slate-300 uppercase whitespace-nowrap tracking-tighter">${escapeNotifHtml(timeLabel)}</span>
                             </div>
                         </div>
-                        <p class="text-[13px] text-slate-500 leading-relaxed break-words whitespace-normal font-medium">${escapeNotifHtml(n.message || '')}</p>
+                        <p class="text-[13px] ${msgClass} leading-relaxed break-words whitespace-normal">${escapeNotifHtml(n.message || '')}</p>
                     </div>
                 `;
             }).join('');
@@ -705,6 +731,15 @@
             list.insertAdjacentHTML('afterbegin', html);
             empty.classList.add('hidden');
             updateAdminNotificationBadge(unreadCount);
+        }
+
+        async function handleAdminNotifClick(id, url, el) {
+            // 1. Mark as read visually and on backend
+            await markAsRead(id, el);
+            // 2. Navigate if url is not #
+            if (url && url !== '#') {
+                window.location.href = url;
+            }
         }
 
         function removeAdminPostCardRealtime(postId) {
@@ -725,11 +760,11 @@
             const toast = document.createElement('div');
             const bgClass = type === 'success' ? 'bg-emerald-500' : (type === 'error' ? 'bg-rose-500' : 'bg-sky-500');
             
-            toast.className = `flash-message p-4 rounded-2xl shadow-2xl flex items-center gap-3 transform transition-all duration-500 translate-x-20 opacity-0 ${bgClass} text-white`;
+            toast.className = `flash-message p-4 rounded-2xl shadow-2xl flex items-center gap-4 transform transition-all duration-500 translate-x-20 opacity-0 ${bgClass} text-white`;
             toast.innerHTML = `
-                <div class="flex-1 font-bold text-sm tracking-tight">${message}</div>
+                <div class="flex-1 font-black text-xs uppercase tracking-widest">${message}</div>
                 <button onclick="this.parentElement.remove()" class="p-1 hover:bg-white/20 rounded-lg transition-colors">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             `;
             
@@ -795,14 +830,17 @@
                     });
                     const data = await res.json();
                     if (data.status === 'success') {
-                        const title = el.querySelector('h4');
-                        if (title) {
-                            title.classList.remove('text-umak-blue');
-                            title.classList.add('text-slate-600');
-                            const badge = document.getElementById('admin-notification-unread-count');
-                            const current = badge && badge.textContent ? parseInt(badge.textContent, 10) || 0 : 0;
-                            updateAdminNotificationBadge(Math.max(0, current - 1));
+                        const h4 = el.querySelector('h4');
+                        const p = el.querySelector('p');
+                        if (h4) {
+                            h4.className = 'text-[15px] font-bold text-slate-500 break-words whitespace-normal flex-1 group-hover:underline underline-offset-2 decoration-slate-300';
                         }
+                        if (p) {
+                            p.className = 'text-[13px] font-medium text-slate-400 leading-relaxed break-words whitespace-normal';
+                        }
+                        const badge = document.getElementById('admin-notification-unread-count');
+                        const current = badge && badge.textContent ? parseInt(badge.textContent, 10) || 0 : 0;
+                        updateAdminNotificationBadge(Math.max(0, current - 1));
                     }
                 } catch (e) { console.error('Error marking as read:', e); }
             };
@@ -815,8 +853,10 @@
                     });
                     if (res.ok) {
                         document.querySelectorAll('.admin-notification-item h4').forEach(h4 => {
-                            h4.classList.remove('text-umak-blue');
-                            h4.classList.add('text-slate-600');
+                            h4.className = 'text-[15px] font-bold text-slate-500 break-words whitespace-normal flex-1 group-hover:underline underline-offset-2 decoration-slate-300';
+                        });
+                        document.querySelectorAll('.admin-notification-item p').forEach(p => {
+                            p.className = 'text-[13px] font-medium text-slate-400 leading-relaxed break-words whitespace-normal';
                         });
                         updateAdminNotificationBadge(0);
                     }
@@ -824,21 +864,45 @@
             };
 
             window.clearAllAdminNotifs = async function() {
-                if (!confirm('Clear all administrative alerts?')) return;
-                try {
-                    const res = await fetch('/notifications/clear-all?scope=admin', {
-                        method: 'POST',
-                        headers: { 'X-CSRFToken': getCSRFToken() }
-                    });
-                    if (res.ok) {
-                        document.getElementById('admin-notification-items-container').innerHTML = `
-                            <div id="admin-notification-empty-state" class="px-8 py-12 text-center">
-                                <p class="text-[14px] text-slate-400 font-bold italic">No active alerts.</p>
-                            </div>
-                        `;
-                        updateAdminNotificationBadge(0);
-                    }
-                } catch (e) { console.error(e); }
+                if (typeof showConfirmModal === 'function') {
+                    showConfirmModal(
+                        'Clear Alerts?',
+                        'Are you sure you want to permanently clear all administrative notifications? This action cannot be undone.',
+                        async () => {
+                            try {
+                                const res = await fetch('/notifications/clear-all?scope=admin', {
+                                    method: 'POST',
+                                    headers: { 'X-CSRFToken': getCSRFToken() }
+                                });
+                                if (res.ok) {
+                                    document.getElementById('admin-notification-items-container').innerHTML = `
+                                        <div id="admin-notification-empty-state" class="px-8 py-12 text-center">
+                                            <p class="text-[14px] text-slate-400 font-bold italic">No active alerts.</p>
+                                        </div>
+                                    `;
+                                    updateAdminNotificationBadge(0);
+                                    if (window.createToast) window.createToast('Notifications cleared.', 'success');
+                                }
+                            } catch (e) { console.error(e); }
+                        }
+                    );
+                } else if (confirm('Clear all administrative alerts?')) {
+                    // Fallback
+                    try {
+                        const res = await fetch('/notifications/clear-all?scope=admin', {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': getCSRFToken() }
+                        });
+                        if (res.ok) {
+                            document.getElementById('admin-notification-items-container').innerHTML = `
+                                <div id="admin-notification-empty-state" class="px-8 py-12 text-center">
+                                    <p class="text-[14px] text-slate-400 font-bold italic">No active alerts.</p>
+                                </div>
+                            `;
+                            updateAdminNotificationBadge(0);
+                        }
+                    } catch (e) { console.error(e); }
+                }
             };
         });
 
@@ -865,7 +929,7 @@
             const notificationChannel = supabaseClient
                 .channel(`admin-realtime-notifications-${userId}`)
                 .on('postgres_changes', {
-                    event: 'INSERT',
+                    event: '*', // Listen for INSERT and UPDATE
                     schema: 'public',
                     table: 'notifications',
                     filter: `user_id=eq.${userId}`

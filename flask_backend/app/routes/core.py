@@ -1818,9 +1818,11 @@ def build_dashboard_sync_state(client, category=None):
 def build_notification_payload(client, user_id, scope="user"):
     # Fetch notifications with actor profile info
     # Filter by scope to separate user-side and admin-side notifications
+    # TRAY FIX: Only pull unread notifications to respect the "Clear All" persistence logic
     query = client.table('notifications')\
         .select("id, title, message, type, is_read, created_at, reference_id, actor_id, actor:profiles!notifications_actor_id_fkey(full_name, avatar_url)")\
         .eq('scope', scope)\
+        .eq('is_read', False)\
         .order('created_at', desc=True)\
         .limit(15)
     
@@ -2785,19 +2787,32 @@ def clear_all_notifications():
     user_id = session.get('user', {}).get('id')
     client = get_user_client()
     
-    # Determine scope based on domain
+    # Determine scope based on domain: allow override via ?scope=
     is_admin_domain = is_admin_domain_request()
-    target_scope = "admin" if is_admin_domain else "user"
+    requested_scope = request.args.get('scope')
+    
+    if requested_scope in ['admin', 'user']:
+        target_scope = requested_scope
+    else:
+        target_scope = "admin" if is_admin_domain else "user"
     
     try:
-        client.table('notifications')\
-            .delete()\
-            .eq("user_id", user_id)\
-            .eq("scope", target_scope)\
-            .execute()
+        # PERSISTENCE FIX: Change .delete() to .update({"is_read": True})
+        # This keeps the records for audit/logs but "clears" them from the active tray
+        query = client.table('notifications')\
+            .update({"is_read": True})\
+            .eq("scope", target_scope)
+            
+        # For user scope, we only clear the current user's personal alerts
+        if target_scope == "user":
+            query = query.eq("user_id", user_id)
+            
+        # For admin scope, we OMIT user_id constraint to clear globally for all admins
+        
+        query.execute()
         return jsonify({"status": "success"})
     except Exception as e:
-        logger.error("Failed to clear all notifications: %s", e)
+        logger.error("Failed to clear notifications: %s", e)
         return jsonify({"status": "error"}), 500
 
 @core.route('/login')

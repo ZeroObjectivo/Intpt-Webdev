@@ -1,0 +1,63 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Administrative Alerts | Admin Hub{% endblock %}
+{% block header_title %}Administrative Alerts{% endblock %}
+
+{% block admin_content %}
+<div class="mb-8 space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm w-fit">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Dashboard
+            </a>
+            
+            <div class="h-6 w-px bg-slate-200"></div>
+            
+            <button onclick="markAllAdminRead()" class="px-5 py-2 bg-white text-umak-blue border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+                Mark all read
+            </button>
+            <button onclick="clearAllAdminNotifs()" class="px-5 py-2 bg-slate-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-sm">
+                Clear all alerts
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto pb-20">
+    <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+        <div id="admin-full-notif-list">
+            {% if notifications %}
+                {% for n in notifications %}
+                    <div class="admin-notification-item p-8 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group"
+                         data-notification-id="{{ n.id }}"
+                         onclick="handleAdminNotifClick('{{ n.id }}', '#', this)">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex items-center gap-4">
+                                <img src="{{ n.actor_avatar if n.actor_avatar else url_for('static', filename='images/Logo.png') }}" 
+                                     class="w-12 h-12 rounded-2xl object-cover border-2 border-slate-50 shadow-sm">
+                                <div>
+                                    <h4 class="text-base {% if not n.is_read %}font-black text-slate-900{% else %}font-bold text-slate-500{% endif %} tracking-tight">{{ n.title }}</h4>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ n.created_at|datetime_obj|relative_time }}</p>
+                                </div>
+                            </div>
+                            {% if not n.is_read %}
+                            <span class="w-2.5 h-2.5 bg-umak-blue rounded-full"></span>
+                            {% endif %}
+                        </div>
+                        <p class="text-sm {% if not n.is_read %}font-black text-slate-700{% else %}font-medium text-slate-400{% endif %} leading-relaxed pl-16">{{ n.message }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="px-8 py-24 text-center">
+                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    </div>
+                    <p class="text-lg text-slate-400 font-bold italic">No administrative alerts found.</p>
+                    <p class="text-sm text-slate-300 font-bold uppercase tracking-widest mt-2">Everything is under control</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
