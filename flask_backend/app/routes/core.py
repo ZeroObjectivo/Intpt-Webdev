@@ -2343,6 +2343,7 @@ def update_post(post_id):
     listing_availability = request.form.get('listing_availability')
     event_date = request.form.get('event_date')
     event_end_date = request.form.get('event_end_date')
+    hosting_college = request.form.get('hosting_college')
 
     # Profanity / moderation check on updated content
     if content:
@@ -2370,6 +2371,7 @@ def update_post(post_id):
 
         if price is not None: update_data["price"] = float(price) if price.strip() else None
         if event_title is not None: update_data["event_title"] = event_title.strip()
+        if hosting_college is not None: update_data["hosting_college"] = hosting_college.strip()
         if product_name is not None: update_data["product_name"] = product_name.strip() or None
         if location is not None: update_data["location"] = location.strip()
         if status is not None: update_data["status"] = status.strip()
@@ -2703,11 +2705,13 @@ def create_post():
     listing_availability = request.form.get('listing_availability')
     event_date = request.form.get('event_date')
     event_end_date = request.form.get('event_end_date')
+    hosting_college = request.form.get('hosting_college')
 
     product_name = product_name.strip() if product_name and product_name.strip() else None
     price = float(price) if price and price.strip() else None
     location = location.strip() if location and location.strip() else None
     status = status.strip() if status and status.strip() else None
+    hosting_college = hosting_college.strip() if hosting_college and hosting_college.strip() else None
     listing_availability = listing_availability.strip() if listing_availability and listing_availability.strip() else None
     if listing_availability not in {"Available", "Not Available"}:
         listing_availability = "Available"
@@ -2775,6 +2779,7 @@ def create_post():
             "content": content,
             "category": category,
             "event_title": event_title,
+            "hosting_college": hosting_college,
             "price": price,
             "location": location,
             "status": post_status,
@@ -2790,7 +2795,16 @@ def create_post():
         if listing_availability:
             post_data["listing_availability"] = listing_availability
 
-        client.table('posts').insert(post_data).execute()
+        try:
+            client.table('posts').insert(post_data).execute()
+        except Exception as db_e:
+            logger.error("Supabase insert failed: %s. Data: %s", db_e, post_data)
+            # Fallback: try inserting without the new hosting_college column if it's the cause
+            if "hosting_college" in post_data:
+                del post_data["hosting_college"]
+                client.table('posts').insert(post_data).execute()
+            else:
+                raise db_e
 
         session['last_post_time'] = current_time
 

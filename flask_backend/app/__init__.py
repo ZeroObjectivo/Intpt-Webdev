@@ -34,16 +34,16 @@ def create_app():
     def datetime_obj(value):
         if not value:
             return None
-        # Clean ISO string
-        ts = value.replace('Z', '').split('.')[0]
+        if isinstance(value, datetime):
+            return value
         try:
-            dt = datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
-        except ValueError:
-            # Fallback for full format
-            dt = datetime.strptime(value.replace('Z', ''), '%Y-%m-%dT%H:%M:%S.%f')
-        
-        # Ensure it's UTC aware
-        return dt.replace(tzinfo=timezone.utc)
+            # fromisoformat is robust for ISO 8601 in modern Python
+            # Replace 'Z' with UTC offset for older Python compatibility if needed
+            cleaned_value = value.replace('Z', '+00:00')
+            return datetime.fromisoformat(cleaned_value)
+        except Exception as e:
+            logger.error("Error parsing datetime '%s': %s", value, e)
+            return None
 
     @app.template_filter('relative_time')
     def relative_time_filter(dt):
