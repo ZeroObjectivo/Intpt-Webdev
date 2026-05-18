@@ -10,6 +10,7 @@
     
     <!-- Custom CSS (compiled Tailwind) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modal.css') }}">
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&display=swap" rel="stylesheet">
@@ -461,6 +462,8 @@
                 </div>
                 <div id="moderation-drop" class="nav-dropdown-content">
                     <a href="{{ url_for('admin.manage_users') }}" class="dropdown-item">User Management</a>
+                    <a href="{{ url_for('admin.manage_sanctions') }}" class="dropdown-item">Managed Sanctions</a>
+                    <a href="{{ url_for('admin.manage_disputes') }}" class="dropdown-item">Verification Disputes</a>
                     <a href="{{ url_for('admin.manage_disputes') }}" class="dropdown-item">Verification Disputes</a>
                     <a href="{{ url_for('admin.reports_queue') }}" class="dropdown-item flex items-center justify-between">
                         Reports Queue
@@ -1051,6 +1054,12 @@
             }
         });
     </script>
+    <script>
+        window.collegeColors = {{ college_colors|tojson|safe if college_colors else '{}' }};
+        window.allPosts = []; // Default empty
+    </script>
+    <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+    {% include 'includes/modal.html' %}
     {% include 'includes/support_modal.html' %}
     {% block admin_scripts %}{% endblock %}
 </body>

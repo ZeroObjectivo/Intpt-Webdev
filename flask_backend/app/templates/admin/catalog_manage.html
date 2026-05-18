@@ -292,7 +292,10 @@
                 <textarea name="requirements" placeholder="Requirements">{{ item.requirements or '' }}</textarea>
                 <div class="catalog-actions">
                     <button type="submit" class="btn-primary">Save</button>
-                    <button type="button" class="btn-danger" onclick="if(confirm('Delete this card?')) this.form.nextElementSibling.submit()">Delete</button>
+                    <button type="button" class="btn-danger" 
+                            onclick="showConfirmModal('Delete Scholarship?', 'Are you sure you want to permanently remove this scholarship card?', () => { this.form.nextElementSibling.submit(); })">
+                        Delete
+                    </button>
                 </div>
             </form>
             <form method="POST" action="{{ url_for('admin.delete_scholarship_catalog_item', item_id=item.id) }}" class="hidden">
@@ -335,7 +338,10 @@
                 <input name="image_url" type="url" value="{{ item.image_url or '' }}" placeholder="Image URL">
                 <div class="catalog-actions">
                     <button type="submit" class="btn-primary">Save</button>
-                    <button type="button" class="btn-danger" onclick="if(confirm('Delete this item?')) this.form.nextElementSibling.submit()">Delete</button>
+                    <button type="button" class="btn-danger" 
+                            onclick="showConfirmModal('Delete Item?', 'Are you sure you want to remove this item from the catalog?', () => { this.form.nextElementSibling.submit(); })">
+                        Delete
+                    </button>
                 </div>
             </form>
             <form method="POST" action="{{ url_for('admin.delete_umak_coop_item', item_id=item.id) }}" class="hidden">

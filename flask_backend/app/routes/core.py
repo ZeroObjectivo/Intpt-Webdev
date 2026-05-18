@@ -958,6 +958,7 @@ def load_event_calendar_page_data(user_id, month_param=None):
     events_res = client.table('posts')\
         .select("*, profiles(full_name, avatar_url, college, course, level)")\
         .eq("category", "Events")\
+        .eq("status", "approved")\
         .gte("event_date", window_start_utc)\
         .lt("event_date", window_end_utc)\
         .order("event_date", desc=False)\
@@ -2128,10 +2129,13 @@ def add_comment(post_id):
 
     client = get_user_client()
     try:
+        now_utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
         comment_data = {
             "post_id": post_id,
             "user_id": user_id,
-            "content": content
+            "content": content,
+            "created_at": now_utc,
+            "updated_at": now_utc
         }
         if parent_id:
             comment_data["parent_id"] = parent_id
@@ -2411,6 +2415,62 @@ def report_post(post_id):
     except Exception as e:
         logger.error("Error reporting post: %s", e)
         return {"error": "Failed to report post."}, 500
+
+@core.route('/comments/<comment_id>/report', methods=['POST'])
+@login_required
+def report_comment(comment_id):
+    user_session = session.get('user')
+    reporter_id = user_session.get('id')
+    data = request.get_json(silent=True) or {}
+    reason = (data.get('reason') or '').strip()
+
+    if not reason:
+        return {"error": "Report reason is required."}, 400
+
+    client = get_user_client()
+
+    try:
+        # Verify comment exists
+        comment_res = client.table('comments').select("id, user_id, post_id").eq("id", comment_id).single().execute()
+        comment = comment_res.data
+        if not comment:
+            return {"error": "Comment not found."}, 404
+
+        if comment.get('user_id') == reporter_id:
+            return {"error": "You cannot report your own comment."}, 400
+
+        # Check for duplicate pending report on this specific comment
+        existing_res = client.table('reports')\
+            .select("id")\
+            .eq("reporter_id", reporter_id)\
+            .eq("comment_id", comment_id)\
+            .eq("status", "pending")\
+            .limit(1).execute()
+
+        if existing_res.data:
+            return {"status": "already_reported"}
+
+        # Insert report using the new comment_id column
+        client.table('reports').insert({
+            "reporter_id": reporter_id,
+            "comment_id": comment_id,
+            "post_id": comment.get('post_id'),
+            "reported_user_id": comment.get('user_id'),
+            "reason": f"[Comment Report] {reason}"
+        }).execute()
+
+        reporter_name = user_session.get('full_name', 'A user')
+        push_admin_notification(
+            title="New Comment Report",
+            message=f"{reporter_name} reported a comment. Reason: {reason[:100]}",
+            notif_type="admin",
+            reference_id=comment.get('post_id'),
+        )
+
+        return {"status": "reported"}
+    except Exception as e:
+        logger.error("Error reporting comment: %s", e)
+        return {"error": "Failed to report comment."}, 500
 
 @core.route('/comments/<comment_id>/update', methods=['POST'])
 @login_required

@@ -1,0 +1,229 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Managed Sanctions | Admin Hub{% endblock %}
+{% block header_title %}Sanctions Control{% endblock %}
+
+{% block admin_content %}
+<div class="mb-6">
+    <a href="{{ url_for('admin.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest border border-slate-100 hover:bg-slate-50 transition-all shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Dashboard
+    </a>
+</div>
+
+<div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+        <div>
+            <h3 class="text-lg font-black text-slate-800 tracking-tight">Active Account Sanctions</h3>
+            <p class="text-sm text-slate-400 font-bold">Review and manage users who are currently banned or suspended.</p>
+        </div>
+        <form id="userSearchForm" class="w-full md:w-auto">
+            <div class="relative">
+                <input type="text" id="userSearchInput" name="search" value="{{ search }}" placeholder="Search restricted users..." 
+                       class="w-full md:w-64 pl-10 pr-4 py-2 rounded-xl border border-slate-100 bg-slate-50 text-sm font-bold focus:outline-none focus:border-umak-blue transition-all"
+                       autocomplete="off">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+        </form>
+    </div>
+
+    <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="border-b border-slate-50">
+                    <th class="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Identification</th>
+                    <th class="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Restriction</th>
+                    <th class="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest">Applied On</th>
+                    <th class="pb-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody" class="divide-y divide-slate-50">
+                {% if users %}
+                    {% for u in users %}
+                    <tr class="group hover:bg-slate-50/50 transition-colors">
+                        <td class="py-5">
+                            <div class="flex items-center gap-4">
+                                <img src="{{ u.avatar_url if u.avatar_url else url_for('static', filename='images/Logo.png') }}" class="w-11 h-11 rounded-xl object-cover border-2 border-white shadow-sm">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-black text-slate-800 truncate">{{ u.full_name }}</p>
+                                    <p class="text-[10px] font-bold text-slate-400 truncate">{{ u.email }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-5">
+                            {% if u.status == 'banned' %}
+                            <span class="px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-rose-100">Banned</span>
+                            {% elif u.status == 'suspended' %}
+                            <div class="flex flex-col gap-1">
+                                <span class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100 w-fit">Suspended</span>
+                                {% if u.suspended_until %}
+                                <p class="text-[8px] font-black text-slate-300 uppercase tracking-tighter ml-1">Until {{ u.suspended_until[:10] }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="py-5 text-[11px] font-bold text-slate-400 uppercase tracking-tight">
+                            {{ u.updated_at[:10] }}
+                        </td>
+                        <td class="py-5 text-right">
+                            <div class="flex justify-end gap-2">
+                                <form action="{{ url_for('admin.lift_user_suspension', user_id=u.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="button" class="px-4 py-2 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-emerald-900/10 hover:bg-emerald-600 transition-all active:scale-95"
+                                            onclick="showConfirmModal('Lift Sanction?', 'Are you sure you want to restore full access for {{ u.full_name }}? All active bans and suspensions will be cleared.', () => { this.form.submit(); })">
+                                        Lift Sanction
+                                    </button>
+                                </form>
+                                <a href="{{ url_for('admin.user_management', user_id=u.id) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-slate-50 text-slate-400 hover:bg-umak-blue hover:text-white transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="py-20 text-center">
+                            <p class="text-xs text-slate-400 font-bold italic uppercase tracking-[0.2em]">Zero sanctioned students found.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div id="userCardsContainer" class="md:hidden space-y-4">
+        {% if users %}
+            {% for u in users %}
+            <article class="p-5 bg-slate-50/50 rounded-2xl border border-slate-100">
+                <div class="flex items-center justify-between gap-4 mb-4">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <img src="{{ u.avatar_url if u.avatar_url else url_for('static', filename='images/Logo.png') }}" class="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm">
+                        <div class="min-w-0">
+                            <p class="text-sm font-black text-slate-800 truncate">{{ u.full_name }}</p>
+                            <div class="mt-1">
+                                {% if u.status == 'banned' %}
+                                <span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[8px] font-black uppercase border border-rose-100">Banned</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[8px] font-black uppercase border border-amber-100">Suspended</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-4 border-t border-slate-100">
+                    <form action="{{ url_for('admin.lift_user_suspension', user_id=u.id) }}" method="POST" class="flex-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="w-full py-2.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg">Lift Sanction</button>
+                    </form>
+                    <a href="{{ url_for('admin.user_management', user_id=u.id) }}" class="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+        {% else %}
+            <p class="text-center text-xs text-slate-400 font-bold italic py-10 uppercase tracking-widest">Zero sanctions found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('userSearchInput');
+        const tableBody = document.getElementById('userTableBody');
+        const cardsContainer = document.getElementById('userCardsContainer');
+        let searchTimer = null;
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (searchTimer) clearTimeout(searchTimer);
+
+            searchTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/admin/sanctions?search=${encodeURIComponent(query)}`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await res.json();
+                    if (data.status === 'ok') {
+                        renderUsers(data.users);
+                    }
+                } catch (err) { console.error('Search failed:', err); }
+            }, 300);
+        });
+
+        function renderUsers(users) {
+            if (!users || users.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="py-20 text-center"><p class="text-xs text-slate-400 font-bold italic uppercase tracking-[0.2em]">No restricted users matching search.</p></td></tr>';
+                cardsContainer.innerHTML = '<p class="text-center text-xs text-slate-400 font-bold italic py-10 uppercase tracking-widest">No sanctions found.</p>';
+                return;
+            }
+
+            tableBody.innerHTML = users.map(u => `
+                <tr class="group hover:bg-slate-50/50 transition-colors">
+                    <td class="py-5">
+                        <div class="flex items-center gap-4">
+                            <img src="${u.avatar_url || '{{ url_for("static", filename="images/Logo.png") }}'}" class="w-11 h-11 rounded-xl object-cover border-2 border-white shadow-sm">
+                            <div class="min-w-0">
+                                <p class="text-sm font-black text-slate-800 truncate">${escapeNotifHtml(u.full_name)}</p>
+                                <p class="text-[10px] font-bold text-slate-400 truncate">${escapeNotifHtml(u.email)}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-5">
+                        ${u.status === 'banned' 
+                            ? '<span class="px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-rose-100">Banned</span>'
+                            : `<div class="flex flex-col gap-1">
+                                <span class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100 w-fit">Suspended</span>
+                                ${u.suspended_until ? `<p class="text-[8px] font-black text-slate-300 uppercase tracking-tighter ml-1">Until ${u.suspended_until.slice(0,10)}</p>` : ''}
+                               </div>`
+                        }
+                    </td>
+                    <td class="py-5 text-[11px] font-bold text-slate-400 uppercase tracking-tight">${u.updated_at.slice(0,10)}</td>
+                    <td class="py-5 text-right">
+                        <div class="flex justify-end gap-2">
+                            <form action="/admin/users/${u.id}/lift-suspension" method="POST">
+                                <input type="hidden" name="csrf_token" value="${getCSRFToken()}">
+                                <button type="submit" class="px-4 py-2 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-emerald-900/10 hover:bg-emerald-600 transition-all">Lift Sanction</button>
+                            </form>
+                            <a href="/admin/users/${u.id}/manage" class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-slate-50 text-slate-400 hover:bg-umak-blue hover:text-white transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            cardsContainer.innerHTML = users.map(u => `
+                <article class="p-5 bg-slate-50/50 rounded-2xl border border-slate-100">
+                    <div class="flex items-center justify-between gap-4 mb-4">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <img src="${u.avatar_url || '{{ url_for("static", filename="images/Logo.png") }}'}" class="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm">
+                            <div class="min-w-0">
+                                <p class="text-sm font-black text-slate-800 truncate">${escapeNotifHtml(u.full_name)}</p>
+                                <div class="mt-1">
+                                    ${u.status === 'banned' 
+                                        ? '<span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[8px] font-black uppercase border border-rose-100">Banned</span>'
+                                        : '<span class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[8px] font-black uppercase border border-amber-100">Suspended</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 pt-4 border-t border-slate-100">
+                        <form action="/admin/users/${u.id}/lift-suspension" method="POST" class="flex-1">
+                            <input type="hidden" name="csrf_token" value="${getCSRFToken()}">
+                            <button type="submit" class="w-full py-2.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg">Lift Sanction</button>
+                        </form>
+                        <a href="/admin/users/${u.id}/manage" class="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </a>
+                    </div>
+                </article>
+            `).join('');
+        }
+    });
+</script>
+{% endblock %}

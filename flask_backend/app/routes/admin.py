@@ -365,13 +365,16 @@ def fetch_comprehensive_stats(client):
     }
 
     try:
-        # 1. Primary Metrics (via standard API - always works)
+        # Primary Metrics (via standard API - always works)
         # Use a single query for profiles if possible, or separate for counts
         profiles_res = client.table('profiles').select("id, college, status, full_name, avatar_url, role").execute()
         stats["user_list"] = profiles_res.data
         stats["total_users"] = len(profiles_res.data)
+        
+        # Track specific sanction counts
         stats["banned_accounts"] = len([p for p in profiles_res.data if p.get('status') == 'banned'])
-
+        stats["suspended_accounts"] = len([p for p in profiles_res.data if p.get('status') == 'suspended'])
+        
         # College Breakdown for Chart
         college_counts = {}
         for p in profiles_res.data:
@@ -548,6 +551,27 @@ def manage_users():
         return jsonify({"status": "ok", "users": users})
         
     return render_template('admin/users.html', users=users, user=session.get('user'), search=search, permissions=permissions)
+
+@admin.route('/admin/sanctions')
+@login_required
+@account_access_required
+def manage_sanctions():
+    client = get_admin_read_client()
+    current_role = get_current_role()
+    permissions = build_admin_permissions(current_role)
+    search = request.args.get('search', '')
+    
+    query = client.table('profiles').select("*").in_("status", ["banned", "suspended"])
+    if search:
+        query = query.or_(f"full_name.ilike.%{search}%,email.ilike.%{search}%")
+    
+    res = query.order('updated_at', desc=True).execute()
+    users = res.data or []
+
+    if wants_json_response():
+        return jsonify({"status": "ok", "users": users})
+        
+    return render_template('admin/sanctions.html', users=users, user=session.get('user'), search=search, permissions=permissions)
 
 @admin.route('/admin/users/<user_id>/manage')
 @login_required

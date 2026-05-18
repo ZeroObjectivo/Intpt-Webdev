@@ -409,18 +409,39 @@ function updateModalContent() {
 }
 
 function formatPostTime(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = (now - date) / 1000;
+    if (!timestamp) return "";
     
+    // Ensure timestamp is treated as UTC
+    let dateStr = String(timestamp);
+    if (!dateStr.includes('Z') && !dateStr.includes('+')) {
+        dateStr = dateStr.replace(' ', 'T') + 'Z';
+    }
+    const date = new Date(dateStr);
+    const now = new Date();
+    
+    // Calculate difference in seconds
+    const diff = (now.getTime() - date.getTime()) / 1000;
+    
+    // Within 24 hours: Relative time
     if (diff < 86400) {
         if (diff < 60) return "Just now";
         if (diff < 3600) return `${Math.floor(diff/60)} mins ago`;
         return `${Math.floor(diff/3600)} hrs ago`;
     }
 
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + 
-           date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    // Older than 24 hours: Localized absolute time
+    const datePart = date.toLocaleDateString(undefined, { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+    
+    const timePart = date.toLocaleTimeString(undefined, { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+
+    return `${datePart} at ${timePart}`;
 }
 
 function renderComment(comment, isReply = false) {
@@ -428,6 +449,7 @@ function renderComment(comment, isReply = false) {
     const isOwner = window.currentUser && window.currentUser.id === comment.user_id;
     const isAdmin = window.currentUser && (window.currentUser.role === 'admin' || window.currentUser.role === 'super_admin');
     const allowOwnEdit = isOwner && !isAdminContext;
+    const profileUrl = isAdminContext ? `/admin/users/${comment.user_id}/manage` : `/profile/${comment.user_id}`;
     
     const div = document.createElement('div');
     div.className = `flex flex-col ${isReply ? 'mt-3' : 'mt-6'} group`;
@@ -435,20 +457,38 @@ function renderComment(comment, isReply = false) {
     
     div.innerHTML = `
         <div class="flex gap-3">
-            <img src="${avatar}" alt="" class="w-9 h-9 rounded-xl object-cover shadow-sm">
+            <a href="${profileUrl}" class="shrink-0">
+                <img src="${avatar}" alt="" class="w-9 h-9 rounded-xl object-cover shadow-sm hover:opacity-80 transition-opacity">
+            </a>
             <div class="flex-1 min-w-0">
                 <div class="bg-slate-50 rounded-2xl px-4 py-3 relative group/comment transition-all hover:bg-slate-100/50">
-                    <div class="flex justify-between items-start mb-1">
-                        <h5 class="text-[13px] font-bold text-slate-900">${toTitleCase(comment.profiles.full_name)}</h5>
-                        <div class="flex items-center gap-1 opacity-0 group-hover/comment:opacity-100 transition-opacity">
-                            ${allowOwnEdit ? `
-                                <button onclick="startEditComment('${comment.id}')" class="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 transition-all" title="Edit">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                </button>
-                                <button onclick="deleteComment('${comment.id}')" class="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-red-500 transition-all" title="Delete">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            ` : ''}
+                    <div class="flex justify-between items-start mb-1 gap-2">
+                        <a href="${profileUrl}" class="text-[13px] font-bold text-slate-900 hover:underline truncate">
+                            ${toTitleCase(comment.profiles.full_name)}
+                        </a>
+                        
+                        <div class="comment-action-menu">
+                            <button onclick="toggleCommentMenu('${comment.id}')" class="comment-dots-btn" title="Options">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+                            </button>
+                            
+                            <div id="comment-dropdown-${comment.id}" class="comment-dropdown">
+                                ${allowOwnEdit ? `
+                                    <button onclick="startEditComment('${comment.id}')" class="comment-dropdown-item">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                        Edit Comment
+                                    </button>
+                                    <button onclick="deleteComment('${comment.id}')" class="comment-dropdown-item text-rose-500">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                        Delete
+                                    </button>
+                                ` : `
+                                    <button onclick="reportComment('${comment.id}')" class="comment-dropdown-item text-rose-500">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                        Report Comment
+                                    </button>
+                                `}
+                            </div>
                         </div>
                     </div>
                     <p id="comment-text-${comment.id}" class="text-[13px] text-slate-600 leading-relaxed font-medium">${comment.content}</p>
@@ -472,6 +512,59 @@ function renderComment(comment, isReply = false) {
     `;
     return div;
 }
+
+function toggleCommentMenu(commentId) {
+    const dropdown = document.getElementById(`comment-dropdown-${commentId}`);
+    if (!dropdown) return;
+
+    // Close all other comment dropdowns
+    document.querySelectorAll('.comment-dropdown.active').forEach(el => {
+        if (el.id !== `comment-dropdown-${commentId}`) el.classList.remove('active');
+    });
+
+    dropdown.classList.toggle('active');
+}
+
+async function reportComment(commentId) {
+    showConfirmModal(
+        'Report Comment?',
+        'Why are you reporting this comment? Our moderation team will review it shortly.',
+        async (payload) => {
+            try {
+                const response = await fetch(`/comments/${commentId}/report`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({ reason: payload.reason + (payload.note ? ': ' + payload.note : '') })
+                });
+                const data = await response.json();
+                if (data.status === 'reported') {
+                    if (window.createToast) window.createToast('Comment reported. Thank you.', 'success');
+                } else if (data.status === 'already_reported') {
+                    if (window.createToast) window.createToast('You have already reported this comment.', 'info');
+                } else {
+                    if (window.createToast) window.createToast(data.error || 'Failed to report comment.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                if (window.createToast) window.createToast('Failed to report comment.', 'error');
+            }
+        },
+        {
+            reasons: ['Harassment', 'Spam', 'Inappropriate Language', 'Misinformation', 'Other'],
+            requireReason: true
+        }
+    );
+}
+
+// Global click listener to close comment dropdowns when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.comment-action-menu')) {
+        document.querySelectorAll('.comment-dropdown.active').forEach(el => el.classList.remove('active'));
+    }
+});
 
 function renderCommentsList(list, comments) {
     if (comments.length > 0) {

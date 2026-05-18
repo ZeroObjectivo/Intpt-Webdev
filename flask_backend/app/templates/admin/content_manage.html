@@ -400,33 +400,36 @@
     async function bulkDismissReports() {
         const selected = Array.from(document.querySelectorAll('input[name="report-select"]:checked')).map(cb => cb.value);
         if (!selected.length) return;
-        
-        if (!confirm(`Dismiss all flags for these ${selected.length} items? This will not delete the content.`)) return;
 
-        const reportType = '{{ report_type }}';
-        const payload = {
-            post_ids: reportType === 'posts' ? selected : [],
-            user_ids: reportType === 'accounts' ? selected : []
-        };
+        showConfirmModal(
+            'Dismiss Flags?',
+            `Are you sure you want to dismiss all flags for these ${selected.length} items? This will not delete the content.`,
+            async () => {
+                const reportType = '{{ report_type }}';
+                const payload = {
+                    post_ids: reportType === 'posts' ? selected : [],
+                    user_ids: reportType === 'accounts' ? selected : []
+                };
 
-        try {
-            const res = await fetch('/admin/reports/bulk-dismiss', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                showToast(`Dismissed flags for ${selected.length} items`, 'success');
-                selected.forEach(id => {
-                    document.querySelector(`[data-admin-post-id="${id}"]`)?.remove();
-                    document.querySelector(`[data-admin-user-id="${id}"]`)?.remove();
-                });
-                deselectAll();
+                try {
+                    const res = await fetch('/admin/reports/bulk-dismiss', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showToast(`Dismissed flags for ${selected.length} items`, 'success');
+                        selected.forEach(id => {
+                            document.querySelector(`[data-admin-post-id="${id}"]`)?.remove();
+                            document.querySelector(`[data-admin-user-id="${id}"]`)?.remove();
+                        });
+                        deselectAll();
+                    }
+                } catch (e) { showToast('Bulk action failed', 'error'); }
             }
-        } catch (e) { showToast('Bulk action failed', 'error'); }
+        );
     }
-
     async function bulkRemovePosts() {
         const selected = Array.from(document.querySelectorAll('input[name="report-select"]:checked')).map(cb => cb.value);
         if (!selected.length) return;
@@ -638,22 +641,26 @@
     async function bulkApprove() {
         const selected = Array.from(document.querySelectorAll('input[name="report-select"]:checked')).map(cb => cb.value);
         if (!selected.length) return;
-        
-        if (!confirm(`Are you sure you want to approve ${selected.length} posts?`)) return;
 
-        try {
-            const res = await fetch('/admin/posts/bulk-approve', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' },
-                body: JSON.stringify({ ids: selected })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                showToast(`Approved ${selected.length} posts`, 'success');
-                selected.forEach(id => document.querySelector(`[data-admin-post-id="${id}"]`)?.remove());
-                deselectAll();
+        showConfirmModal(
+            'Approve Posts?',
+            `Are you sure you want to approve ${selected.length} posts? They will be immediately visible on the public feed.`,
+            async () => {
+                try {
+                    const res = await fetch('/admin/posts/bulk-approve', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken(), 'Accept': 'application/json' },
+                        body: JSON.stringify({ ids: selected })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showToast(`Approved ${selected.length} posts`, 'success');
+                        selected.forEach(id => document.querySelector(`[data-admin-post-id="${id}"]`)?.remove());
+                        deselectAll();
+                    }
+                } catch (e) { showToast('Bulk action failed', 'error'); }
             }
-        } catch (e) { showToast('Bulk action failed', 'error'); }
+        );
     }
 
     function bulkRejectModal() {
