@@ -582,9 +582,16 @@
                     </button>
 
                     <div id="notification-menu" class="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden hidden z-[60] border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                            <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
-                            <span id="admin-notification-unread-count" class="px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">New</span>
+                        <div class="px-8 py-4 border-b border-slate-50 bg-slate-50/50 flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Administrative Alerts</h3>
+                                <span id="admin-notification-unread-count" class="px-2.5 py-1 bg-rose-100 text-rose-600 rounded-full text-[10px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">New</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button onclick="markAllAdminRead()" class="text-[10px] font-black text-umak-blue uppercase tracking-widest hover:text-blue-700 transition-colors">Mark all read</button>
+                                <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                                <button onclick="clearAllAdminNotifs()" class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors">Clear all</button>
+                            </div>
                         </div>
 
                         <div class="max-h-[32rem] overflow-y-auto custom-scrollbar" id="admin-notification-list-container">
@@ -604,11 +611,11 @@
                                     </div>
                                 {% endfor %}
                                 <div id="admin-notification-empty-state" class="px-8 py-12 text-center hidden">
-                                    <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
+                                    <p class="text-[14px] text-slate-400 font-bold italic">No active alerts.</p>
                                 </div>
                             {% else %}
                                 <div id="admin-notification-empty-state" class="px-8 py-12 text-center">
-                                    <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
+                                    <p class="text-[14px] text-slate-400 font-bold italic">No active alerts.</p>
                                 </div>
                             {% endif %}
                             </div>
@@ -799,6 +806,40 @@
                     }
                 } catch (e) { console.error('Error marking as read:', e); }
             };
+
+            window.markAllAdminRead = async function() {
+                try {
+                    const res = await fetch('/notifications/mark-all-read?scope=admin', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCSRFToken() }
+                    });
+                    if (res.ok) {
+                        document.querySelectorAll('.admin-notification-item h4').forEach(h4 => {
+                            h4.classList.remove('text-umak-blue');
+                            h4.classList.add('text-slate-600');
+                        });
+                        updateAdminNotificationBadge(0);
+                    }
+                } catch (e) { console.error(e); }
+            };
+
+            window.clearAllAdminNotifs = async function() {
+                if (!confirm('Clear all administrative alerts?')) return;
+                try {
+                    const res = await fetch('/notifications/clear-all?scope=admin', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCSRFToken() }
+                    });
+                    if (res.ok) {
+                        document.getElementById('admin-notification-items-container').innerHTML = `
+                            <div id="admin-notification-empty-state" class="px-8 py-12 text-center">
+                                <p class="text-[14px] text-slate-400 font-bold italic">No active alerts.</p>
+                            </div>
+                        `;
+                        updateAdminNotificationBadge(0);
+                    }
+                } catch (e) { console.error(e); }
+            };
         });
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -829,9 +870,13 @@
                     table: 'notifications',
                     filter: `user_id=eq.${userId}`
                 }, (payload) => {
+                    const row = payload.new;
+                    // Only react if the notification is for the admin scope
+                    if (row && row.scope !== 'admin') return;
+
                     setTimeout(async () => {
                         try {
-                            const res = await fetch('/sync/realtime', { headers: { 'Accept': 'application/json' } });
+                            const res = await fetch('/sync/realtime?scope=admin', { headers: { 'Accept': 'application/json' } });
                             if (!res.ok) return;
                             const data = await res.json();
                             if (data && data.notifications) {
@@ -843,6 +888,20 @@
                     }, realtimeDelayMs);
                 })
                 .subscribe();
+
+            // Initial load for admin notifications
+            (async () => {
+                try {
+                    const res = await fetch('/sync/realtime?scope=admin', { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (data && data.notifications) {
+                        renderAdminNotificationMenu(data.notifications.items || [], Number(data.notifications.unread_count || 0));
+                    }
+                } catch (e) {
+                    console.error('Admin notification initial load failed:', e);
+                }
+            })();
 
             const moderationChannel = supabaseClient
                 .channel(`admin-realtime-post-removals-${userId}`)

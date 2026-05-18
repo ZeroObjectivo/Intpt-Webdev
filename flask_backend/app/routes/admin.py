@@ -251,7 +251,7 @@ def build_admin_permissions(role):
         "can_modify_admin_accounts": is_super_admin,
     }
 
-def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None):
+def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None, scope="user"):
     if not user_id:
         return
     sender_client = supabase_service or client
@@ -294,6 +294,7 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                         .eq("reference_id", reference_id)\
                         .ilike("title", "%liked your post%")\
                         .eq("is_read", False)\
+                        .eq("scope", scope)\
                         .limit(1).execute()
                     
                     if existing.data:
@@ -301,7 +302,8 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                             "title": new_title,
                             "message": "",
                             "actor_id": actor_id,
-                            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                            "scope": scope
                         }).eq("id", existing.data[0]['id']).execute()
                         return
                     
@@ -319,12 +321,14 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                 .eq("reference_id", reference_id)\
                 .eq("title", title)\
                 .eq("is_read", False)\
+                .eq("scope", scope)\
                 .limit(1).execute()
              
              if existing.data:
                 sender_client.table('notifications').update({
                     "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    "actor_id": actor_id
+                    "actor_id": actor_id,
+                    "scope": scope
                 }).eq("id", existing.data[0]['id']).execute()
                 return
 
@@ -336,6 +340,7 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
             "actor_id": actor_id,
             "title": title,
             "message": message,
+            "scope": scope
         }).execute()
     except Exception as e:
         logger.warning("Notification insert skipped for user %s: %s", user_id, e)
