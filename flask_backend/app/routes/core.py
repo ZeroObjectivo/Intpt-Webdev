@@ -129,7 +129,7 @@ def _safe_int(value, default=0):
 
 ADMIN_NOTIFICATION_ROLES = {'super_admin', 'superadmin', 'admin', 'content_moderator', 'account_manager'}
 
-def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None):
+def push_notification(client, user_id, *, title, message, notif_type="system", reference_id=None, actor_id=None, scope="user"):
     if not user_id:
         return
     
@@ -179,6 +179,7 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                         .eq("reference_id", reference_id)\
                         .ilike("title", "%liked your post%")\
                         .eq("is_read", False)\
+                        .eq("scope", scope)\
                         .limit(1).execute()
                     
                     if existing.data:
@@ -186,7 +187,8 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                             "title": new_title,
                             "message": "", # Content moved to title
                             "actor_id": actor_id, # Latest actor for photo
-                            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                            "scope": scope
                         }).eq("id", existing.data[0]['id']).execute()
                         return
                     
@@ -205,12 +207,14 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
                 .eq("reference_id", reference_id)\
                 .eq("title", title)\
                 .eq("is_read", False)\
+                .eq("scope", scope)\
                 .limit(1).execute()
              
              if existing.data:
                 sender_client.table('notifications').update({
                     "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    "actor_id": actor_id
+                    "actor_id": actor_id,
+                    "scope": scope
                 }).eq("id", existing.data[0]['id']).execute()
                 return
 
@@ -222,13 +226,14 @@ def push_notification(client, user_id, *, title, message, notif_type="system", r
             "actor_id": actor_id,
             "title": title,
             "message": message,
+            "scope": scope
         }).execute()
     except Exception as e:
         logger.warning("Notification insert skipped for user %s: %s", user_id, e)
 
 
 def push_admin_notification(*, title, message, notif_type="admin", reference_id=None):
-    """Send a notification to all users with admin-level roles."""
+    """Send a notification to all users with admin-level roles with scope='admin'."""
     sender_client = supabase_service
     if not sender_client:
         logger.warning("No service client available for admin notifications")
@@ -248,6 +253,7 @@ def push_admin_notification(*, title, message, notif_type="admin", reference_id=
                 "reference_id": reference_id,
                 "title": title,
                 "message": message,
+                "scope": "admin"
             }
             for uid in admin_ids
         ]
@@ -1872,14 +1878,21 @@ def build_dashboard_sync_state(client, category=None):
     ])
     return state
 
-def build_notification_payload(client, user_id):
+def build_notification_payload(client, user_id, scope="user"):
     # Fetch notifications with actor profile info
-    # Explicitly name the FK because we have two relations to profiles (user_id and actor_id)
-    notifications_res = client.table('notifications')\
+    # Filter by scope to separate user-side and admin-side notifications
+    query = client.table('notifications')\
         .select("id, title, message, type, is_read, created_at, reference_id, actor_id, actor:profiles!notifications_actor_id_fkey(full_name, avatar_url)")\
-        .eq('user_id', user_id)\
+        .eq('scope', scope)\
         .order('created_at', desc=True)\
-        .limit(15).execute()
+        .limit(15)
+    
+    # SYSTEM ARCHITECTURE FIX: Admin scope is GLOBAL for all admins.
+    # User scope is PRIVATE to the specific user_id.
+    if scope == "user":
+        query = query.eq('user_id', user_id)
+        
+    notifications_res = query.execute()
 
     items = notifications_res.data or []
     for n in items:
@@ -1897,12 +1910,16 @@ def build_notification_payload(client, user_id):
         if 'actor' in n: del n['actor']
 
     try:
-        unread_res = client.table('notifications')\
+        count_query = client.table('notifications')\
             .select("id", count='exact')\
-            .eq('user_id', user_id)\
+            .eq('scope', scope)\
             .eq('is_read', False)\
-            .limit(1)\
-            .execute()
+            .limit(1)
+            
+        if scope == "user":
+            count_query = count_query.eq('user_id', user_id)
+            
+        unread_res = count_query.execute()
         unread_count = int(unread_res.count or 0)
     except Exception:
         unread_count = len([n for n in items if not n.get('is_read')])
@@ -2007,11 +2024,23 @@ def sync_realtime():
     user = session.get('user', {})
     user_id = user.get('id')
     role = (user.get('role') or '').lower()
+    
+    # Determine notification scope: Allow explicit override via ?scope=
+    is_admin_domain = is_admin_domain_request()
+    requested_scope = request.args.get('scope')
+    
+    if requested_scope in ['admin', 'user']:
+        notif_scope = requested_scope
+    else:
+        notif_scope = "admin" if is_admin_domain else "user"
 
     try:
         client = get_user_client()
         state = build_dashboard_sync_state(client, category=category)
-        notifications = build_notification_payload(client, user_id)
+        
+        # Now passing the determined scope
+        notifications = build_notification_payload(client, user_id, scope=notif_scope)
+        
         interactions = {
             "posts": build_interactions_payload(client, user_id, post_ids)
         }
@@ -2019,7 +2048,7 @@ def sync_realtime():
         if is_jwt_error(e) and refresh_supabase_auth():
             client = get_user_client()
             state = build_dashboard_sync_state(client, category=category)
-            notifications = build_notification_payload(client, user_id)
+            notifications = build_notification_payload(client, user_id, scope=notif_scope)
             interactions = {
                 "posts": build_interactions_payload(client, user_id, post_ids)
             }
@@ -2035,8 +2064,6 @@ def sync_realtime():
         "notifications": notifications,
         "interactions": interactions,
     }
-
-    is_admin_domain = is_admin_domain_request()
 
     if is_admin_domain and role in ['admin', 'super_admin', 'superadmin', 'content_manager', 'content_moderator', 'account_manager']:
         payload["admin"] = build_admin_activity_payload(client)
@@ -2777,6 +2804,7 @@ def notifications_page():
         res = client.table('notifications')\
             .select("id, title, message, type, is_read, created_at, reference_id")\
             .eq('user_id', user_id)\
+            .eq('scope', 'user')\
             .order('created_at', desc=True)\
             .limit(50).execute()
         notifications = res.data or []
@@ -2786,6 +2814,7 @@ def notifications_page():
             res = client.table('notifications')\
                 .select("id, title, message, type, is_read, created_at, reference_id")\
                 .eq('user_id', user_id)\
+                .eq('scope', 'user')\
                 .order('created_at', desc=True)\
                 .limit(50).execute()
             notifications = res.data or []
@@ -2826,10 +2855,16 @@ def mark_notification_read(notification_id):
 def mark_all_notifications_read():
     user_id = session.get('user', {}).get('id')
     client = get_user_client()
+    
+    # Determine scope based on domain
+    is_admin_domain = is_admin_domain_request()
+    target_scope = "admin" if is_admin_domain else "user"
+    
     try:
         client.table('notifications')\
             .update({"is_read": True})\
             .eq("user_id", user_id)\
+            .eq("scope", target_scope)\
             .execute()
         return jsonify({"status": "success"})
     except Exception as e:
@@ -2841,10 +2876,16 @@ def mark_all_notifications_read():
 def clear_all_notifications():
     user_id = session.get('user', {}).get('id')
     client = get_user_client()
+    
+    # Determine scope based on domain
+    is_admin_domain = is_admin_domain_request()
+    target_scope = "admin" if is_admin_domain else "user"
+    
     try:
         client.table('notifications')\
             .delete()\
             .eq("user_id", user_id)\
+            .eq("scope", target_scope)\
             .execute()
         return jsonify({"status": "success"})
     except Exception as e:
