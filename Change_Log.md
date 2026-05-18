@@ -8,6 +8,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 ## [Unreleased] - 2026-05-17
 
 ### Added
+- **New Admin User:** Added `cboregas.k12254168@umak.edu.ph` as an admin for development purposes.
 - **Multi-Step Onboarding Flow:** Enhanced the registration process with a new two-step flow:
     1.  **Community Guidelines:** Improved T&C presentation with mandatory scroll-to-read validation.
     2.  **Profile Setup:** New form to collect required academic info (College, Course, Year Level) and optional details (Bio, Contact, Social Links) before users access the dashboard.
@@ -71,6 +72,7 @@ This document summarizes the recent major updates, bug fixes, and feature implem
 - **Post Card UI Enhancements:** Updated `includes/post_card.html` with improved styling (rounded corners on images and overlays) to match the latest design standards.
 
 ### Fixed
+- **Post Creation:** Resolved a "Something went wrong" error when creating posts. The issue was caused by attempting to insert into `listing_availability` and `product_name` columns which are missing from the current database schema. Implemented a resilient insertion logic that omits these fields if they are not provided, allowing standard posts to be created successfully while the schema is pending update.
 - **Mobile Navigation:** Restored the unresponsive hamburger menu on mobile breakpoints and consolidated the Top Nav Profile dropdown (Account name and My Profile link) into the mobile menu drawer for a cleaner interface.
 - **Profile Engagement Metrics:** Fixed profile 'Like' and 'Comment' counter metrics to accurately aggregate interactions received on authored posts via joined queries, rather than counting sent interactions.
 - **Onboarding Completion (500 Error):** Fixed a critical 500 Internal Server Error on `/onboarding/complete` caused by a missing `flash` import in `auth.py`. 
