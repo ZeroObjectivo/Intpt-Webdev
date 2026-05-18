@@ -393,14 +393,18 @@
                             <div id="notification-header" class="px-6 py-4 border-b border-slate-100/80 bg-white/70 flex justify-between items-center">
                                 <div class="flex items-center gap-3">
                                     <h3 class="text-[13px] font-black text-slate-800 uppercase tracking-widest">Notifications</h3>
-                                    <span id="notification-unread-count" class="notification-count-badge px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">
+                                    <span id="notification-unread-count" class="notification-count-badge px-2.5 py-1 bg-red-100 text-red-600 rounded-full text-[10px] font-black {% if unread_notifications_count <= 0 %}hidden{% endif %}">
                                         New
                                     </span>
                                 </div>
-                                <button onclick="markAllAsRead(event)" class="text-[11px] font-medium font-sans text-umak-blue hover:text-umak-blue/80 transition-colors">Mark all read</button>
+                                <div class="flex items-center gap-3">
+                                    <button onclick="markAllAsRead(event)" class="text-[10px] font-black text-umak-blue uppercase tracking-widest hover:text-blue-700 transition-colors">Mark all read</button>
+                                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                                    <button onclick="clearAllUserNotifs()" class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors">Clear all</button>
+                                </div>
                             </div>
 
-                            <div id="notification-list-container" class="max-h-[32rem] overflow-y-auto custom-scrollbar">
+                            <div id="notification-list-container" class="max-h-[350px] overflow-y-auto custom-scrollbar">
                                 <div id="notification-items-container">
                                 {% if notifications %}
                                     {% for n in notifications %}
@@ -434,9 +438,9 @@
                                     </div>
                                     <p class="text-[14px] text-slate-400 font-bold italic">No notifications yet.</p>
                                 </div>
-                                <div id="notification-footer" class="p-4 bg-slate-50/30 {% if not notifications %}hidden{% endif %}">
-                                    <a href="{{ url_for('core.notifications_page') }}" class="block w-full py-3 text-center text-[12px] font-medium font-sans text-slate-500 hover:text-umak-blue transition-colors">View All Notifications</a>
-                                </div>
+                            </div>
+                            <div id="notification-footer" class="p-4 border-t border-slate-50 bg-slate-50/30 text-center {% if not notifications %}hidden{% endif %}">
+                                <a href="{{ url_for('core.notifications_page') }}" class="text-[11px] font-black text-umak-blue uppercase tracking-widest hover:text-blue-700 transition-colors">See all notifications</a>
                             </div>
                         </div>
                     </div>
@@ -684,7 +688,41 @@
                     } catch (err) { console.error(err); }
                 };
 
-                // Remove clearAllNotifications local JS as button is removed from UI
+                window.clearAllUserNotifs = async function() {
+                    if (typeof showConfirmModal === 'function') {
+                        showConfirmModal(
+                            'Clear Notifications?',
+                            'Are you sure you want to dismiss all active notifications?',
+                            async () => {
+                                try {
+                                    const res = await fetch('/notifications/clear-all?scope=user', {
+                                        method: 'POST',
+                                        headers: { 'X-CSRFToken': getCSRFToken() }
+                                    });
+                                    if (res.ok) {
+                                        document.getElementById('notification-items-container').innerHTML = '';
+                                        document.getElementById('notification-empty-state').classList.remove('hidden');
+                                        document.getElementById('notification-footer').classList.add('hidden');
+                                        updateNotificationBadge(0);
+                                        if (window.createToast) window.createToast('Notifications cleared.', 'success');
+                                    }
+                                } catch (e) { console.error(e); }
+                            }
+                        );
+                    } else if (confirm('Clear all notifications?')) {
+                        try {
+                            const res = await fetch('/notifications/clear-all?scope=user', {
+                                method: 'POST',
+                                headers: { 'X-CSRFToken': getCSRFToken() }
+                            });
+                            if (res.ok) {
+                                document.getElementById('notification-items-container').innerHTML = '';
+                                document.getElementById('notification-empty-state').classList.remove('hidden');
+                                updateNotificationBadge(0);
+                            }
+                        } catch (e) { console.error(e); }
+                    }
+                };
 
                 window.handleNotificationClick = async function(id, referenceId, type, el) {
                     // 1. Mark as read (Optimistic)
@@ -1204,14 +1242,41 @@ document.addEventListener('DOMContentLoaded', () => {
         .channel('realtime-notifications')
         .on('postgres_changes', 
             { 
-                event: 'INSERT', 
+                event: '*', // Listen for ALL changes (INSERT, UPDATE, DELETE)
                 schema: 'public', 
                 table: 'notifications',
                 filter: `user_id=eq.${userId}`
             }, 
             (payload) => {
-                console.log('New notification received:', payload.new);
-                setTimeout(() => handleNewNotification(payload.new), 50);
+                console.log('Real-time notification change:', payload.eventType, payload.new);
+                
+                if (payload.eventType === 'INSERT') {
+                    setTimeout(() => handleNewNotification(payload.new), 50);
+                } else if (payload.eventType === 'UPDATE') {
+                    // Update existing item in UI
+                    const notif = payload.new;
+                    const el = document.getElementById(`notif-${notif.id}`);
+                    if (el) {
+                        const h4 = el.querySelector('h4');
+                        const p = el.querySelector('p');
+                        if (notif.is_read) {
+                            if (h4) {
+                                h4.classList.remove('font-black', 'text-slate-900');
+                                h4.classList.add('font-bold', 'text-slate-500');
+                            }
+                            if (p) {
+                                p.classList.remove('font-bold', 'text-slate-700');
+                                p.classList.add('font-medium', 'text-slate-400');
+                            }
+                        }
+                    }
+                    // Refresh unread count
+                    setTimeout(pollNotificationRealtime, 100);
+                } else if (payload.eventType === 'DELETE') {
+                    const el = document.getElementById(`notif-${payload.old.id}`);
+                    if (el) el.remove();
+                    setTimeout(pollNotificationRealtime, 100);
+                }
             }
         )
         .subscribe((status, err) => {

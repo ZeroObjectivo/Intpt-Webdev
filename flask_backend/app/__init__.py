@@ -45,19 +45,29 @@ def create_app():
         # Ensure it's UTC aware
         return dt.replace(tzinfo=timezone.utc)
 
+    @app.template_filter('relative_time')
+    def relative_time_filter(dt):
+        from .routes.core import format_relative_time
+        return format_relative_time(dt)
+
     @app.context_processor
     def inject_notifications():
-        from flask import session
+        from flask import session, request
         from services.supabase_client import get_user_client
         from app.routes.core import build_notification_payload
+        from app.routes.auth import is_admin_domain_request
         
         user = session.get('user')
         if not user:
             return {'notifications': [], 'unread_notifications_count': 0}
             
         try:
+            # Domain-aware scope detection for SSR (Server Side Rendering)
+            # Prevents user-side notifs from leaking into Admin Hub on initial load
+            notif_scope = "admin" if is_admin_domain_request() else "user"
+            
             client = get_user_client()
-            payload = build_notification_payload(client, user['id'])
+            payload = build_notification_payload(client, user['id'], scope=notif_scope)
             
             return {
                 'notifications': payload['items'],

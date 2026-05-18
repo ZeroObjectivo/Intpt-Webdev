@@ -492,6 +492,38 @@ def dashboard():
 
     return render_template('admin/dashboard.html', stats=stats, user=session.get('user'), permissions=permissions)
 
+@admin.route('/admin/notifications')
+@login_required
+@admin_required
+def admin_notifications():
+    client = get_admin_read_client()
+    user_session = session.get('user')
+    try:
+        # Fetch all admin-scoped notifications (global)
+        res = client.table('notifications')\
+            .select("id, title, message, type, is_read, created_at, reference_id, actor:profiles!notifications_actor_id_fkey(full_name, avatar_url)")\
+            .eq('scope', 'admin')\
+            .order('created_at', desc=True)\
+            .limit(100).execute()
+        notifications = res.data or []
+        
+        # Flatten actor details
+        for n in notifications:
+            actor = n.get('actor')
+            if actor:
+                n['actor_name'] = actor.get('full_name')
+                n['actor_avatar'] = actor.get('avatar_url')
+            else:
+                n['actor_name'] = "System"
+                n['actor_avatar'] = None
+    except Exception as e:
+        logger.error("Error fetching admin notifications: %s", e)
+        notifications = []
+        
+    return render_template('admin/admin_notifications.html', 
+                           notifications=notifications, 
+                           user=user_session)
+
 @admin.route('/admin/support')
 @login_required
 @admin_required
@@ -779,7 +811,7 @@ def reports_queue(category='All'):
     current_role = get_current_role()
     permissions = build_admin_permissions(current_role)
     
-    report_type = request.args.get('type', 'posts') # 'posts' or 'accounts'
+    report_type = request.args.get('type', 'posts') # 'posts', 'accounts', or 'comments'
     sort_method = request.args.get('sort', 'recent_reports')
     search = request.args.get('search', '')
     
@@ -789,7 +821,7 @@ def reports_queue(category='All'):
         pending_reports = reports_res.data or []
         
         if not pending_reports:
-            return render_template('admin/reports_queue.html', accounts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+            return render_template('admin/reports_queue.html', accounts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions, search=search)
 
         # 2. Group reports by user_id
         report_stats = {}
@@ -811,7 +843,7 @@ def reports_queue(category='All'):
         # 4. Filter by Search
         if search:
             search_lower = search.lower()
-            accounts = [a for a in accounts if search_lower in (a.get('full_name') or '').lower() or search_lower in (a.get('email') or '').lower()]
+            accounts = [a for a in accounts if search_lower in (a.get('full_name') or '').lower() or search_lower in (a.get('email') or '').lower() or search_lower == a.get('id')]
 
         # 5. Attach stats and Sort
         for a in accounts:
@@ -827,7 +859,53 @@ def reports_queue(category='All'):
         else:
             accounts.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
 
-        return render_template('admin/reports_queue.html', accounts=accounts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+        return render_template('admin/reports_queue.html', accounts=accounts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions, search=search)
+
+    elif report_type == 'comments':
+        # 1. Fetch all pending comment reports
+        reports_res = client.table('reports').select("comment_id, created_at").eq('status', 'pending').not_.is_('comment_id', 'null').execute()
+        pending_reports = reports_res.data or []
+        
+        if not pending_reports:
+            return render_template('admin/reports_queue.html', comments=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions, search=search)
+
+        # 2. Group reports by comment_id
+        report_stats = {}
+        for r in pending_reports:
+            cid = r['comment_id']
+            if cid not in report_stats:
+                report_stats[cid] = {"total": 0, "latest_report": r['created_at'], "earliest_report": r['created_at']}
+            report_stats[cid]["total"] += 1
+            if r['created_at'] > report_stats[cid]["latest_report"]:
+                report_stats[cid]["latest_report"] = r['created_at']
+            if r['created_at'] < report_stats[cid]["earliest_report"]:
+                report_stats[cid]["earliest_report"] = r['created_at']
+
+        # 3. Fetch details for these comments
+        comment_ids = list(report_stats.keys())
+        res = client.table('comments').select("*, profiles(full_name, avatar_url), posts(id, category)").in_('id', comment_ids).execute()
+        comments = res.data or []
+
+        # 4. Filter by Search
+        if search:
+            search_lower = search.lower()
+            comments = [c for c in comments if search_lower in (c.get('content') or '').lower() or search_lower == c.get('id')]
+
+        # 5. Attach stats and Sort
+        for c in comments:
+            stats = report_stats.get(c['id'], {"total": 0, "latest_report": "", "earliest_report": ""})
+            c['report_count'] = stats["total"]
+            c['latest_report_at'] = stats["latest_report"]
+            c['earliest_report_at'] = stats["earliest_report"]
+
+        if sort_method == 'most_reports':
+            comments.sort(key=lambda x: x.get('report_count', 0), reverse=True)
+        elif sort_method == 'oldest_reports':
+            comments.sort(key=lambda x: x.get('earliest_report_at', ''))
+        else:
+            comments.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
+
+        return render_template('admin/reports_queue.html', comments=comments, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions, search=search)
 
     else: # report_type == 'posts' (Reported Posts)
         # 1. Fetch all pending post reports
@@ -835,7 +913,7 @@ def reports_queue(category='All'):
         pending_reports = reports_res.data or []
         
         if not pending_reports:
-            return render_template('admin/reports_queue.html', posts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+            return render_template('admin/reports_queue.html', posts=[], category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions, search=search)
 
         # 2. Group reports by post_id
         report_stats = {}
@@ -860,7 +938,7 @@ def reports_queue(category='All'):
         # 4. Filter by Search
         if search:
             search_lower = search.lower()
-            posts = [p for p in posts if search_lower in (p.get('content') or '').lower()]
+            posts = [p for p in posts if search_lower in (p.get('content') or '').lower() or search_lower == p.get('id')]
 
         # 5. Attach stats and Sort
         for p in posts:
@@ -876,7 +954,7 @@ def reports_queue(category='All'):
         else:
             posts.sort(key=lambda x: x.get('latest_report_at', ''), reverse=True)
 
-        return render_template('admin/reports_queue.html', posts=posts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions)
+        return render_template('admin/reports_queue.html', posts=posts, category=category, sort=sort_method, report_type=report_type, user=session.get('user'), permissions=permissions, search=search)
 
 
 @admin.route('/admin/posts/bulk-approve', methods=['POST'])

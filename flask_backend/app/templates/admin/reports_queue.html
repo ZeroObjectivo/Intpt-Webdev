@@ -88,13 +88,18 @@
 
         <div class="flex flex-wrap items-center gap-3">
             <!-- Report Type Toggle -->
-            <div class="bg-slate-100 p-1 rounded-2xl flex items-center shadow-inner">
-                <a href="{{ url_for('admin.reports_queue') }}?type=posts&sort={{ sort }}" 
-                   class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+            <div class="bg-slate-100 p-1 rounded-2xl flex items-center shadow-inner border border-slate-200/50">
+                <a href="{{ url_for('admin.reports_queue', type='posts', sort=sort, search=search) }}" 
+                   class="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
                    {% if report_type == 'posts' %} bg-white text-umak-blue shadow-sm {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
                     Post Flags
                 </a>
-                <a href="{{ url_for('admin.reports_queue') }}?type=accounts&sort={{ sort }}" 
+                <a href="{{ url_for('admin.reports_queue', type='comments', sort=sort, search=search) }}" 
+                   class="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                   {% if report_type == 'comments' %} bg-white text-umak-blue shadow-sm {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
+                    Comment Flags
+                </a>
+                <a href="{{ url_for('admin.reports_queue', type='accounts', sort=sort, search=search) }}" 
                    class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
                    {% if report_type == 'accounts' %} bg-white text-umak-blue shadow-sm {% else %} text-slate-400 hover:text-slate-600 {% endif %}">
                     Account Flags
@@ -103,7 +108,7 @@
 
             <!-- Sort Dropdown -->
             <div class="relative">
-                <select onchange="window.location.href='{{ url_for('admin.reports_queue') }}?type={{ report_type }}&sort=' + this.value" 
+                <select onchange="window.location.href='{{ url_for('admin.reports_queue') }}?type={{ report_type }}&search={{ search }}&sort=' + this.value" 
                         class="pl-4 pr-10 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:ring-2 focus:ring-umak-blue/20 transition-all appearance-none cursor-pointer shadow-sm min-w-[160px]">
                     <option value="recent_reports" {% if sort == 'recent_reports' %}selected{% endif %}>Recent Flags</option>
                     <option value="most_reports" {% if sort == 'most_reports' %}selected{% endif %}>Most Flags</option>
@@ -191,6 +196,67 @@
         {% else %}
             <div class="text-center py-24 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
                 <p class="text-slate-400 font-bold italic">Queue clean! No reported posts.</p>
+            </div>
+        {% endif %}
+    {% elif report_type == 'comments' %}
+        {% if comments %}
+            {% for c in comments %}
+            <div class="report-card group relative" data-admin-comment-id="{{ c.id }}">
+                <div class="absolute top-8 left-6 z-10">
+                    <label class="cursor-pointer">
+                        <input type="checkbox" name="report-select" value="{{ c.id }}" onchange="updateBulkUI()" class="hidden">
+                        <div class="tick-circle shadow-sm border-2">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.4" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex justify-between items-start mb-6 pl-12">
+                    <div class="flex items-center gap-4">
+                        <img src="{{ c.profiles.avatar_url if c.profiles.avatar_url else url_for('static', filename='images/Logo.png') }}" 
+                             class="w-12 h-12 rounded-2xl object-cover border-2 border-slate-50 shadow-sm">
+                        <div>
+                            <h4 class="text-sm font-black text-slate-800 tracking-tight">{{ c.profiles.full_name }}</h4>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Comment on #{{ c.posts.category }}</span>
+                                <span class="w-1 h-1 bg-slate-200 rounded-full"></span>
+                                <span class="text-[9px] font-bold text-slate-300 uppercase">{{ c.created_at[:16].replace('T', ' ') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="px-3 py-1.5 bg-rose-50 rounded-xl border border-rose-100">
+                            <span class="text-[10px] font-black text-rose-600 uppercase tracking-tight">{{ c.report_count }} Reports</span>
+                        </div>
+                        <button onclick="window.location.href='/admin/content/All?search={{ c.post_id }}'" 
+                                class="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-umak-blue hover:text-white transition-all shadow-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50/50 rounded-2xl p-5 mb-6 ml-12">
+                    <p class="text-slate-600 text-sm font-medium leading-relaxed">{{ c.content }}</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-50 ml-12">
+                    <div class="flex gap-2">
+                        <button onclick="warnUserModal('{{ c.user_id }}', '{{ c.post_id }}')" 
+                                class="px-6 py-2.5 bg-amber-50 text-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all">
+                            Warn Author
+                        </button>
+                        <button onclick="confirmRemoveComment('{{ c.id }}')" 
+                                class="px-6 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">
+                            Remove Comment
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-24 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
+                <p class="text-slate-400 font-bold italic">Queue clean! No reported comments.</p>
             </div>
         {% endif %}
     {% else %}
@@ -329,6 +395,69 @@
         }
     }
 
+    async function confirmRemovePost(postId) {
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal('Remove Post?', 'This will permanently archive this post from the public feed.', async (payload = {}) => {
+                try {
+                    const res = await fetch(`/admin/posts/${postId}/delete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+                        body: JSON.stringify({ reason: payload.reason || 'Community Guideline Violation' })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'deleted') {
+                        showToast('Post removed', 'success');
+                        document.querySelector(`[data-admin-post-id="${postId}"]`)?.remove();
+                    }
+                } catch (e) { showToast('Action failed', 'error'); }
+            }, { 
+                reasons: ['Harassment', 'Spam', 'Misinformation', 'Other'], 
+                requireReason: true,
+                confirmText: 'Remove Post'
+            });
+        }
+    }
+
+    function warnUserModal(userId, postId) {
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal('Issue Warning?', 'The author will receive a system notification regarding this content.', async (payload = {}) => {
+                try {
+                    const res = await fetch(`/admin/users/${userId}/warn`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+                        body: JSON.stringify({ post_id: postId, reason: payload.reason })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showToast('Warning issued', 'success');
+                    }
+                } catch (e) { showToast('Action failed', 'error'); }
+            }, {
+                reasons: ['Community Standards', 'Harassment', 'Inappropriate Content', 'Spam'],
+                requireReason: true,
+                confirmText: 'Send Warning'
+            });
+        }
+    }
+
+    async function confirmRemoveComment(commentId) {
+        if (typeof showConfirmModal === 'function') {
+            showConfirmModal('Remove Comment?', 'This action will permanently delete this comment from the platform.', async () => {
+                try {
+                    const res = await fetch(`/admin/comments/${commentId}/delete`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCSRFToken() }
+                    });
+                    const data = await res.json();
+                    if (data.status === 'deleted') {
+                        showToast('Comment removed', 'success');
+                        document.querySelector(`[data-admin-comment-id="${commentId}"]`)?.remove();
+                    }
+                } catch (e) { showToast('Action failed', 'error'); }
+            });
+        }
+    }
+
     function openAdminPostView(postId, imgIdx = 0) {
         const post = window.allPosts.find(p => p.id === postId);
         if (!post) return;
@@ -344,6 +473,22 @@
     function showToast(message, type = 'success') {
         window.dispatchEvent(new CustomEvent('flash-message', { detail: { message, type } }));
     }
+
+    // Auto-scroll and highlight for search deep links
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchId = urlParams.get('search');
+        if (searchId) {
+            const target = document.querySelector(`[data-admin-post-id="${searchId}"], [data-admin-user-id="${searchId}"], [data-admin-comment-id="${searchId}"]`);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('ring-4', 'ring-umak-blue/20', 'border-umak-blue');
+                setTimeout(() => {
+                    target.classList.remove('ring-4', 'ring-umak-blue/20', 'border-umak-blue');
+                }, 3000);
+            }
+        }
+    });
 </script>
 <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
 {% endblock %}
