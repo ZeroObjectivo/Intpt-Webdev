@@ -171,6 +171,90 @@
     height: 1.25rem;
 }
 
+/* ===== Intro Flow Left Panel Redesign ===== */
+.intro-left-panel {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 13.5rem 4.9rem 4.7rem;
+    background: linear-gradient(135deg, #e2e8f0 0%, #dbeafe 8%, #cbd5e1 100%);
+}
+
+.intro-left-layer {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+}
+
+.intro-left-gradient {
+    inset: 0;
+    background: linear-gradient(180deg, rgba(14, 41, 102, 0.88) 12%, rgba(17, 24, 39, 0.15) 100%);
+    mix-blend-mode: multiply;
+}
+
+.intro-left-rectangle {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.72;
+    mix-blend-mode: multiply;
+}
+
+.intro-left-ellipse {
+    width: 1080px;
+    max-width: none;
+    left: -130px;
+    top: -640px;
+    opacity: 0.95;
+}
+
+.intro-left-vector {
+    width: 34px;
+    left: 78px;
+    top: 88px;
+    filter: brightness(0) invert(1);
+    opacity: 0.85;
+}
+
+.intro-left-copy {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+}
+
+.intro-left-title {
+    margin: 0 0 1.2rem;
+    color: #cbd5e1;
+    font-family: 'Metropolis', 'Inter', sans-serif;
+    font-size: clamp(2.8rem, 4.2vw, 4.35rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.intro-left-subtitle {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1rem, 1.4vw, 1.5rem);
+    line-height: 1.45;
+    max-width: 39rem;
+}
+
+.intro-left-footer {
+    position: relative;
+    z-index: 2;
+    margin: auto 0 0;
+    max-width: 40rem;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(0.95rem, 1.15vw, 1.2rem);
+    line-height: 1.45;
+}
+
 /* ===== Intro Flow Animations ===== */
 #intro-flow {
     transition: opacity 0.4s ease, transform 0.4s ease;
@@ -268,5 +352,29 @@
 @media (max-width: 1024px) {
     #intro-flow .grid {
         grid-template-rows: 45vh 1fr;
+    }
+
+    .intro-left-panel {
+        padding: 5.5rem 2.2rem 2rem;
+    }
+
+    .intro-left-vector {
+        left: 36px;
+        top: 30px;
+        width: 26px;
+    }
+
+    .intro-left-ellipse {
+        width: 760px;
+        left: -180px;
+        top: -540px;
+    }
+
+    .intro-left-title {
+        margin-bottom: 0.8rem;
+    }
+
+    .intro-left-footer {
+        margin-top: 1.3rem;
     }
 }
