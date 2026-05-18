@@ -3975,6 +3975,10 @@ h1,
     display: inline;
   }
 
+  .md\:flex {
+    display: flex;
+  }
+
   .md\:inline-flex {
     display: inline-flex;
   }
