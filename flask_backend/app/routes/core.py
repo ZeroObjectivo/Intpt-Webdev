@@ -2176,6 +2176,14 @@ def add_comment(post_id):
     if not content:
         return {"error": "Comment cannot be empty"}, 400
 
+    # Rate limit: one comment per 3 seconds per user
+    now = time.time()
+    last_comment_at = session.get('_last_comment_at', 0)
+    if now - last_comment_at < 3:
+        return {"error": "You're commenting too fast. Please wait a moment."}, 429
+    session['_last_comment_at'] = now
+    session.modified = True
+
     try:
         moderation = evaluate_submission_policy(user_id, content, "comment")
     except Exception as e:

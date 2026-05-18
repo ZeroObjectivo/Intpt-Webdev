@@ -603,17 +603,23 @@ async function toggleLike(postId, btn) {
     }
 }
 
+let _commentSubmitting = false;
 async function submitComment(event) {
     event.preventDefault();
     if (isAdminContext) return;
+    if (_commentSubmitting) return;
     const textarea = document.getElementById('commentTextarea');
     const content = textarea.value.trim();
     if (!content || !currentPost) return;
 
+    _commentSubmitting = true;
+    const submitBtn = document.querySelector('.modal-comment-submit');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.5'; }
+
     try {
         const body = { content };
         if (currentReplyTo) body.parent_id = currentReplyTo.id;
-        
+
         const response = await fetch(`/posts/${currentPost.id}/comments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
@@ -622,6 +628,7 @@ async function submitComment(event) {
         const data = await response.json();
         if (!response.ok || data.status === 'blocked') {
             var msg = data.error || data.message || 'Your comment violates content policy.';
+            if (response.status === 429) msg = data.error || "You're commenting too fast. Please wait a moment.";
             if (typeof showModerationPopup === 'function') {
                 showModerationPopup(msg);
             } else if (window.createToast) {
@@ -644,6 +651,11 @@ async function submitComment(event) {
         }
     } catch (error) {
         console.error('Comment error:', error);
+    } finally {
+        setTimeout(function() {
+            _commentSubmitting = false;
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; }
+        }, 1500);
     }
 }
 
