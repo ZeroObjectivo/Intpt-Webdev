@@ -23,6 +23,7 @@ class DashboardLayoutTest(unittest.TestCase):
         self.template = (PROJECT_ROOT / "app" / "templates" / "dashboard.html").read_text()
         self.core_route = (PROJECT_ROOT / "app" / "routes" / "core.py").read_text()
         self.sidebar_include = (PROJECT_ROOT / "app" / "templates" / "includes" / "primary_sidebar.html").read_text()
+        self.post_card_include = (PROJECT_ROOT / "app" / "templates" / "includes" / "post_card.html").read_text()
 
     def test_dashboard_grid_uses_fluid_columns_instead_of_rigid_widths(self):
         container_rule = re.search(r"\.dashboard-container\s*\{(?P<body>.*?)\}", self.css, re.S)
@@ -270,6 +271,14 @@ class DashboardLayoutTest(unittest.TestCase):
     def test_dashboard_uses_relative_post_timestamp_value(self):
         self.assertIn("post.relative_created_at", self.template)
         self.assertNotIn("post.created_at[:10]", self.template)
+
+    def test_non_owner_post_cards_report_from_footer_instead_of_header_menu(self):
+        self.assertIn("{% if post.user_id == user.id %}", self.post_card_include)
+        self.assertNotIn("Report Post", self.post_card_include)
+        self.assertIn("reportPost('{{ post.id }}')", self.post_card_include)
+        self.assertIn("report-post-label", self.post_card_include)
+        self.assertIn("hover:text-amber-500", self.post_card_include)
+        self.assertIn("ml-auto", self.post_card_include)
 
 
 class RelativeTimestampTest(unittest.TestCase):
