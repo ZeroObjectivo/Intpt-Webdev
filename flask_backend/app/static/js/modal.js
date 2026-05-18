@@ -446,7 +446,9 @@ function formatPostTime(timestamp) {
 
 function renderComment(comment, isReply = false) {
     const avatar = comment.profiles.avatar_url || "/static/images/Logo.png";
-    const isOwner = window.currentUser && window.currentUser.id === comment.user_id;
+    const currentId = (window.currentUser && window.currentUser.id) || '';
+    const commentOwnerId = comment.user_id || '';
+    const isOwner = currentId && commentOwnerId && currentId === commentOwnerId;
     const isAdmin = window.currentUser && (window.currentUser.role === 'admin' || window.currentUser.role === 'super_admin');
     const allowOwnEdit = isOwner && !isAdminContext;
     const profileUrl = isAdminContext ? `/admin/users/${comment.user_id}/manage` : `/profile/${comment.user_id}`;
@@ -473,7 +475,7 @@ function renderComment(comment, isReply = false) {
                             </button>
                             
                             <div id="comment-dropdown-${comment.id}" class="comment-dropdown">
-                                ${allowOwnEdit ? `
+                                ${isOwner ? `
                                     <button onclick="startEditComment('${comment.id}')" class="comment-dropdown-item">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                                         Edit Comment
