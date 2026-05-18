@@ -41,6 +41,9 @@ class AdminDeleteArchivingTest(unittest.TestCase):
         self.assertIn("liked your post", core_routes)
         self.assertIn("commented.", core_routes)
         self.assertIn("replied.", core_routes)
+        self.assertIn("def normalize_notification_title_case(title):", core_routes)
+        self.assertIn("normalize_person_display_name(full_name.split()[0])", core_routes)
+        self.assertIn("normalize_notification_title_case(n.get('title'))", core_routes)
 
 
 if __name__ == "__main__":

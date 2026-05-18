@@ -183,22 +183,42 @@
 
             <aside class="sidebar sticky top-20 h-full">
                 <section class="sidebar-section">
-                    <h2 class="sidebar-heading">Trending Now</h2>
+                    <h2 class="sidebar-heading sidebar-heading-display trending-now-heading">Trending Now</h2>
                     <div class="trending-list">
                         {% if trending %}
                             {% for item in trending %}
                             <div class="trending-item cursor-pointer" data-post-id="{{ item.id }}" onclick='openCommentModal({{ item|tojson|safe }})'>
-                                <span class="trending-number">{{ loop.index }}</span>
+                                <div class="trending-rank">
+                                    <span class="trending-number">{{ loop.index }}</span>
+                                </div>
                                 <div class="trending-details">
-                                    <span class="trending-category">{{ item.category }}</span>
-                                    <h4 class="line-clamp-2">{{ item.content }}</h4>
-                                    <span class="likes">
+                                    {% set trending_category = item.category or 'General' %}
+                                    <div class="trending-pill-row">
+                                        {% if trending_category == 'Lost & Found' %}
+                                            <span class="badge badge-lost-found trending-pill">Lost &amp; Found</span>
+                                        {% elif trending_category in ['Buy & Sell', 'Heron Business'] %}
+                                            <span class="badge badge-heron-business trending-pill">Heron Business</span>
+                                        {% elif trending_category == 'Question' %}
+                                            <span class="badge badge-question trending-pill">Question</span>
+                                        {% elif trending_category == 'Events' %}
+                                            <span class="badge badge-events trending-pill">Events</span>
+                                        {% else %}
+                                            <span class="badge badge-general trending-pill">General</span>
+                                        {% endif %}
+                                    </div>
+                                    <h4 class="trending-description line-clamp-2">{{ item.content }}</h4>
+                                    <p class="trending-likes">
                                         {% if (item.likes_count or 0) >= 1000 %}
                                             {{ '%.1fk'|format((item.likes_count or 0) / 1000) }} likes
                                         {% else %}
                                             {{ (item.likes_count or 0) }} likes
                                         {% endif %}
-                                    </span>
+                                    </p>
+                                </div>
+                                <div class="trending-chevron" aria-hidden="true">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 6 6 6-6 6"></path>
+                                    </svg>
                                 </div>
                             </div>
                             {% endfor %}
@@ -211,7 +231,7 @@
                 </section>
 
                 <section class="sidebar-section">
-                    <h2 class="sidebar-heading">Upcoming Events</h2>
+                    <h2 class="sidebar-heading sidebar-heading-display">Upcoming Events</h2>
                     <div class="event-list">
                         {% if events %}
                             {% for event in events %}
@@ -223,10 +243,8 @@
                                 <div class="event-divider" aria-hidden="true"></div>
                                 <div class="event-info">
                                     <h4 class="line-clamp-1" title="{{ event.event_title or event.content }}">{{ event.event_title or 'Untitled Event' }}</h4>
-                                    <p>{{ event.time_display }}<br>{{ event.location or 'UMak Campus' }}</p>
-                                </div>
-                                <div class="event-status-stack">
-                                    <span class="event-status-label">status</span>
+                                    <p>{{ event.time_display }}</p>
+                                    <p class="event-location">{{ event.location or 'UMak Campus' }}</p>
                                     <div class="event-status {% if event.status == 'Ongoing' %}status-ongoing{% else %}status-upcoming{% endif %}">{{ event.status }}</div>
                                 </div>
                             </div>

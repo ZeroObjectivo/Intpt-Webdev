@@ -138,6 +138,24 @@ class DashboardLayoutTest(unittest.TestCase):
         self.assertIn('class="feed-filter-title-icon"', self.template)
         self.assertIn('class="sr-only">Filter posts</span>', self.template)
 
+    def test_trending_now_uses_card_layout_with_rank_and_status(self):
+        self.assertIn('class="trending-rank"', self.template)
+        self.assertIn('class="trending-pill-row"', self.template)
+        self.assertIn('class="badge badge-events trending-pill"', self.template)
+        self.assertIn('class="trending-description line-clamp-2"', self.template)
+        self.assertIn('class="trending-likes"', self.template)
+        self.assertIn('class="trending-chevron"', self.template)
+        self.assertIn(".trending-pill", self.css)
+        self.assertIn(".trending-description", self.css)
+        self.assertIn(".trending-likes", self.css)
+
+    def test_upcoming_events_places_status_under_details_without_label(self):
+        self.assertIn('<p>{{ event.time_display }}</p>', self.template)
+        self.assertIn('class="event-location"', self.template)
+        self.assertNotIn('class="event-status-stack"', self.template)
+        self.assertNotIn(">status<", self.template)
+        self.assertIn(".event-location", self.css)
+
     def test_create_post_modal_has_dynamic_category_fields(self):
         self.assertIn('id="createPostForm"', self.template)
         self.assertIn('enctype="multipart/form-data"', self.template)
